@@ -15,14 +15,14 @@ class AuthController extends Controller
 
     public function storeLogin(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $credentials = $request->only('id_number', 'password');
 
         if (Auth::attempt($credentials)) {
             return redirect()->intended('/dashboard');
         }
 
         return redirect('login')->withErrors([
-            'email' => 'The provided credentials do not match our records.',
+            'id_number' => 'The provided credentials do not match our records.',
         ]);
     }
 
@@ -48,5 +48,13 @@ class AuthController extends Controller
         Auth::login($user);
 
         return redirect('/dashboard');
+    }
+
+    public function logout(Request $request)
+    {
+        \Illuminate\Support\Facades\Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect()->route('login');
     }
 }

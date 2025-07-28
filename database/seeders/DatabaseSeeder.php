@@ -13,11 +13,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        \App\Models\User::create([
+            'name' => 'Admin User',
+            'id_number' => 'admin123',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+        \App\Models\Category::insert([
+            ['name' => 'Furnitures', 'code' => 'FUR'],
+            ['name' => 'Electronics & IT Equipment', 'code' => 'ELE'],
+            ['name' => 'Teaching & Presentation Tools', 'code' => 'TPT'],
+            ['name' => 'Fixtures', 'code' => 'FIX'],
+            ['name' => 'Religious or Institutional Items', 'code' => 'REL'],
         ]);
     }
 }
