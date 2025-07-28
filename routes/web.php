@@ -10,13 +10,14 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\QRCodeController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\DisposalController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/login', [AuthController::class, 'createLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'storeLogin']);
 Route::get('/register', [AuthController::class, 'createRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'storeRegister']);
 
-Route::get('/dashboard', [AssetController::class, 'index'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/assets', [AssetController::class, 'index'])->name('assets.index');
 Route::get('/assets/create', [AssetController::class, 'create'])->name('assets.create');
 Route::post('/assets', [AssetController::class, 'store'])->name('assets.store');
