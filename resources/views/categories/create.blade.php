@@ -33,6 +33,10 @@
     <form action="{{ route('categories.store') }}" method="POST">
         @csrf
         <div class="mb-6">
+            <label class="block text-gray-700 font-semibold mb-2" for="code">Category Code (3 letters)</label>
+            <input type="text" name="code" id="code" maxlength="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" value="{{ old('code') }}" required>
+        </div>
+        <div class="mb-6">
             <label class="block text-gray-700 font-semibold mb-2" for="name">Category Name</label>
             <input type="text" name="name" id="name" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" value="{{ old('name') }}" required>
         </div>

@@ -36,8 +36,16 @@ class LocationController extends Controller
 
     public function show(Location $location)
     {
-        $assets = $location->assets()->with('category')->paginate(10);
-        return view('locations.show', compact('location', 'assets'));
+        // Get assets in this location
+        $assets = $location->assets;
+        
+        // Get borrowings for this location
+        $borrowings = \App\Models\Borrowing::where('room', 'like', '%' . $location->building . ' - Floor ' . $location->floor . ' - Room ' . $location->room . '%')
+                                      ->where('status', '!=', 'returned')
+                                      ->latest()
+                                      ->get();
+        
+        return view('locations.show', compact('location', 'assets', 'borrowings'));
     }
 
     public function edit(Location $location)

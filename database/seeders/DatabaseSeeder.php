@@ -26,5 +26,8 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Fixtures', 'code' => 'FIX'],
             ['name' => 'Religious or Institutional Items', 'code' => 'REL'],
         ]);
+        
+        // Seed borrowing data
+        $this->call(BorrowingSeeder::class);
     }
 }

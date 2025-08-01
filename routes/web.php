@@ -11,6 +11,7 @@ use App\Http\Controllers\QRCodeController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\DisposalController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\BorrowingController;
 
 Route::get('/login', [AuthController::class, 'createLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'storeLogin']);
@@ -66,5 +67,14 @@ Route::delete('/assets/{asset}/maintenances/{maintenance}', [MaintenanceControll
 
 // Disposal routes
 Route::get('/disposal-history', [DisposalController::class, 'history'])->name('disposals.history');
-
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+// Borrowing routes - Fix the order and remove duplicates
+Route::get('/borrowing', [BorrowingController::class, 'index'])->name('borrowing.index');
+Route::get('/borrowing/create', [BorrowingController::class, 'create'])->name('borrowing.create');
+Route::post('/borrowing', [BorrowingController::class, 'store'])->name('borrowing.store');
+Route::get('/borrowing/{borrowing}', [BorrowingController::class, 'show'])->name('borrowing.show');
+Route::put('/borrowing/{borrowing}/return', [BorrowingController::class, 'markAsReturned'])->name('borrowing.return');
+Route::delete('/borrowing/{borrowing}', [BorrowingController::class, 'cancel'])->name('borrowing.cancel');
+
+// Remove this line as it's causing conflicts with the individual routes
+// Route::resource('borrowing', BorrowingController::class)->except(['edit', 'update']);

@@ -16,8 +16,10 @@ class DashboardController extends Controller
         // Get counts for dashboard stats
         $totalAssets = Asset::count();
         $availableAssets = Asset::where('status', 'Available')->count();
+        $inUseAssets = Asset::where('status', 'In Use')->count();
         $disposedAssets = Asset::where('status', 'Disposed')->count();
-        $pendingMaintenances = Maintenance::where('status', 'Pending')->count();
+        // Fix: count maintenances with status 'Scheduled' or 'In Progress'
+        $pendingMaintenances = Maintenance::whereIn('status', ['Scheduled', 'In Progress'])->count();
         $totalUsers = User::count();
 
         // Get recent assets
@@ -41,6 +43,7 @@ class DashboardController extends Controller
         return view('dashboard.dashboard', compact(
             'totalAssets',
             'availableAssets',
+            'inUseAssets',
             'disposedAssets',
             'pendingMaintenances',
             'totalUsers',

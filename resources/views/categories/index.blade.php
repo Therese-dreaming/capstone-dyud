@@ -36,11 +36,7 @@
                         {{ $category->name }}
                     </h2>
                     <div class="text-gray-400 text-xs mt-1">
-                        @if($category->created_at)
-                            Created {{ $category->created_at->diffForHumans() }}
-                        @else
-                            0
-                        @endif
+                        {{ $category->assets_count }}
                     </div>
                 </div>
             </a>

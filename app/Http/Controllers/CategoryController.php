@@ -9,7 +9,8 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = Category::orderBy('name')->get();
+        // Eager load asset count for each category
+        $categories = Category::withCount('assets')->orderBy('name')->get();
         return view('categories.index', compact('categories'));
     }
 

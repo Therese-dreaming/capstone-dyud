@@ -422,27 +422,15 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <h4 class="text-lg font-semibold text-gray-900 mb-4">Asset Distribution by Category</h4>
-                        <div class="h-64 flex items-center justify-center" id="categoryChart">
-                            <div class="text-center">
-                                <div class="inline-block p-4 rounded-full bg-gray-100 mb-4">
-                                    <i class="fas fa-chart-pie text-gray-500 text-2xl"></i>
-                                </div>
-                                <p class="text-gray-500">Chart visualization will appear here</p>
-                                <p class="text-sm text-gray-400 mt-2">Displaying data for {{ $categories->count() }} categories</p>
-                            </div>
+                        <div class="h-64 relative">
+                            <canvas id="categoryChart"></canvas>
                         </div>
                     </div>
 
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <h4 class="text-lg font-semibold text-gray-900 mb-4">Asset Status Distribution</h4>
-                        <div class="h-64 flex items-center justify-center" id="statusChart">
-                            <div class="text-center">
-                                <div class="inline-block p-4 rounded-full bg-gray-100 mb-4">
-                                    <i class="fas fa-chart-bar text-gray-500 text-2xl"></i>
-                                </div>
-                                <p class="text-gray-500">Chart visualization will appear here</p>
-                                <p class="text-sm text-gray-400 mt-2">Displaying status distribution data</p>
-                            </div>
+                        <div class="h-64 relative">
+                            <canvas id="statusChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -650,9 +638,8 @@
     transition-duration: 150ms;
 }
 </style>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Add some interactive features
 document.addEventListener('DOMContentLoaded', function() {
     // Add hover effects to cards
     const cards = document.querySelectorAll('.bg-white.rounded-xl');
@@ -671,6 +658,133 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', function() {
             if (this.href && !this.href.includes('#')) {
                 this.style.opacity = '0.7';
+            }
+        });
+    });
+
+    // Chart.js initialization
+    function renderCharts() {
+        // Destroy previous charts if they exist
+        if (window.categoryChartInstance) {
+            window.categoryChartInstance.destroy();
+        }
+        if (window.statusChartInstance) {
+            window.statusChartInstance.destroy();
+        }
+        // Category Chart
+        const categoryChartElem = document.getElementById('categoryChart');
+        if (categoryChartElem) {
+            const categoryCtx = categoryChartElem.getContext('2d');
+            window.categoryChartInstance = new Chart(categoryCtx, {
+                type: 'pie',
+                data: {
+                    labels: {!! json_encode($categories->pluck('name')) !!},
+                    datasets: [{
+                        data: {!! json_encode($categories->pluck('assets_count')) !!},
+                        backgroundColor: [
+                            '#4F46E5', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD',
+                            '#EF4444', '#F87171', '#FCA5A5', '#10B981', '#34D399',
+                            '#F59E0B', '#FBBF24', '#8B5CF6', '#A78BFA', '#EC4899'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 15,
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Asset Distribution by Category',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        // Status Chart
+        const statusChartElem = document.getElementById('statusChart');
+        if (statusChartElem) {
+            const statusCtx = statusChartElem.getContext('2d');
+            window.statusChartInstance = new Chart(statusCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Available', 'In Use', 'Maintenance', 'Retired'],
+                    datasets: [{
+                        label: 'Number of Assets',
+                        data: [
+                            {{ $availableAssets }},
+                            {{ $inUseAssets }},
+                            {{ $pendingMaintenances }},
+                            0
+                        ],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',  // Green for Available
+                            'rgba(59, 130, 246, 0.7)',  // Blue for In Use
+                            'rgba(245, 158, 11, 0.7)',  // Yellow for Maintenance
+                            'rgba(239, 68, 68, 0.7)'    // Red for Retired
+                        ],
+                        borderColor: [
+                            'rgb(16, 185, 129)',
+                            'rgb(59, 130, 246)',
+                            'rgb(245, 158, 11)',
+                            'rgb(239, 68, 68)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Asset Status Distribution',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Render charts on initial load if Analytics tab is visible
+    if (document.querySelector('[x-show="activeTab === \'analytics\'"]')) {
+        renderCharts();
+    }
+
+    // Re-render charts when switching to Analytics tab
+    document.querySelectorAll('button').forEach(button => {
+        button.addEventListener('click', function() {
+            if (this.textContent.trim().includes('Analytics')) {
+                setTimeout(() => {
+                    renderCharts();
+                }, 200);
             }
         });
     });

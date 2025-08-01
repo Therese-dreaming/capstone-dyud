@@ -53,9 +53,9 @@
                 <label class="block text-gray-700 font-semibold mb-2" for="role">Role</label>
                 <select name="role" id="role" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" required>
                     <option value="superadmin">Superadmin</option>
-                    <option value="admin">Admin</option>
+                    <option value="gsu">GSU</option>
                     <option value="user">User</option>
-                </select>
+                </select>       
             </div>
         </div>
         <button type="submit" class="mt-8 w-full bg-gradient-to-r from-red-800 to-red-900 hover:from-red-900 hover:to-red-950 text-white font-bold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 flex items-center justify-center gap-2">
