@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers;2    
 
 use App\Models\Borrowing;
+use App\Models\Asset;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -13,7 +15,13 @@ class BorrowingController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
         $query = Borrowing::query();
+        
+        // If user is not admin or GSU, only show their own borrowings
+        if ($user->role === 'user') {
+            $query->where('borrower_id_number', $user->id_number);
+        }
         
         // Apply filters if provided
         if ($request->has('status') && $request->status) {
@@ -49,10 +57,44 @@ class BorrowingController extends Controller
     }
 
     /**
+     * Get available assets by category for dynamic item selection.
+     */
+    public function getAvailableAssets(Request $request)
+    {
+        $categoryName = $request->input('category');
+        
+        if (!$categoryName) {
+            return response()->json(['assets' => []]);
+        }
+        
+        // Get category ID by name
+        $category = Category::where('name', $categoryName)->first();
+        
+        if (!$category) {
+            return response()->json(['assets' => []]);
+        }
+        
+        // Get available assets in this category
+        $assets = Asset::where('category_id', $category->id)
+            ->where('status', 'Available')
+            ->select('id', 'name', 'asset_code', 'condition')
+            ->get();
+        
+        return response()->json(['assets' => $assets]);
+    }
+
+    /**
      * Display the specified resource.
      */
     public function show(Borrowing $borrowing)
     {
+        $user = auth()->user();
+        
+        // If user is not admin or GSU, only allow viewing their own borrowings
+        if ($user->role === 'user' && $borrowing->borrower_id_number !== $user->id_number) {
+            abort(403, 'Unauthorized access.');
+        }
+        
         return view('borrowing.show', compact('borrowing'));
     }
 
@@ -101,28 +143,28 @@ class BorrowingController extends Controller
             
             $borrowing->save();
             
-            \Log::info('Borrowing created successfully', ['borrowing_id' => $borrowing->id]);
+            // Update asset status to 'In Use' for borrowed items
+            if (is_array($validated['items'])) {
+                foreach ($validated['items'] as $assetId) {
+                    $asset = Asset::find($assetId);
+                    if ($asset && $asset->status === 'Available') {
+                        $asset->status = 'In Use';
+                        $asset->save();
+                    }
+                }
+            }
             
-            return redirect()->route('borrowing.index')->with('success', 'Item borrowed successfully!');
-            
+            return redirect()->route('borrowing.index')
+                ->with('success', 'Borrowing request created successfully!');
+                
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Borrowing validation failed', [
-                'errors' => $e->errors(),
-                'input' => $request->all()
-            ]);
-            
             return redirect()->back()
                 ->withErrors($e->errors())
                 ->withInput();
                 
         } catch (\Exception $e) {
-            \Log::error('Borrowing creation failed', [
-                'error' => $e->getMessage(),
-                'input' => $request->all()
-            ]);
-            
             return redirect()->back()
-                ->with('error', 'Failed to create borrowing. Please try again.')
+                ->with('error', 'Failed to create borrowing request. Please try again.')
                 ->withInput();
         }
     }

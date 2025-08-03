@@ -14,15 +14,32 @@
                     <div class="bg-gradient-to-r from-red-600 to-red-800 text-white p-3 rounded-xl shadow-lg">
                         <i class="fas fa-exchange-alt text-xl"></i>
                     </div>
-                    Asset Borrowing
+                    @if(auth()->user()->role === 'user')
+                        My Borrowings
+                    @else
+                        Asset Borrowing
+                    @endif
                 </h1>
-                <p class="text-gray-600 mt-2 text-sm md:text-base">Manage asset borrowing and returns</p>
+                <p class="text-gray-600 mt-2 text-sm md:text-base">
+                    @if(auth()->user()->role === 'user')
+                        View and manage your borrowing requests
+                    @else
+                        Manage asset borrowing and returns
+                    @endif
+                </p>
             </div>
             <div class="mt-4 sm:mt-0 flex items-center space-x-3">
-                <a href="{{ route('borrowing.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
-                    <i class="fas fa-plus"></i>
-                    New Borrowing
-                </a>
+                @if(auth()->user()->role === 'user')
+                    <a href="{{ route('user.borrowing.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        New Request
+                    </a>
+                @else
+                    <a href="{{ route('borrowing.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        New Borrowing
+                    </a>
+                @endif
             </div>
         </div>
 
@@ -33,19 +50,31 @@
                         :class="activeTab === 'current' ? 'bg-red-50 text-red-700 border-b-2 border-red-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
                         class="flex-1 px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2">
                     <i class="fas fa-clock"></i>
-                    Current Borrowings
+                    @if(auth()->user()->role === 'user')
+                        My Current Items
+                    @else
+                        Current Borrowings
+                    @endif
                 </button>
                 <button @click="activeTab = 'history'" 
                         :class="activeTab === 'history' ? 'bg-red-50 text-red-700 border-b-2 border-red-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
                         class="flex-1 px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2">
                     <i class="fas fa-history"></i>
-                    Borrowing History
+                    @if(auth()->user()->role === 'user')
+                        My History
+                    @else
+                        Borrowing History
+                    @endif
                 </button>
                 <button @click="activeTab = 'overdue'" 
                         :class="activeTab === 'overdue' ? 'bg-red-50 text-red-700 border-b-2 border-red-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
                         class="flex-1 px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2">
                     <i class="fas fa-exclamation-circle"></i>
-                    Overdue Items
+                    @if(auth()->user()->role === 'user')
+                        My Overdue Items
+                    @else
+                        Overdue Items
+                    @endif
                 </button>
             </div>
         </div>
@@ -116,9 +145,11 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Asset
                                 </th>
+                                @if(auth()->user()->role !== 'user')
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Borrower
                                 </th>
+                                @endif
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Borrowed Date
                                 </th>
@@ -149,10 +180,12 @@
                                         </div>
                                     </div>
                                 </td>
+                                @if(auth()->user()->role !== 'user')
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">{{ $borrowing->borrower_name }}</div>
                                     <div class="text-sm text-gray-500">{{ $borrowing->borrower_id_number }}</div>
                                 </td>
+                                @endif
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $borrowing->borrow_date->format('M d, Y') }}
                                 </td>
@@ -166,6 +199,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">
+                                        @if(auth()->user()->role !== 'user')
                                         <form action="{{ route('borrowing.return', $borrowing) }}" method="POST">
                                             @csrf
                                             @method('PUT')
@@ -173,9 +207,15 @@
                                                 <i class="fas fa-check-circle"></i>
                                             </button>
                                         </form>
+                                        @endif
                                         <a href="{{ route('borrowing.show', $borrowing) }}" class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 p-1.5 rounded-lg transition-colors">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        @if(auth()->user()->role === 'user')
+                                        <button onclick="cancelBorrowing({{ $borrowing->id }})" class="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 p-1.5 rounded-lg transition-colors">
+                                            <i class="fas fa-times-circle"></i>
+                                        </button>
+                                        @else
                                         <form action="{{ route('borrowing.cancel', $borrowing) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
@@ -183,12 +223,13 @@
                                                 <i class="fas fa-times-circle"></i>
                                             </button>
                                         </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                <td colspan="{{ auth()->user()->role === 'user' ? '5' : '6' }}" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                     No active borrowings found
                                 </td>
                             </tr>
@@ -250,10 +291,12 @@
                                         </div>
                                     </div>
                                 </td>
+                                @if(auth()->user()->role !== 'user')
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">{{ $borrowing->borrower_name }}</div>
                                     <div class="text-sm text-gray-500">{{ $borrowing->borrower_id_number }}</div>
                                 </td>
+                                @endif
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $borrowing->borrow_date->format('M d, Y') }}
                                 </td>
@@ -275,7 +318,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                <td colspan="{{ auth()->user()->role === 'user' ? '5' : '6' }}" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                     No borrowing history found
                                 </td>
                             </tr>
@@ -337,10 +380,12 @@
                                         </div>
                                     </div>
                                 </td>
+                                @if(auth()->user()->role !== 'user')
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">{{ $borrowing->borrower_name }}</div>
                                     <div class="text-sm text-gray-500">{{ $borrowing->borrower_id_number }}</div>
                                 </td>
+                                @endif
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $borrowing->borrow_date->format('M d, Y') }}
                                 </td>
@@ -354,6 +399,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end space-x-2">
+                                        @if(auth()->user()->role !== 'user')
                                         <form action="{{ route('borrowing.return', $borrowing) }}" method="POST">
                                             @csrf
                                             @method('PUT')
@@ -361,18 +407,25 @@
                                                 <i class="fas fa-check-circle"></i>
                                             </button>
                                         </form>
+                                        @endif
                                         <a href="{{ route('borrowing.show', $borrowing) }}" class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 p-1.5 rounded-lg transition-colors">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        @if(auth()->user()->role === 'user')
+                                        <button onclick="cancelBorrowing({{ $borrowing->id }})" class="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 p-1.5 rounded-lg transition-colors">
+                                            <i class="fas fa-times-circle"></i>
+                                        </button>
+                                        @else
                                         <button class="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 p-1.5 rounded-lg transition-colors">
                                             <i class="fas fa-bell"></i>
                                         </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                <td colspan="{{ auth()->user()->role === 'user' ? '5' : '6' }}" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                     No overdue items found
                                 </td>
                             </tr>
@@ -547,6 +600,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 500);
     }
+    
+    // Function to cancel borrowing for users
+    window.cancelBorrowing = function(borrowingId) {
+        if (confirm('Are you sure you want to cancel this borrowing request?')) {
+            fetch(`/user/borrowing/${borrowingId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to cancel borrowing: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to cancel borrowing request.');
+            });
+        }
+    };
 });
 </script>
 @endsection

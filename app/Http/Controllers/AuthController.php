@@ -18,12 +18,16 @@ class AuthController extends Controller
         $credentials = $request->only('id_number', 'password');
 
         if (Auth::attempt($credentials)) {
-            return redirect()->intended('/dashboard');
+            // Update last login timestamp
+            $user = Auth::user();
+            $user->update(['last_login' => now()]);
+            
+            return redirect()->intended('/dashboard')->with('success', 'Welcome back, ' . $user->name . '!');
         }
 
         return redirect('login')->withErrors([
             'id_number' => 'The provided credentials do not match our records.',
-        ]);
+        ])->withInput($request->only('id_number'));
     }
 
     public function createRegister()
@@ -35,14 +39,17 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'id_number' => 'required|string|max:255|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
         $user = \App\Models\User::create([
             'name' => $request->name,
+            'id_number' => $request->id_number,
             'email' => $request->email,
             'password' => bcrypt($request->password),
+            'role' => 'user', // Default role for new registrations
         ]);
 
         Auth::login($user);

@@ -16,6 +16,27 @@
                     <h2 class="text-3xl font-bold text-gray-800">Welcome Back</h2>
                     <p class="text-gray-600 mt-2">Please sign in to continue</p>
                 </div>
+
+                <!-- Success Message -->
+                @if(session('success'))
+                    <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        {{ session('success') }}
+                    </div>
+                @endif
+
+                <!-- Error Messages -->
+                @if($errors->any())
+                    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        <ul class="list-disc list-inside">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <form action="/login" method="POST">
                     @csrf
                     <div class="mb-6">
@@ -24,7 +45,7 @@
                         </label>
                         <input type="text" id="id_number" name="id_number" 
                             class="w-full border border-gray-300 rounded-lg py-3 px-4 text-gray-700 placeholder-gray-400 focus:outline-none focus:border-red-800 focus:ring-1 focus:ring-red-800 transition duration-200"
-                            required placeholder="Enter your ID number">
+                            required placeholder="Enter your ID number" value="{{ old('id_number') }}">
                     </div>
                     <div class="mb-6">
                         <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">

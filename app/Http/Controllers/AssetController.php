@@ -19,10 +19,22 @@ class AssetController extends Controller
         return view('assets.index', compact('assets'));
     }
 
+    public function gsuIndex()
+    {
+        $assets = Asset::with(['category', 'location', 'warranty'])->paginate(10);
+        return view('assets.gsu-index', compact('assets'));
+    }
+
     public function create()
     {
         $categories = Category::all();
         $locations = Location::all();
+        
+        // Check if user is GSU and return appropriate view
+        if (auth()->user()->role === 'gsu') {
+            return view('assets.gsu-create', compact('categories', 'locations'));
+        }
+        
         return view('assets.create', compact('categories', 'locations'));
     }
 
@@ -72,7 +84,7 @@ class AssetController extends Controller
                     'warranty_expiry' => $validated['warranty_expiry']
                 ]);
 
-                return redirect()->route('assets.index')
+                return redirect()->route(auth()->user()->role === 'gsu' ? 'gsu.assets.index' : 'assets.index')
                     ->with('success', 'Asset and warranty created successfully.');
             });
         } catch (\Exception $e) {
@@ -86,6 +98,12 @@ class AssetController extends Controller
     public function show(Asset $asset)
     {
         $asset->load(['category', 'location', 'warranty', 'disposes']);
+        
+        // Check if user is GSU and return appropriate view
+        if (auth()->user()->role === 'gsu') {
+            return view('assets.gsu-show', compact('asset'));
+        }
+        
         return view('assets.show', compact('asset'));
     }
 
@@ -136,7 +154,7 @@ class AssetController extends Controller
             ]
         );
 
-        return redirect()->route('assets.index')
+        return redirect()->route(auth()->user()->role === 'gsu' ? 'gsu.assets.index' : 'assets.index')
             ->with('success', 'Asset updated successfully.');
     }
 
@@ -148,7 +166,7 @@ class AssetController extends Controller
 
         // Check if asset is not already disposed
         if ($asset->status === 'Disposed') {
-            return redirect()->route('assets.index')
+            return redirect()->route(auth()->user()->role === 'gsu' ? 'gsu.assets.index' : 'assets.index')
                 ->with('error', 'Asset is already disposed.');
         }
 
@@ -167,7 +185,7 @@ class AssetController extends Controller
                     'status' => 'Disposed'
                 ]);
 
-                return redirect()->route('assets.index')
+                return redirect()->route(auth()->user()->role === 'gsu' ? 'gsu.assets.index' : 'assets.index')
                     ->with('success', "Asset {$asset->asset_code} has been disposed successfully.");
             });
         } catch (\Exception $e) {
@@ -182,7 +200,7 @@ class AssetController extends Controller
         $assetCode = $asset->asset_code;
         $asset->delete();
         
-        return redirect()->route('assets.index')
+        return redirect()->route(auth()->user()->role === 'gsu' ? 'gsu.assets.index' : 'assets.index')
             ->with('success', "Asset {$assetCode} has been deleted successfully.");
     }
 

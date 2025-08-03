@@ -35,6 +35,14 @@
                             required placeholder="Enter your ID number">
                     </div>
                     <div class="mb-6">
+                        <label for="email" class="block text-gray-700 text-sm font-semibold mb-2">
+                            <i class="fas fa-envelope mr-2 text-red-800"></i>Email
+                        </label>
+                        <input type="email" id="email" name="email" 
+                            class="w-full border border-gray-300 rounded-lg py-3 px-4 text-gray-700 placeholder-gray-400 focus:outline-none focus:border-red-800 focus:ring-1 focus:ring-red-800 transition duration-200"
+                            required placeholder="Enter your email">
+                    </div>
+                    <div class="mb-6">
                         <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">
                             <i class="fas fa-lock mr-2 text-red-800"></i>Password
                         </label>

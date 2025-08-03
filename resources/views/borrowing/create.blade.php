@@ -2,7 +2,9 @@
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50" x-data="{ 
-    selectedCategory: '{{ old('category') }}'
+    selectedCategory: '{{ old('category') }}',
+    availableAssets: [],
+    loadingAssets: false
 }">
     <!-- Page Header -->
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -33,35 +35,35 @@
                         Select Asset Category to Borrow
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                        <button @click="selectedCategory = 'Electronics & IT Equipments'" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 hover:shadow-md hover:border-red-300 transition-all duration-200 flex flex-col items-center transform hover:-translate-y-1">
+                        <button @click="selectedCategory = 'Electronics & IT Equipments'; loadAvailableAssets('Electronics & IT Equipments')" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 hover:shadow-md hover:border-red-300 transition-all duration-200 flex flex-col items-center transform hover:-translate-y-1">
                             <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
                                 <i class="fas fa-laptop text-blue-600 text-3xl"></i>
                             </div>
                             <h3 class="text-lg font-medium text-gray-900">Electronics & IT Equipments</h3>
                         </button>
                         
-                        <button @click="selectedCategory = 'Fixtures'" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 hover:shadow-md hover:border-red-300 transition-all duration-200 flex flex-col items-center transform hover:-translate-y-1">
+                        <button @click="selectedCategory = 'Fixtures'; loadAvailableAssets('Fixtures')" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 hover:shadow-md hover:border-red-300 transition-all duration-200 flex flex-col items-center transform hover:-translate-y-1">
                             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
                                 <i class="fas fa-lightbulb text-green-600 text-3xl"></i>
                             </div>
                             <h3 class="text-lg font-medium text-gray-900">Fixtures</h3>
                         </button>
                         
-                        <button @click="selectedCategory = 'Furnitures'" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 hover:shadow-md hover:border-red-300 transition-all duration-200 flex flex-col items-center transform hover:-translate-y-1">
+                        <button @click="selectedCategory = 'Furnitures'; loadAvailableAssets('Furnitures')" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 hover:shadow-md hover:border-red-300 transition-all duration-200 flex flex-col items-center transform hover:-translate-y-1">
                             <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
                                 <i class="fas fa-chair text-yellow-600 text-3xl"></i>
                             </div>
                             <h3 class="text-lg font-medium text-gray-900">Furnitures</h3>
                         </button>
                         
-                        <button @click="selectedCategory = 'Religious or Institutional Items'" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 hover:shadow-md hover:border-red-300 transition-all duration-200 flex flex-col items-center transform hover:-translate-y-1">
+                        <button @click="selectedCategory = 'Religious or Institutional Items'; loadAvailableAssets('Religious or Institutional Items')" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 hover:shadow-md hover:border-red-300 transition-all duration-200 flex flex-col items-center transform hover:-translate-y-1">
                             <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
                                 <i class="fas fa-place-of-worship text-purple-600 text-3xl"></i>
                             </div>
                             <h3 class="text-lg font-medium text-gray-900">Religious or Institutional Items</h3>
                         </button>
                         
-                        <button @click="selectedCategory = 'Teaching & Presentation Tools'" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 hover:shadow-md hover:border-red-300 transition-all duration-200 flex flex-col items-center transform hover:-translate-y-1">
+                        <button @click="selectedCategory = 'Teaching & Presentation Tools'; loadAvailableAssets('Teaching & Presentation Tools')" class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 hover:shadow-md hover:border-red-300 transition-all duration-200 flex flex-col items-center transform hover:-translate-y-1">
                             <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
                                 <i class="fas fa-chalkboard-teacher text-red-600 text-3xl"></i>
                             </div>
@@ -73,7 +75,7 @@
                 <!-- Borrowing Form -->
                 <div x-show="selectedCategory" class="animate__animated animate__fadeIn">
                     <h3 class="text-xl leading-6 font-medium text-gray-900 mb-6 border-b pb-3 flex items-center">
-                        <button @click="selectedCategory = ''" class="mr-3 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-colors">
+                        <button @click="selectedCategory = ''; availableAssets = []" class="mr-3 text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-colors">
                             <i class="fas fa-arrow-left"></i>
                         </button>
                         Borrowing Form - <span x-text="selectedCategory" class="text-red-600 ml-2"></span>
@@ -192,47 +194,50 @@
                             </div>
                             
                             <div>
-                                <label for="items" class="block text-sm font-medium text-gray-700 mb-2">Select Items</label>
-                                <div class="relative">
-                                    <select id="items" name="items[]" 
-                                        class="px-4 py-3 bg-white border border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-200 block w-full rounded-md transition-all text-gray-700" 
-                                        multiple required size="5">
-                                        <optgroup label="Electronics & IT Equipments" x-show="selectedCategory === 'Electronics & IT Equipments'">
-                                            <option value="laptop">Laptop</option>
-                                            <option value="projector">Projector</option>
-                                            <option value="camera">Camera</option>
-                                            <option value="microphone">Microphone</option>
-                                        </optgroup>
-                                        
-                                        <optgroup label="Fixtures" x-show="selectedCategory === 'Fixtures'">
-                                            <option value="lamp">Lamp</option>
-                                            <option value="fan">Fan</option>
-                                            <option value="whiteboard">Whiteboard</option>
-                                        </optgroup>
-                                        
-                                        <optgroup label="Furnitures" x-show="selectedCategory === 'Furnitures'">
-                                            <option value="chair">Chair</option>
-                                            <option value="table">Table</option>
-                                            <option value="cabinet">Cabinet</option>
-                                        </optgroup>
-                                        
-                                        <optgroup label="Religious or Institutional Items" x-show="selectedCategory === 'Religious or Institutional Items'">
-                                            <option value="cross">Cross</option>
-                                            <option value="flag">Flag</option>
-                                            <option value="banner">Banner</option>
-                                        </optgroup>
-                                        
-                                        <optgroup label="Teaching & Presentation Tools" x-show="selectedCategory === 'Teaching & Presentation Tools'">
-                                            <option value="pointer">Laser Pointer</option>
-                                            <option value="markers">Markers</option>
-                                            <option value="flipchart">Flip Chart</option>
-                                        </optgroup>
-                                    </select>
+                                <label for="items" class="block text-sm font-medium text-gray-700 mb-2">Select Available Items</label>
+                                
+                                <!-- Loading State -->
+                                <div x-show="loadingAssets" class="flex items-center justify-center py-8">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                                    <span class="ml-2 text-gray-600">Loading available assets...</span>
                                 </div>
-                                <p class="mt-2 text-xs text-gray-500 flex items-center">
-                                    <i class="fas fa-info-circle mr-1 text-red-500"></i>
-                                    Hold Ctrl/Cmd to select multiple items
-                                </p>
+                                
+                                <!-- Available Assets List -->
+                                <div x-show="!loadingAssets && availableAssets.length > 0" class="space-y-3">
+                                    <div class="text-sm text-gray-600 mb-3">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Select the items you want to borrow (only available items are shown)
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <template x-for="asset in availableAssets" :key="asset.id">
+                                            <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                                <input type="checkbox" name="items[]" :value="asset.id" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                                                <div class="ml-3 flex-1">
+                                                    <div class="flex items-center justify-between">
+                                                        <div>
+                                                            <p class="text-sm font-medium text-gray-900" x-text="asset.name"></p>
+                                                            <p class="text-xs text-gray-500" x-text="'Code: ' + asset.asset_code"></p>
+                                                        </div>
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
+                                                              :class="asset.condition === 'Good' ? 'bg-green-100 text-green-800' : 
+                                                                     (asset.condition === 'Fair' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800')"
+                                                              x-text="asset.condition">
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </template>
+                                    </div>
+                                </div>
+                                
+                                <!-- No Available Assets -->
+                                <div x-show="!loadingAssets && availableAssets.length === 0" class="text-center py-8">
+                                    <div class="text-gray-400 mb-4">
+                                        <i class="fas fa-box-open text-4xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Available Assets</h3>
+                                    <p class="text-gray-600">There are no available assets in this category at the moment.</p>
+                                </div>
                             </div>
                             
                             <div class="mt-4">
@@ -250,7 +255,7 @@
                                 <i class="fas fa-times mr-2"></i> Cancel
                             </a>
                             <button type="submit" class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-3 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm transition-colors">
-                                <i class="fas fa-paper-plane mr-2"></i> Submit Request
+                                <i class="fas fa-save mr-2"></i> Create Borrowing
                             </button>
                         </div>
                     </form>
@@ -261,48 +266,20 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Set default date values for the form
-    const today = new Date().toISOString().split('T')[0];
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+function loadAvailableAssets(category) {
+    this.loadingAssets = true;
+    this.availableAssets = [];
     
-    // Function to set default values
-    function setDefaultValues() {
-        const dateInput = document.querySelector('input[name="date"]');
-        const dueDateInput = document.querySelector('input[name="due_date"]');
-        const timeInput = document.querySelector('input[name="time"]');
-        
-        if (dateInput && !dateInput.value) {
-            dateInput.value = today;
-        }
-        if (dueDateInput && !dueDateInput.value) {
-            dueDateInput.value = tomorrowStr;
-        }
-        if (timeInput && !timeInput.value) {
-            timeInput.value = new Date().toTimeString().slice(0, 5);
-        }
-    }
-    
-    // Set default values when page loads
-    setDefaultValues();
-    
-    // Form validation
-    const borrowingForm = document.querySelector('form[action*="borrowing"]');
-    if (borrowingForm) {
-        borrowingForm.addEventListener('submit', function(e) {
-            // Check dates
-            const dueDate = this.querySelector('input[name="due_date"]').value;
-            const borrowDate = this.querySelector('input[name="date"]').value;
-            
-            if (dueDate <= borrowDate) {
-                e.preventDefault();
-                alert('Due date must be after the borrow date.');
-                return false;
-            }
+    fetch(`{{ route('borrowing.available-assets') }}?category=${encodeURIComponent(category)}`)
+        .then(response => response.json())
+        .then(data => {
+            this.availableAssets = data.assets;
+            this.loadingAssets = false;
+        })
+        .catch(error => {
+            console.error('Error loading assets:', error);
+            this.loadingAssets = false;
         });
-    }
-});
+}
 </script>
 @endsection

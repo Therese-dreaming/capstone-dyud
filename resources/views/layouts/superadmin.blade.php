@@ -183,26 +183,7 @@
                         </ul>
                     </li>
                     
-                    <!-- Borrowing Management -->
-                    <li x-data="{ open: false }">
-                        <button @click="open = !open" type="button"
-                            class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"
-                            :class="{ 'bg-red-50 text-red-800': open }">
-                            <span class="flex items-center">
-                                <i class="fas fa-exchange-alt w-5"></i>
-                                <span class="ml-3 text-sm">Borrowing</span>
-                            </span>
-                            <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
-                        </button>
-                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
-                            <li>
-                                <a href="{{ route('borrowing.index') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('borrowing.index') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-list mr-2 w-4"></i> Manage Borrowings
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+
                 </ul>
             </nav>
 

@@ -10,14 +10,28 @@
                     <div class="bg-gradient-to-r from-red-600 to-red-800 text-white p-3 rounded-xl shadow-lg">
                         <i class="fas fa-eye text-xl"></i>
                     </div>
-                    Borrowing Details
+                    @if(auth()->user()->role === 'user')
+                        My Borrowing Details
+                    @else
+                        Borrowing Details
+                    @endif
                 </h1>
-                <p class="text-gray-600 mt-2 text-sm md:text-base">View detailed information about this borrowing</p>
+                <p class="text-gray-600 mt-2 text-sm md:text-base">
+                    @if(auth()->user()->role === 'user')
+                        View detailed information about your borrowing request
+                    @else
+                        View detailed information about this borrowing
+                    @endif
+                </p>
             </div>
             <div class="mt-4 sm:mt-0 flex items-center space-x-3">
-                <a href="{{ route('borrowing.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
+                <a href="{{ auth()->user()->role === 'user' ? route('user.borrowing.index') : route('borrowing.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
                     <i class="fas fa-arrow-left"></i>
-                    Back to Borrowings
+                    @if(auth()->user()->role === 'user')
+                        Back to My Borrowings
+                    @else
+                        Back to Borrowings
+                    @endif
                 </a>
             </div>
         </div>
@@ -30,6 +44,7 @@
             
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    @if(auth()->user()->role !== 'user')
                     <!-- Borrower Information -->
                     <div class="space-y-4">
                         <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">Borrower Details</h3>
@@ -49,6 +64,7 @@
                             <p class="mt-1 text-sm text-gray-900">{{ $borrowing->room }}</p>
                         </div>
                     </div>
+                    @endif
                     
                     <!-- Borrowing Details -->
                     <div class="space-y-4">

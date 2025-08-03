@@ -13,12 +13,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\User::create([
-            'name' => 'Admin User',
-            'id_number' => 'admin123',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('password123'),
+        // Call the UserSeeder to create the three users
+        $this->call([
+            UserSeeder::class,
         ]);
+
         \App\Models\Category::insert([
             ['name' => 'Furnitures', 'code' => 'FUR'],
             ['name' => 'Electronics & IT Equipment', 'code' => 'ELE'],

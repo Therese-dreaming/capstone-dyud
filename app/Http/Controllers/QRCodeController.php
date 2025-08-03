@@ -30,4 +30,10 @@ class QRCodeController extends Controller
             ->header('Content-Type', 'image/png')
             ->header('Content-Disposition', 'attachment; filename="asset-' . $assetCode . '.png"');
     }
+
+    public function gsuScanner()
+    {
+        // GSU-specific QR scanner view
+        return view('assets.gsu-qr-scanner');
+    }
 }
