@@ -42,6 +42,7 @@ class AssetController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'quantity' => 'required|integer|min:1|max:100',
             'category_id' => 'required|exists:categories,id',
             'location_id' => 'required|exists:locations,id',
             'condition' => 'required|in:Good,Fair,Poor',
@@ -57,35 +58,49 @@ class AssetController extends Controller
 
         try {
             return DB::transaction(function () use ($validated, $request) {
-                // Generate asset code
+                $quantity = $validated['quantity'];
+                $createdAssets = [];
+                
+                // Get the latest asset for this category to determine starting sequence
                 $category = Category::find($request->category_id);
                 $latestAsset = Asset::where('category_id', $category->id)->latest()->first();
-                $sequence = $latestAsset ? (int)substr($latestAsset->asset_code, -4) + 1 : 1;
-                $validated['asset_code'] = $category->code . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+                $startingSequence = $latestAsset ? (int)substr($latestAsset->asset_code, -4) + 1 : 1;
+                
+                for ($i = 0; $i < $quantity; $i++) {
+                    // Generate unique asset code for each asset
+                    $sequence = $startingSequence + $i;
+                    $assetCode = $category->code . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+                    
+                    // Create asset
+                    $asset = Asset::create([
+                        'asset_code' => $assetCode,
+                        'name' => $validated['name'],
+                        'category_id' => $validated['category_id'],
+                        'location_id' => $validated['location_id'],
+                        'condition' => $validated['condition'],
+                        'description' => $validated['description'],
+                        'purchase_cost' => $validated['purchase_cost'],
+                        'purchase_date' => $validated['purchase_date'],
+                        'status' => $validated['status']
+                    ]);
+                    
+                    // Create warranty for each asset
+                    $warranty = Warranty::create([
+                        'asset_id' => $asset->id,
+                        'manufacturer' => $validated['manufacturer'],
+                        'model' => $validated['model'],
+                        'warranty_expiry' => $validated['warranty_expiry']
+                    ]);
+                    
+                    $createdAssets[] = $asset;
+                }
 
-                // Create asset
-                $asset = Asset::create([
-                    'asset_code' => $validated['asset_code'],
-                    'name' => $validated['name'],
-                    'category_id' => $validated['category_id'],
-                    'location_id' => $validated['location_id'],
-                    'condition' => $validated['condition'],
-                    'description' => $validated['description'],
-                    'purchase_cost' => $validated['purchase_cost'],
-                    'purchase_date' => $validated['purchase_date'],
-                    'status' => $validated['status']
-                ]);
-
-                // Create warranty
-                $warranty = Warranty::create([
-                    'asset_id' => $asset->id,
-                    'manufacturer' => $validated['manufacturer'],
-                    'model' => $validated['model'],
-                    'warranty_expiry' => $validated['warranty_expiry']
-                ]);
-
+                $message = $quantity === 1 
+                    ? 'Asset and warranty created successfully.' 
+                    : "{$quantity} assets and warranties created successfully.";
+                    
                 return redirect()->route(auth()->user()->role === 'gsu' ? 'gsu.assets.index' : 'assets.index')
-                    ->with('success', 'Asset and warranty created successfully.');
+                    ->with('success', $message);
             });
         } catch (\Exception $e) {
             \Log::error('Asset and warranty creation failed: ' . $e->getMessage());

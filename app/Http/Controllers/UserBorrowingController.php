@@ -3,151 +3,74 @@
 namespace App\Http\Controllers;
 
 use App\Models\Borrowing;
-use App\Models\Location;
 use App\Models\Asset;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class UserBorrowingController extends Controller
 {
     /**
-     * Display a listing of the user's borrowings.
+     * Display a listing of the user's borrowing requests.
      */
     public function index(Request $request)
     {
         $user = auth()->user();
-        $query = Borrowing::where('borrower_id_number', $user->id_number);
+        $query = Borrowing::with(['asset.category', 'asset.location', 'approvedBy'])
+            ->where('user_id', $user->id);
         
-        // Apply tab filtering
-        $tab = $request->get('tab', 'all');
-        switch ($tab) {
-            case 'current':
-                $query->whereIn('status', ['active', 'overdue']);
-                break;
-            case 'overdue':
-                $query->where('status', 'overdue');
-                break;
-            case 'returned':
-                $query->where('status', 'returned');
-                break;
-            default:
-                // Show all borrowings
-                break;
-        }
-        
-        // Apply filters if provided
-        if ($request->has('status') && $request->status) {
+        // Apply filters
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
         
-        if ($request->has('category') && $request->category) {
-            $query->where('category', $request->category);
-        }
-        
-        if ($request->has('search') && $request->search) {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('category', 'like', "%{$search}%")
-                  ->orWhere('room', 'like', "%{$search}%")
-                  ->orWhere('purpose', 'like', "%{$search}%");
+                $q->whereHas('asset', function($assetQuery) use ($search) {
+                    $assetQuery->where('name', 'like', "%{$search}%")
+                              ->orWhere('asset_code', 'like', "%{$search}%");
+                });
             });
         }
         
-        // Apply date range filter
-        if ($request->has('date_range') && $request->date_range) {
-            switch ($request->date_range) {
-                case 'today':
-                    $query->whereDate('borrow_date', today());
-                    break;
-                case 'week':
-                    $query->whereBetween('borrow_date', [now()->startOfWeek(), now()->endOfWeek()]);
-                    break;
-                case 'month':
-                    $query->whereMonth('borrow_date', now()->month);
-                    break;
-            }
-        }
+        $borrowings = $query->latest()->paginate(10);
         
-        // Apply sorting
-        $sort = $request->get('sort', 'latest');
-        switch ($sort) {
-            case 'oldest':
-                $query->orderBy('borrow_date', 'asc');
-                break;
-            case 'due_date':
-                $query->orderBy('due_date', 'asc');
-                break;
-            default:
-                $query->latest();
-                break;
-        }
-        
-        // Check for overdue items and update their status
-        $overdueItems = Borrowing::where('borrower_id_number', $user->id_number)
-            ->where('status', 'active')
-            ->where('due_date', '<', now()->format('Y-m-d'))
-            ->get();
-            
-        foreach ($overdueItems as $item) {
-            $item->status = 'overdue';
-            $item->save();
-        }
-        
-        $borrowings = $query->paginate(10);
-        
-        // Breadcrumbs for navigation
-        $breadcrumbs = [
-            ['title' => 'My Borrowings', 'url' => route('user.borrowing.index')]
-        ];
-        
-        return view('user.borrowing.index', compact('borrowings', 'breadcrumbs'));
-    }
-
-    /**
-     * Get available assets by category for dynamic item selection.
-     */
-    public function getAvailableAssets(Request $request)
-    {
-        $categoryName = $request->input('category');
-        
-        if (!$categoryName) {
-            return response()->json(['assets' => []]);
-        }
-        
-        // Get category ID by name
-        $category = Category::where('name', $categoryName)->first();
-        
-        if (!$category) {
-            return response()->json(['assets' => []]);
-        }
-        
-        // Get available assets in this category
-        $assets = Asset::where('category_id', $category->id)
-            ->where('status', 'Available')
-            ->select('id', 'name', 'asset_code', 'condition')
-            ->get();
-        
-        return response()->json(['assets' => $assets]);
+        return view('user.borrowings.index', compact('borrowings'));
     }
 
     /**
      * Show the form for creating a new borrowing request.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $locations = Location::orderBy('building')
-                        ->orderBy('floor')
-                        ->orderBy('room')
-                        ->get();
+        $categories = Category::all();
+        $locations = Location::all();
         
-        // Breadcrumbs for navigation
-        $breadcrumbs = [
-            ['title' => 'My Borrowings', 'url' => route('user.borrowing.index')],
-            ['title' => 'New Request', 'url' => route('user.borrowing.create')]
-        ];
-                        
-        return view('user.borrowing.create', compact('locations', 'breadcrumbs'));
+        // Build query for available assets with pagination
+        $query = Asset::where('status', 'Available')
+            ->with(['category', 'location']);
+        
+        // Apply category filter
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+        
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('asset_code', 'like', "%{$search}%")
+                  ->orWhereHas('category', function($categoryQuery) use ($search) {
+                      $categoryQuery->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        $availableAssets = $query->paginate(12); // Show 12 assets per page
+        
+        return view('user.borrowings.create', compact('categories', 'locations', 'availableAssets'));
     }
 
     /**
@@ -157,166 +80,74 @@ class UserBorrowingController extends Controller
     {
         $user = auth()->user();
         
+        $validated = $request->validate([
+            'asset_id' => 'required|exists:assets,id',
+            'location_id' => 'required|exists:locations,id',
+            'purpose' => 'required|string|max:500',
+            'request_date' => 'required|date|after_or_equal:today',
+            'due_date' => 'required|date|after:request_date',
+        ]);
+        
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'id_number' => 'required|string|max:255',
-                'location_id' => 'required|exists:locations,id',
-                'request_date' => 'required|date',
-                'due_date' => 'required|date|after:request_date',
-                'category' => 'required|string|max:255',
-                'item_name' => 'required|string|max:255',
-                'quantity' => 'required|integer|min:1',
-                'purpose' => 'nullable|string',
-            ]);
-            
-            // Verify that the user is creating a request for themselves
-            if ($validated['id_number'] !== $user->id_number) {
-                return redirect()->back()
-                    ->with('error', 'You can only create borrowing requests for yourself.')
-                    ->withInput();
-            }
-            
-            // Get location details
-            $location = Location::findOrFail($validated['location_id']);
-            $roomInfo = $location->building . ' - Floor ' . $location->floor . ' - Room ' . $location->room;
-            
-            // Get category ID
-            $category = Category::where('name', $validated['category'])->first();
-            if (!$category) {
-                return redirect()->back()
-                    ->with('error', 'Invalid category selected.')
-                    ->withInput();
-            }
-            
-            // Check available assets for the requested item and category
-            $availableAssets = Asset::where('category_id', $category->id)
-                ->where('name', 'like', '%' . $validated['item_name'] . '%')
-                ->where('status', 'Available')
-                ->get();
-            
-            if ($availableAssets->count() < $validated['quantity']) {
-                return redirect()->back()
-                    ->with('error', 'Insufficient available assets. Only ' . $availableAssets->count() . ' items available.')
-                    ->withInput();
-            }
-            
-            // Automatically assign assets
-            $assignedAssets = $availableAssets->take($validated['quantity']);
-            $assetNames = $assignedAssets->pluck('name')->toArray();
-            
-            $borrowing = new Borrowing();
-            $borrowing->borrower_name = $validated['name'];
-            $borrowing->borrower_id_number = $validated['id_number'];
-            $borrowing->room = $roomInfo;
-            $borrowing->category = $validated['category'];
-            $borrowing->items = $assetNames;
-            $borrowing->purpose = $validated['purpose'] ?? null;
-            $borrowing->borrow_date = $validated['request_date'];
-            $borrowing->borrow_time = now()->format('H:i');
-            $borrowing->due_date = $validated['due_date'];
-            $borrowing->status = 'active';
-            
-            $borrowing->save();
-            
-            // Update asset status to 'In Use' for assigned items
-            foreach ($assignedAssets as $asset) {
-                $asset->status = 'In Use';
-                $asset->save();
-            }
-            
-            return redirect()->route('user.borrowing.index')
-                ->with('success', 'Borrowing request submitted successfully! ' . count($assetNames) . ' items have been assigned to you.');
-            
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()
-                ->withErrors($e->errors())
-                ->withInput();
+            return DB::transaction(function () use ($validated, $user) {
+                // Check if asset is still available
+                $asset = Asset::findOrFail($validated['asset_id']);
+                if ($asset->status !== 'Available') {
+                    return redirect()->back()
+                        ->with('error', 'This asset is no longer available for borrowing.')
+                        ->withInput();
+                }
                 
+                // Check if user already has a pending request for this asset
+                $existingRequest = Borrowing::where('user_id', $user->id)
+                    ->where('asset_id', $validated['asset_id'])
+                    ->whereIn('status', [Borrowing::STATUS_PENDING, Borrowing::STATUS_APPROVED])
+                    ->first();
+                
+                if ($existingRequest) {
+                    return redirect()->back()
+                        ->with('error', 'You already have a request for this asset.')
+                        ->withInput();
+                }
+                
+                // Create borrowing request
+                            $borrowing = Borrowing::create([
+                'user_id' => $user->id,
+                'asset_id' => $validated['asset_id'],
+                'location_id' => $validated['location_id'],
+                'borrower_name' => $user->name,
+                'borrower_id_number' => $user->id_number,
+                'purpose' => $validated['purpose'],
+                'request_date' => $validated['request_date'],
+                'due_date' => $validated['due_date'],
+                'status' => Borrowing::STATUS_PENDING,
+            ]);
+                
+                return redirect()->route('user.borrowings.index')
+                    ->with('success', 'Borrowing request submitted successfully! Please wait for admin approval.');
+            });
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Failed to submit borrowing request. Please try again.')
+                ->with('error', 'Failed to submit borrowing request: ' . $e->getMessage())
                 ->withInput();
         }
     }
 
     /**
-     * Display the specified borrowing.
+     * Display the specified borrowing request.
      */
     public function show(Borrowing $borrowing)
     {
         $user = auth()->user();
         
         // Ensure user can only view their own borrowings
-        if ($borrowing->borrower_id_number !== $user->id_number) {
+        if ($borrowing->user_id !== $user->id) {
             abort(403, 'Unauthorized access.');
         }
         
-        // Breadcrumbs for navigation
-        $breadcrumbs = [
-            ['title' => 'My Borrowings', 'url' => route('user.borrowing.index')],
-            ['title' => 'Borrowing Details', 'url' => route('user.borrowing.show', $borrowing)]
-        ];
+        $borrowing->load(['asset.category', 'asset.location', 'approvedBy']);
         
-        return view('user.borrowing.show', compact('borrowing', 'breadcrumbs'));
-    }
-
-    /**
-     * Show current borrowings (active and overdue).
-     */
-    public function current(Request $request)
-    {
-        $user = auth()->user();
-        $query = Borrowing::where('borrower_id_number', $user->id_number)
-                         ->whereIn('status', ['active', 'overdue']);
-        
-        // Apply search and filters
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('category', 'like', "%{$search}%")
-                  ->orWhere('room', 'like', "%{$search}%");
-            });
-        }
-        
-        $borrowings = $query->latest()->paginate(10);
-        
-        // Breadcrumbs for navigation
-        $breadcrumbs = [
-            ['title' => 'My Borrowings', 'url' => route('user.borrowing.index')],
-            ['title' => 'Current Items', 'url' => route('user.borrowing.current')]
-        ];
-        
-        return view('user.borrowing.index', compact('borrowings', 'breadcrumbs'))->with('activeTab', 'current');
-    }
-
-    /**
-     * Show overdue borrowings.
-     */
-    public function overdue(Request $request)
-    {
-        $user = auth()->user();
-        $query = Borrowing::where('borrower_id_number', $user->id_number)
-                         ->where('status', 'overdue');
-        
-        // Apply search and filters
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('category', 'like', "%{$search}%")
-                  ->orWhere('room', 'like', "%{$search}%");
-            });
-        }
-        
-        $borrowings = $query->latest()->paginate(10);
-        
-        // Breadcrumbs for navigation
-        $breadcrumbs = [
-            ['title' => 'My Borrowings', 'url' => route('user.borrowing.index')],
-            ['title' => 'Overdue Items', 'url' => route('user.borrowing.overdue')]
-        ];
-        
-        return view('user.borrowing.index', compact('borrowings', 'breadcrumbs'))->with('activeTab', 'overdue');
+        return view('user.borrowings.show', compact('borrowing'));
     }
 
     /**
@@ -327,20 +158,121 @@ class UserBorrowingController extends Controller
         $user = auth()->user();
         
         // Ensure user can only cancel their own borrowings
-        if ($borrowing->borrower_id_number !== $user->id_number) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized access.'], 403);
+        if ($borrowing->user_id !== $user->id) {
+            return redirect()->back()
+                ->with('error', 'Unauthorized access.');
         }
         
-        // Only allow cancellation of active or overdue borrowings
-        if (!in_array($borrowing->status, ['active', 'overdue'])) {
-            return response()->json(['success' => false, 'message' => 'Cannot cancel this borrowing request.'], 400);
+        // Only allow cancellation of pending requests
+        if ($borrowing->status !== Borrowing::STATUS_PENDING) {
+            return redirect()->back()
+                ->with('error', 'Only pending requests can be cancelled.');
         }
         
         try {
             $borrowing->delete();
-            return response()->json(['success' => true, 'message' => 'Borrowing request cancelled successfully.']);
+            
+            return redirect()->back()
+                ->with('success', 'Borrowing request cancelled successfully.');
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to cancel borrowing request.'], 500);
+            return redirect()->back()
+                ->with('error', 'Failed to cancel borrowing request: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get available assets by category.
+     */
+    public function getAvailableAssets(Request $request)
+    {
+        $categoryId = $request->input('category_id');
+        
+        $query = Asset::where('status', 'Available')
+            ->with(['category', 'location']);
+        
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+        
+        $assets = $query->get();
+        
+        return response()->json(['assets' => $assets]);
+    }
+
+    /**
+     * Store multiple borrowing requests (bulk borrowing).
+     */
+    public function storeBulk(Request $request)
+    {
+        $user = auth()->user();
+        
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.asset_id' => 'required|exists:assets,id',
+            'location_id' => 'required|exists:locations,id',
+            'purpose' => 'required|string|max:500',
+            'request_date' => 'required|date|after_or_equal:today',
+            'due_date' => 'required|date|after:request_date',
+        ]);
+        
+        try {
+            return DB::transaction(function () use ($validated, $user) {
+                $createdBorrowings = [];
+                $errors = [];
+                
+                foreach ($validated['items'] as $item) {
+                    // Check if asset is still available
+                    $asset = Asset::findOrFail($item['asset_id']);
+                    if ($asset->status !== 'Available') {
+                        $errors[] = "Asset {$asset->name} ({$asset->asset_code}) is no longer available.";
+                        continue;
+                    }
+                    
+                    // Check if user already has a pending request for this asset
+                    $existingRequest = Borrowing::where('user_id', $user->id)
+                        ->where('asset_id', $item['asset_id'])
+                        ->whereIn('status', [Borrowing::STATUS_PENDING, Borrowing::STATUS_APPROVED])
+                        ->first();
+                    
+                    if ($existingRequest) {
+                        $errors[] = "You already have a request for asset {$asset->name} ({$asset->asset_code}).";
+                        continue;
+                    }
+                    
+                    // Create borrowing request
+                    $borrowing = Borrowing::create([
+                        'user_id' => $user->id,
+                        'asset_id' => $item['asset_id'],
+                        'location_id' => $validated['location_id'],
+                        'borrower_name' => $user->name,
+                        'borrower_id_number' => $user->id_number,
+                        'purpose' => $validated['purpose'],
+                        'request_date' => $validated['request_date'],
+                        'due_date' => $validated['due_date'],
+                        'status' => Borrowing::STATUS_PENDING,
+                    ]);
+                    
+                    $createdBorrowings[] = $borrowing;
+                }
+                
+                if (empty($createdBorrowings)) {
+                    return redirect()->back()
+                        ->with('error', 'No borrowing requests were created. ' . implode(' ', $errors))
+                        ->withInput();
+                }
+                
+                $successMessage = count($createdBorrowings) . ' borrowing request(s) submitted successfully!';
+                if (!empty($errors)) {
+                    $successMessage .= ' Some items could not be processed: ' . implode(' ', $errors);
+                }
+                
+                return redirect()->route('user.borrowings.index')
+                    ->with('success', $successMessage);
+            });
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to submit borrowing requests: ' . $e->getMessage())
+                ->withInput();
         }
     }
 } 

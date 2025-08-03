@@ -14,6 +14,11 @@
                 <input type="text" name="name" id="name" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" value="{{ old('name') }}" required>
             </div>
             <div>
+                <label class="block text-gray-700 font-semibold mb-2" for="quantity">Quantity</label>
+                <input type="number" name="quantity" id="quantity" min="1" max="100" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" value="{{ old('quantity', 1) }}" required>
+                <p class="text-sm text-gray-600 mt-1">Enter the number of identical assets to create</p>
+            </div>
+            <div>
                 <label class="block text-gray-700 font-semibold mb-2" for="category_id">Category</label>
                 <select name="category_id" id="category_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" required>
                     <option value="">Select Category</option>

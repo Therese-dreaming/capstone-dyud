@@ -48,10 +48,10 @@
                     <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('dashboard') ? 'text-red-600 bg-red-50' : '' }}">
                         <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
                     </a>
-                    <a href="{{ route('user.borrowing.index') }}" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('user.borrowing.*') ? 'text-red-600 bg-red-50' : '' }}">
-                        <i class="fas fa-list mr-2"></i>My Borrowings
+                    <a href="{{ route('user.borrowings.index') }}" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('user.borrowings.*') ? 'text-red-600 bg-red-50' : '' }}">
+                        <i class="fas fa-handshake mr-2"></i>My Borrowings
                     </a>
-                    <a href="{{ route('user.borrowing.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                    <a href="{{ route('user.borrowings.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
                         <i class="fas fa-plus mr-2"></i>New Request
                     </a>
                 </div>
@@ -92,10 +92,10 @@
                 <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('dashboard') ? 'text-red-600 bg-red-50' : '' }}">
                     <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
                 </a>
-                <a href="{{ route('user.borrowing.index') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('user.borrowing.*') ? 'text-red-600 bg-red-50' : '' }}">
-                    <i class="fas fa-list mr-2"></i>My Borrowings
+                <a href="{{ route('user.borrowings.index') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('user.borrowings.*') ? 'text-red-600 bg-red-50' : '' }}">
+                    <i class="fas fa-handshake mr-2"></i>My Borrowings
                 </a>
-                <a href="{{ route('user.borrowing.create') }}" class="bg-red-600 hover:bg-red-700 text-white block px-3 py-2 rounded-md text-base font-medium transition-colors">
+                <a href="{{ route('user.borrowings.create') }}" class="bg-red-600 hover:bg-red-700 text-white block px-3 py-2 rounded-md text-base font-medium transition-colors">
                     <i class="fas fa-plus mr-2"></i>New Request
                 </a>
             </div>

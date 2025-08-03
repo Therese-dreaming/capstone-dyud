@@ -30,16 +30,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
     // User borrowing routes - accessible by all authenticated users
-    Route::get('/user/borrowing', [UserBorrowingController::class, 'index'])->name('user.borrowing.index');
-    Route::get('/user/borrowing/create', [UserBorrowingController::class, 'create'])->name('user.borrowing.create');
-    Route::post('/user/borrowing', [UserBorrowingController::class, 'store'])->name('user.borrowing.store');
-    Route::get('/user/borrowing/{borrowing}', [UserBorrowingController::class, 'show'])->name('user.borrowing.show');
-    Route::get('/user/borrowing/current', [UserBorrowingController::class, 'current'])->name('user.borrowing.current');
-    Route::get('/user/borrowing/overdue', [UserBorrowingController::class, 'overdue'])->name('user.borrowing.overdue');
-    Route::delete('/user/borrowing/{borrowing}', [UserBorrowingController::class, 'cancel'])->name('user.borrowing.cancel');
+    Route::get('/user/borrowings', [UserBorrowingController::class, 'index'])->name('user.borrowings.index');
+    Route::get('/user/borrowings/create', [UserBorrowingController::class, 'create'])->name('user.borrowings.create');
+    Route::post('/user/borrowings', [UserBorrowingController::class, 'store'])->name('user.borrowings.store');
+    Route::post('/user/borrowings/bulk', [UserBorrowingController::class, 'storeBulk'])->name('user.borrowings.store-bulk');
+    Route::get('/user/borrowings/{borrowing}', [UserBorrowingController::class, 'show'])->name('user.borrowings.show');
+    Route::delete('/user/borrowings/{borrowing}', [UserBorrowingController::class, 'cancel'])->name('user.borrowings.cancel');
     
     // API route for getting available assets by category (for user borrowing)
-    Route::get('/user/borrowing/available-assets', [UserBorrowingController::class, 'getAvailableAssets'])->name('user.borrowing.available-assets');
+    Route::get('/user/borrowings/available-assets', [UserBorrowingController::class, 'getAvailableAssets'])->name('user.borrowings.available-assets');
+    
+    // API route for getting asset details (for modals)
+    Route::get('/api/assets/{asset}', function (App\Models\Asset $asset) {
+        return response()->json($asset->load(['category', 'location']));
+    })->name('api.assets.show');
     
     // Routes for admin only (removed user role)
     Route::middleware(['role:admin'])->group(function () {
@@ -97,7 +101,14 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}/delete', [UserController::class, 'destroy'])->name('users.destroy');
 
-        // Note: Borrowing functionality moved to user routes only
+        // Admin Borrowing Management
+        Route::get('/borrowings', [BorrowingController::class, 'index'])->name('borrowings.index');
+        Route::get('/borrowings/{borrowing}', [BorrowingController::class, 'show'])->name('borrowings.show');
+        Route::put('/borrowings/{borrowing}/approve', [BorrowingController::class, 'approve'])->name('borrowings.approve');
+        Route::put('/borrowings/{borrowing}/reject', [BorrowingController::class, 'reject'])->name('borrowings.reject');
+        Route::put('/borrowings/{borrowing}/return', [BorrowingController::class, 'return'])->name('borrowings.return');
+        Route::delete('/borrowings/{borrowing}', [BorrowingController::class, 'destroy'])->name('borrowings.destroy');
+        Route::get('/borrowings-statistics', [BorrowingController::class, 'statistics'])->name('borrowings.statistics');
     });
 
     // Routes for GSU users only (super admin)

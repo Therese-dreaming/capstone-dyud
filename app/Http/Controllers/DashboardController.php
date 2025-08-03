@@ -29,20 +29,21 @@ class DashboardController extends Controller
     private function userDashboard($user)
     {
         // Get user-specific borrowing statistics
-        $currentBorrowings = Borrowing::where('borrower_id_number', $user->id_number)
-            ->whereIn('status', ['active', 'overdue'])
+        $currentBorrowings = Borrowing::where('user_id', $user->id)
+            ->whereIn('status', ['approved', 'overdue'])
             ->count();
         
-        $returnedItems = Borrowing::where('borrower_id_number', $user->id_number)
+        $returnedItems = Borrowing::where('user_id', $user->id)
             ->where('status', 'returned')
             ->count();
         
-        $overdueItems = Borrowing::where('borrower_id_number', $user->id_number)
+        $overdueItems = Borrowing::where('user_id', $user->id)
             ->where('status', 'overdue')
             ->count();
         
         // Get recent borrowings for the user
-        $recentBorrowings = Borrowing::where('borrower_id_number', $user->id_number)
+        $recentBorrowings = Borrowing::where('user_id', $user->id)
+            ->with(['asset.category', 'asset.location'])
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
