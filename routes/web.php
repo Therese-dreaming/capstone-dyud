@@ -13,6 +13,9 @@ use App\Http\Controllers\DisposalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\UserBorrowingController;
+use App\Http\Controllers\LostAssetController;
+use App\Http\Controllers\SemesterRecordController;
+use App\Http\Controllers\SemesterSettingController;
 
 // Default route - redirect to login
 Route::get('/', function () {
@@ -103,12 +106,26 @@ Route::middleware(['auth'])->group(function () {
 
         // Admin Borrowing Management
         Route::get('/borrowings', [BorrowingController::class, 'index'])->name('borrowings.index');
+        Route::get('/borrowings/ongoing', [BorrowingController::class, 'ongoing'])->name('borrowings.ongoing');
         Route::get('/borrowings/{borrowing}', [BorrowingController::class, 'show'])->name('borrowings.show');
         Route::put('/borrowings/{borrowing}/approve', [BorrowingController::class, 'approve'])->name('borrowings.approve');
         Route::put('/borrowings/{borrowing}/reject', [BorrowingController::class, 'reject'])->name('borrowings.reject');
         Route::put('/borrowings/{borrowing}/return', [BorrowingController::class, 'return'])->name('borrowings.return');
         Route::delete('/borrowings/{borrowing}', [BorrowingController::class, 'destroy'])->name('borrowings.destroy');
         Route::get('/borrowings-statistics', [BorrowingController::class, 'statistics'])->name('borrowings.statistics');
+
+        // Lost Assets Management
+        Route::get('/lost-assets', [LostAssetController::class, 'index'])->name('lost-assets.index');
+        Route::get('/assets/{asset}/lost', [LostAssetController::class, 'create'])->name('lost-assets.create');
+        Route::post('/assets/{asset}/lost', [LostAssetController::class, 'store'])->name('lost-assets.store');
+        Route::get('/lost-assets/{lostAsset}', [LostAssetController::class, 'show'])->name('lost-assets.show');
+        Route::put('/lost-assets/{lostAsset}/status', [LostAssetController::class, 'updateStatus'])->name('lost-assets.update-status');
+        Route::delete('/lost-assets/{lostAsset}', [LostAssetController::class, 'destroy'])->name('lost-assets.destroy');
+
+        // Date Range View
+        Route::get('/locations/{location}/date-range', [LocationController::class, 'dateRangeView'])->name('locations.date-range');
+
+
     });
 
     // Routes for GSU users only (super admin)

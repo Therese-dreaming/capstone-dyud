@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         // Call the UserSeeder to create the three users
         $this->call([
             UserSeeder::class,
+            SemesterSettingSeeder::class,
         ]);
 
         \App\Models\Category::insert([

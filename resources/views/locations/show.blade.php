@@ -12,8 +12,14 @@
                 {{ $location->building }}
             </h1>
         </div>
-        <div class="text-sm text-gray-600">
-            <i class="fas fa-boxes mr-2"></i>{{ $assets->count() }} assets
+        <div class="flex items-center gap-3">
+            <div class="text-sm text-gray-600">
+                <i class="fas fa-boxes mr-2"></i>{{ $assets->count() }} assets
+            </div>
+            <a href="{{ route('locations.date-range', $location) }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
+                <i class="fas fa-calendar-alt"></i> Date Range View
+            </a>
+
         </div>
     </div>
 
@@ -117,45 +123,37 @@
                                         </div>
                                     </div>
                                     <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ $borrowing->category }}</div>
-                                        <div class="text-sm text-gray-500 font-mono">
-                                            @foreach($borrowing->items as $item)
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1">
-                                                    {{ ucfirst($item) }}
-                                                </span>
-                                            @endforeach
-                                        </div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $borrowing->asset->name }}</div>
+                                        <div class="text-sm text-gray-500 font-mono">{{ $borrowing->asset->asset_code }}</div>
+                                        <div class="text-xs text-gray-400">{{ $borrowing->asset->category->name }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm text-gray-900">{{ $borrowing->borrower_name }}</div>
-                                <div class="text-sm text-gray-500">{{ $borrowing->borrower_id_number }}</div>
+                                <div class="text-sm text-gray-900">{{ $borrowing->user->name }}</div>
+                                <div class="text-sm text-gray-500">{{ $borrowing->user->id_number }}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm text-gray-900">{{ $borrowing->borrow_date->format('M d, Y') }}</div>
-                                <div class="text-sm text-gray-500">{{ $borrowing->borrow_time }}</div>
+                                <div class="text-sm text-gray-900">{{ $borrowing->created_at->format('M d, Y') }}</div>
+                                <div class="text-sm text-gray-500">{{ $borrowing->created_at->format('h:i A') }}</div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm text-gray-900">{{ $borrowing->due_date->format('M d, Y') }}</div>
                                 <div class="text-sm text-gray-500">
                                     @if($borrowing->isOverdue())
-                                        <span class="text-red-600 font-medium">Overdue</span>
+                                        <span class="text-red-600 font-medium">{{ $borrowing->getOverdueText() }}</span>
                                     @else
-                                        {{ $borrowing->due_date->diffForHumans() }}
+                                        <span class="text-green-600">{{ $borrowing->getDueInText() }}</span>
                                     @endif
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                    @if($borrowing->status === 'active') bg-green-100 text-green-800 
-                                    @elseif($borrowing->status === 'overdue') bg-red-100 text-red-800 
-                                    @else bg-gray-100 text-gray-800 @endif">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $borrowing->getStatusBadgeClass() }}">
                                     {{ ucfirst($borrowing->status) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-right text-sm font-medium">
-                                <a href="{{ route('borrowing.show', $borrowing) }}" class="text-blue-600 hover:text-blue-900 mr-3">
+                                <a href="{{ route('borrowings.show', $borrowing) }}" class="text-blue-600 hover:text-blue-900 mr-3">
                                     <i class="fas fa-eye"></i>
                                 </a>
                             </td>

@@ -144,7 +144,7 @@
                                         @if($borrowing->isOverdue())
                                             <div class="text-xs text-red-600 font-medium mt-1">
                                                 <i class="fas fa-exclamation-triangle mr-1"></i>
-                                                Overdue by {{ now()->diffInDays($borrowing->due_date) }} days
+                                                {{ $borrowing->getOverdueText() }}
                                             </div>
                                         @endif
                                     </td>

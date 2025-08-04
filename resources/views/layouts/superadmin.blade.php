@@ -94,6 +94,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a href="{{ route('borrowings.ongoing') }}"
+                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('borrowings.ongoing') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
+                                    <i class="fas fa-clock mr-2 w-4"></i> Ongoing Borrowings
+                                </a>
+                            </li>
+                            <li>
                                 <a href="{{ route('borrowings.index', ['status' => 'pending']) }}"
                                     class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->get('status') === 'pending' ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
                                     <i class="fas fa-clock mr-2 w-4"></i> Pending Approval
@@ -101,7 +107,7 @@
                             </li>
                             <li>
                                 <a href="{{ route('borrowings.index', ['status' => 'approved']) }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->get('status') === 'approved' ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
+                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->get('status') === 'approved' ? 'bg-red-100 text-red-800' : 'text-gray-800' }}">
                                     <i class="fas fa-check mr-2 w-4"></i> Approved
                                 </a>
                             </li>
@@ -140,6 +146,12 @@
                                 <a href="{{ route('maintenances.history') }}"
                                     class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('maintenances.history') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
                                     <i class="fas fa-history mr-2 w-4"></i> Maintenance History
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('lost-assets.index') }}"
+                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('lost-assets.*') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
+                                    <i class="fas fa-search mr-2 w-4"></i> Lost Assets
                                 </a>
                             </li>
                         </ul>
@@ -219,6 +231,7 @@
                             </li>
                         </ul>
                     </li>
+
                     
 
                 </ul>

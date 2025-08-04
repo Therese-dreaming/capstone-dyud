@@ -36,6 +36,17 @@
         <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 mb-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Asset Selection</h3>
             
+            <!-- Information Note -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-600 mt-0.5 mr-3"></i>
+                    <div class="text-sm text-blue-800">
+                        <p class="font-medium mb-1">Asset Availability</p>
+                        <p>Only assets that are currently available and have no pending or approved borrowing requests are shown. This ensures fair access to all users.</p>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Search and Filters -->
             <div class="mb-6">
                 <form method="GET" action="{{ route('user.borrowings.create') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -118,6 +129,7 @@
                         <div class="col-span-full text-center py-8">
                             <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
                             <p class="text-gray-600">No available assets found matching your criteria.</p>
+                            <p class="text-sm text-gray-500 mt-2">Note: Assets with pending or approved borrowing requests are not shown.</p>
                         </div>
                     @endforelse
                 </div>
@@ -181,15 +193,53 @@
                 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Where will you use the asset?</label>
-                    <select name="location_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-500" required>
+                    <select name="location_id" id="location_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-500" required onchange="toggleCustomLocation()">
                         <option value="">Select a location</option>
                         @foreach($locations as $location)
                             <option value="{{ $location->id }}" {{ old('location_id') == $location->id ? 'selected' : '' }}>
                                 {{ $location->building }} - Floor {{ $location->floor }} - Room {{ $location->room }}
                             </option>
                         @endforeach
+                        <option value="custom" {{ old('location_id') == 'custom' ? 'selected' : '' }}>Custom Location (Not in list)</option>
                     </select>
                     <p class="text-sm text-gray-600 mt-1">Select where you will be using the borrowed asset</p>
+                </div>
+                
+                <!-- Custom Location Fields (hidden by default) -->
+                <div id="customLocationFields" class="mb-4" style="display: none;">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-info-circle text-yellow-600 mt-0.5 mr-3"></i>
+                            <div class="text-sm text-yellow-800">
+                                <p class="font-medium mb-1">Custom Location</p>
+                                <p>Please provide the details of where you will be using the asset. This information will be recorded for tracking purposes.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2" for="custom_building">Building</label>
+                            <input type="text" name="custom_building" id="custom_building" 
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-500" 
+                                   placeholder="e.g., Main Building, Annex, etc." 
+                                   value="{{ old('custom_building') }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2" for="custom_floor">Floor</label>
+                            <input type="text" name="custom_floor" id="custom_floor" 
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-500" 
+                                   placeholder="e.g., 1st, 2nd, Ground, etc." 
+                                   value="{{ old('custom_floor') }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2" for="custom_room">Room/Area</label>
+                            <input type="text" name="custom_room" id="custom_room" 
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-500" 
+                                   placeholder="e.g., Room 101, Lab A, Office, etc." 
+                                   value="{{ old('custom_room') }}">
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="mb-6">
@@ -215,16 +265,6 @@
     </div>
 </div>
 
-
-<!-- Validation Error Toast -->
-@if($errors->any())
-    <div class="fixed top-6 right-6 z-50 bg-red-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-fade-in min-w-[300px] border border-red-700"
-         x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)">
-        <i class="fas fa-exclamation-circle text-2xl text-red-300"></i>
-        <span class="font-semibold">{{ $errors->first() }}</span>
-        <button @click="show = false" class="ml-auto text-red-200 hover:text-white"><i class="fas fa-times"></i></button>
-    </div>
-@endif
 
 <style>
 @keyframes fade-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
@@ -428,6 +468,34 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSelections();
     updateCartDisplay();
     updateFormVisibility();
+    toggleCustomLocation(); // Initialize custom location fields
 });
+
+// Toggle custom location fields
+function toggleCustomLocation() {
+    const locationSelect = document.getElementById('location_id');
+    const customFields = document.getElementById('customLocationFields');
+    const customBuilding = document.getElementById('custom_building');
+    const customFloor = document.getElementById('custom_floor');
+    const customRoom = document.getElementById('custom_room');
+    
+    if (locationSelect.value === 'custom') {
+        customFields.style.display = 'block';
+        // Make custom fields required
+        customBuilding.required = true;
+        customFloor.required = true;
+        customRoom.required = true;
+        // Remove required from location_id
+        locationSelect.required = false;
+    } else {
+        customFields.style.display = 'none';
+        // Remove required from custom fields
+        customBuilding.required = false;
+        customFloor.required = false;
+        customRoom.required = false;
+        // Add required back to location_id
+        locationSelect.required = true;
+    }
+}
 </script>
 @endsection 

@@ -51,15 +51,32 @@
                 </select>
             </div>
             <div>
-                <label class="block text-gray-700 font-semibold mb-2" for="location_id">Location</label>
+                <label class="block text-gray-700 font-semibold mb-2" for="location_id">
+                    @if($asset->status === 'In Use')
+                        Original Location (Where asset will return)
+                    @else
+                        Location
+                    @endif
+                </label>
                 <select name="location_id" id="location_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" required>
                     <option value="">Select Location</option>
                     @foreach($locations as $location)
-                        <option value="{{ $location->id }}" {{ old('location_id', $asset->location_id) == $location->id ? 'selected' : '' }}>
+                        @php
+                            // For borrowed assets, show original location. For available assets, show current location
+                            $displayLocationId = $asset->status === 'In Use' ? $asset->original_location_id : $asset->location_id;
+                        @endphp
+                        <option value="{{ $location->id }}" {{ old('location_id', $displayLocationId) == $location->id ? 'selected' : '' }}>
                             {{ $location->building }} - Floor {{ $location->floor }} - Room {{ $location->room }}
                         </option>
                     @endforeach
                 </select>
+                @if($asset->status === 'In Use')
+                    <p class="text-sm text-blue-600 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Asset is currently borrowed and located at: 
+                        <strong>{{ $asset->location->building }} - Floor {{ $asset->location->floor }} - Room {{ $asset->location->room }}</strong>
+                    </p>
+                @endif
             </div>
             <div>
                 <label class="block text-gray-700 font-semibold mb-2" for="condition">Condition</label>
@@ -80,7 +97,7 @@
             </div>
             <div>
                 <label class="block text-gray-700 font-semibold mb-2" for="purchase_date">Purchase Date</label>
-                <input type="date" name="purchase_date" id="purchase_date" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" value="{{ old('purchase_date', $asset->purchase_date) }}" required>
+                <input type="date" name="purchase_date" id="purchase_date" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" value="{{ old('purchase_date', $asset->purchase_date ? $asset->purchase_date->format('Y-m-d') : '') }}" required>
             </div>
             <div>
                 <label class="block text-gray-700 font-semibold mb-2" for="status">Status</label>
@@ -107,7 +124,7 @@
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-gray-700 font-semibold mb-2" for="warranty_expiry">Warranty Expiry Date</label>
-                    <input type="date" name="warranty_expiry" id="warranty_expiry" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" value="{{ old('warranty_expiry', $asset->warranty->warranty_expiry ?? '') }}" required>
+                    <input type="date" name="warranty_expiry" id="warranty_expiry" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" value="{{ old('warranty_expiry', $asset->warranty && $asset->warranty->warranty_expiry ? \Carbon\Carbon::parse($asset->warranty->warranty_expiry)->format('Y-m-d') : '') }}" required>
                 </div>
             </div>
         </div>

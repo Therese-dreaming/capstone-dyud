@@ -5,33 +5,25 @@
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
-                <i class="fas fa-handshake text-red-800"></i>
-                Borrowing Requests
+                <i class="fas fa-clock text-red-800"></i>
+                Ongoing Borrowings
             </h1>
-            <p class="text-gray-600 mt-1">Manage and approve borrowing requests from users</p>
+            <p class="text-gray-600 mt-1">Manage currently borrowed assets and mark them as returned</p>
         </div>
+        <a href="{{ route('borrowings.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2 shadow-lg">
+            <i class="fas fa-arrow-left"></i> Back to All Requests
+        </a>
     </div>
 
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <div class="flex items-center">
-                <div class="p-3 bg-yellow-100 rounded-full">
-                    <i class="fas fa-clock text-yellow-600 text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Pending</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $borrowings->where('status', 'pending')->count() }}</p>
-                </div>
-            </div>
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
             <div class="flex items-center">
                 <div class="p-3 bg-green-100 rounded-full">
                     <i class="fas fa-check text-green-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Approved</p>
+                    <p class="text-sm font-medium text-gray-600">Active Borrowings</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $borrowings->where('status', 'approved')->count() }}</p>
                 </div>
             </div>
@@ -50,11 +42,11 @@
         <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
             <div class="flex items-center">
                 <div class="p-3 bg-blue-100 rounded-full">
-                    <i class="fas fa-undo text-blue-600 text-xl"></i>
+                    <i class="fas fa-map-marker-alt text-blue-600 text-xl"></i>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Returned</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $borrowings->where('status', 'returned')->count() }}</p>
+                    <p class="text-sm font-medium text-gray-600">Total Active</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $borrowings->count() }}</p>
                 </div>
             </div>
         </div>
@@ -73,12 +65,9 @@
                 </div>
                 <div class="flex gap-2">
                     <select id="statusFilter" class="px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
-                        <option value="">All Status</option>
-                        <option value="pending">Pending</option>
+                        <option value="">All Active</option>
                         <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
                         <option value="overdue">Overdue</option>
-                        <option value="returned">Returned</option>
                     </select>
                     <select id="categoryFilter" class="px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
                         <option value="">All Categories</option>
@@ -91,7 +80,7 @@
         </div>
     </div>
 
-    <!-- Borrowing Requests Table -->
+    <!-- Ongoing Borrowings Table -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -102,9 +91,6 @@
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                             <i class="fas fa-box mr-1"></i>Asset
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                            <i class="fas fa-calendar mr-1"></i>Request Date
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                             <i class="fas fa-calendar-check mr-1"></i>Due Date
@@ -145,18 +131,16 @@
                                 @elseif($borrowing->custom_location)
                                 <div class="text-xs text-orange-600 mt-1">
                                     <i class="fas fa-map-marker-alt mr-1"></i>
-                                    {{ $borrowing->custom_location }}
-                                    <span class="text-gray-500">(Custom)</span>
+                                    {{ $borrowing->custom_location }} <span class="text-gray-500">(Custom)</span>
                                 </div>
                                 @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $borrowing->request_date->format('M d, Y') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ $borrowing->due_date->format('M d, Y') }}</div>
                                 @if($borrowing->getOverdueText())
                                     <div class="text-xs text-red-600 font-medium">{{ $borrowing->getOverdueText() }}</div>
+                                @elseif($borrowing->getDueInText())
+                                    <div class="text-xs text-gray-500">{{ $borrowing->getDueInText() }}</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -172,27 +156,11 @@
                                         <i class="fas fa-eye text-xs"></i>
                                     </a>
                                     
-                                    @if($borrowing->status === 'pending')
-                                        <button onclick="openApproveModal({{ $borrowing->id }}, '{{ addslashes($borrowing->asset->asset_code) }}')"
-                                                class="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition-colors duration-150"
-                                                title="Approve Request">
-                                            <i class="fas fa-check text-xs"></i>
-                                        </button>
-                                        
-                                        <button onclick="openRejectModal({{ $borrowing->id }})"
-                                                class="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors duration-150"
-                                                title="Reject Request">
-                                            <i class="fas fa-times text-xs"></i>
-                                        </button>
-                                    @endif
-                                    
-                                    @if($borrowing->status === 'approved')
-                                        <button onclick="openReturnModal({{ $borrowing->id }}, '{{ addslashes($borrowing->asset->asset_code) }}')"
-                                                class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition-colors duration-150"
-                                                title="Mark as Returned">
-                                            <i class="fas fa-undo text-xs"></i>
-                                        </button>
-                                    @endif
+                                    <button onclick="openReturnModal({{ $borrowing->id }}, '{{ addslashes($borrowing->asset->asset_code) }}')"
+                                            class="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition-colors duration-150"
+                                            title="Mark as Returned">
+                                        <i class="fas fa-undo text-xs"></i>
+                                    </button>
                                     
                                     <button onclick="openDeleteModal({{ $borrowing->id }}, '{{ addslashes($borrowing->asset->asset_code) }}')"
                                             class="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors duration-150"
@@ -204,11 +172,11 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="5" class="px-6 py-12 text-center">
                                 <div class="text-gray-400">
                                     <i class="fas fa-inbox text-4xl mb-4"></i>
-                                    <div class="text-lg font-medium text-gray-600">No borrowing requests found</div>
-                                    <div class="text-sm text-gray-500 mt-1">No borrowing requests match your current filters</div>
+                                    <div class="text-lg font-medium text-gray-600">No ongoing borrowings found</div>
+                                    <div class="text-sm text-gray-500 mt-1">All assets have been returned or no active borrowings exist</div>
                                 </div>
                             </td>
                         </tr>
@@ -224,57 +192,25 @@
     </div>
 </div>
 
-<!-- Reject Modal -->
-<div id="rejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
+<!-- Return Modal -->
+<div id="returnModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
     <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative">
-        <button onclick="closeRejectModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-800 text-xl">
-            <i class="fas fa-times"></i>
-        </button>
-        <div class="flex flex-col items-center">
-            <div class="bg-red-100 text-red-800 rounded-full p-4 mb-4">
-                <i class="fas fa-times text-3xl"></i>
-            </div>
-            <h3 class="text-xl font-bold mb-2 text-gray-800">Reject Borrowing Request</h3>
-            <p class="text-gray-600 mb-6 text-center">Please provide a reason for rejecting this request.</p>
-            <form id="rejectForm" method="POST" class="w-full flex flex-col items-center gap-3">
-                @csrf
-                @method('PUT')
-                <div class="w-full mb-4">
-                    <label for="rejectNotes" class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason</label>
-                    <textarea name="notes" id="rejectNotes" rows="3" required
-                              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                              placeholder="Please provide a reason for rejecting this request..."></textarea>
-                </div>
-                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-times"></i> Reject Request
-                </button>
-                <button type="button" onclick="closeRejectModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-times"></i> Cancel
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Approve Modal -->
-<div id="approveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
-    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative">
-        <button onclick="closeApproveModal()" class="absolute top-3 right-3 text-gray-400 hover:text-green-800 text-xl">
+        <button onclick="closeReturnModal()" class="absolute top-3 right-3 text-gray-400 hover:text-green-800 text-xl">
             <i class="fas fa-times"></i>
         </button>
         <div class="flex flex-col items-center">
             <div class="bg-green-100 text-green-800 rounded-full p-4 mb-4">
-                <i class="fas fa-check text-3xl"></i>
+                <i class="fas fa-undo text-3xl"></i>
             </div>
-            <h3 class="text-xl font-bold mb-2 text-gray-800">Approve Borrowing Request</h3>
-            <p class="text-gray-600 mb-6 text-center">Are you sure you want to approve the borrowing request for <span id="approveAssetCode" class="font-semibold text-green-800"></span>?</p>
-            <form id="approveForm" method="POST" class="w-full flex flex-col items-center gap-3">
+            <h3 class="text-xl font-bold mb-2 text-gray-800">Mark Asset as Returned</h3>
+            <p class="text-gray-600 mb-6 text-center">Are you sure you want to mark the asset <span id="returnAssetCode" class="font-semibold text-green-800"></span> as returned? The asset will be restored to its original location.</p>
+            <form id="returnForm" method="POST" class="w-full flex flex-col items-center gap-3">
                 @csrf
                 @method('PUT')
                 <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-check"></i> Approve Request
+                    <i class="fas fa-undo"></i> Mark as Returned
                 </button>
-                <button type="button" onclick="closeApproveModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                <button type="button" onclick="closeReturnModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
                     <i class="fas fa-times"></i> Cancel
                 </button>
             </form>
@@ -282,7 +218,6 @@
     </div>
 </div>
 
-<!-- Delete Modal -->
 <!-- Delete Modal -->
 <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
     <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative">
@@ -302,32 +237,6 @@
                     <i class="fas fa-trash-alt"></i> Delete Request
                 </button>
                 <button type="button" onclick="closeDeleteModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-times"></i> Cancel
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Return Modal -->
-<div id="returnModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
-    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative">
-        <button onclick="closeReturnModal()" class="absolute top-3 right-3 text-gray-400 hover:text-blue-800 text-xl">
-            <i class="fas fa-times"></i>
-        </button>
-        <div class="flex flex-col items-center">
-            <div class="bg-blue-100 text-blue-800 rounded-full p-4 mb-4">
-                <i class="fas fa-undo text-3xl"></i>
-            </div>
-            <h3 class="text-xl font-bold mb-2 text-gray-800">Mark Asset as Returned</h3>
-            <p class="text-gray-600 mb-6 text-center">Are you sure you want to mark the asset <span id="returnAssetCode" class="font-semibold text-blue-800"></span> as returned? The asset will be restored to its original location.</p>
-            <form id="returnForm" method="POST" class="w-full flex flex-col items-center gap-3">
-                @csrf
-                @method('PUT')
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-undo"></i> Mark as Returned
-                </button>
-                <button type="button" onclick="closeReturnModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
                     <i class="fas fa-times"></i> Cancel
                 </button>
             </form>
@@ -360,26 +269,6 @@
 
 <script>
     // Modal functions
-    function openApproveModal(borrowingId, assetCode) {
-        document.getElementById('approveAssetCode').textContent = assetCode;
-        document.getElementById('approveForm').action = '/borrowings/' + borrowingId + '/approve';
-        document.getElementById('approveModal').style.display = 'flex';
-    }
-
-    function closeApproveModal() {
-        document.getElementById('approveModal').style.display = 'none';
-    }
-
-    function openRejectModal(borrowingId) {
-        document.getElementById('rejectForm').action = '/borrowings/' + borrowingId + '/reject';
-        document.getElementById('rejectModal').style.display = 'flex';
-    }
-
-    function closeRejectModal() {
-        document.getElementById('rejectModal').style.display = 'none';
-        document.getElementById('rejectNotes').value = '';
-    }
-
     function openReturnModal(borrowingId, assetCode) {
         document.getElementById('returnAssetCode').textContent = assetCode;
         document.getElementById('returnForm').action = '/borrowings/' + borrowingId + '/return';
@@ -402,17 +291,9 @@
 
     // Close modals when clicking outside
     window.onclick = function(event) {
-        const approveModal = document.getElementById('approveModal');
-        const rejectModal = document.getElementById('rejectModal');
         const returnModal = document.getElementById('returnModal');
         const deleteModal = document.getElementById('deleteModal');
         
-        if (event.target === approveModal) {
-            closeApproveModal();
-        }
-        if (event.target === rejectModal) {
-            closeRejectModal();
-        }
         if (event.target === returnModal) {
             closeReturnModal();
         }

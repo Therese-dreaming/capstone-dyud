@@ -14,6 +14,8 @@ class Borrowing extends Model
     protected $fillable = [
         'user_id',
         'asset_id',
+        'location_id',
+        'custom_location',
         'borrower_name',
         'borrower_id_number',
         'purpose',
@@ -67,6 +69,49 @@ class Borrowing extends Model
         }
         
         return now()->greaterThan($this->due_date);
+    }
+
+    public function getOverdueText()
+    {
+        if (!$this->isOverdue()) {
+            return null;
+        }
+
+        $diffInMinutes = $this->due_date->diffInMinutes(now());
+        
+        // Additional safety check to ensure we have a positive number
+        if ($diffInMinutes <= 0) {
+            return null;
+        }
+        
+        if ($diffInMinutes < 60) {
+            return "Overdue by {$diffInMinutes} minute" . ($diffInMinutes > 1 ? 's' : '');
+        } elseif ($diffInMinutes < 1440) { // Less than 24 hours
+            $hours = floor($diffInMinutes / 60);
+            return "Overdue by {$hours} hour" . ($hours > 1 ? 's' : '');
+        } else {
+            $days = $this->due_date->diffInDays(now());
+            return "Overdue by {$days} day" . ($days > 1 ? 's' : '');
+        }
+    }
+
+    public function getDueInText()
+    {
+        if ($this->isOverdue()) {
+            return null;
+        }
+
+        $diffInMinutes = now()->diffInMinutes($this->due_date, false);
+        
+        if ($diffInMinutes < 60) {
+            return "Due in {$diffInMinutes} minute" . ($diffInMinutes > 1 ? 's' : '');
+        } elseif ($diffInMinutes < 1440) { // Less than 24 hours
+            $hours = floor($diffInMinutes / 60);
+            return "Due in {$hours} hour" . ($hours > 1 ? 's' : '');
+        } else {
+            $days = now()->diffInDays($this->due_date, false);
+            return "Due in {$days} day" . ($days > 1 ? 's' : '');
+        }
     }
 
     public function isPending()

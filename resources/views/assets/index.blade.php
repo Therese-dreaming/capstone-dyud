@@ -42,7 +42,7 @@
                         <i class="fas fa-folder mr-1"></i>Category
                     </th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                        <i class="fas fa-map-marker-alt mr-1"></i>Location
+                        <i class="fas fa-map-marker-alt mr-1"></i>Current Location
                     </th>
                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                         <i class="fas fa-tools mr-1"></i>Condition
@@ -75,6 +75,11 @@
                             <div class="text-xs text-gray-600">
                                 <div class="font-medium">{{ $asset->location->building }}</div>
                                 <div class="text-gray-500">Floor {{ $asset->location->floor }} • Room {{ $asset->location->room }}</div>
+                                @if($asset->status === 'In Use' && $asset->original_location_id && $asset->original_location_id !== $asset->location_id)
+                                    <div class="text-blue-600 font-medium mt-1">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>Currently borrowed
+                                    </div>
+                                @endif
                             </div>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap border-r border-gray-100">
@@ -109,12 +114,19 @@
                                    title="Edit Asset">
                                     <i class="fas fa-edit text-xs"></i>
                                 </a>
-                                @if($asset->status !== 'Disposed')
+                                @if($asset->status !== 'Disposed' && $asset->status !== 'Lost')
                                 <button @click="showDisposeModal = true; disposeAssetId = {{ $asset->id }}; disposeAssetCode = '{{ addslashes($asset->asset_code) }}'"
                                         class="inline-flex items-center justify-center w-8 h-8 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-colors duration-150"
                                         title="Dispose Asset">
                                     <i class="fas fa-ban text-xs"></i>
                                 </button>
+                                @endif
+                                @if($asset->status !== 'Disposed' && $asset->status !== 'Lost')
+                                <a href="{{ route('lost-assets.create', $asset) }}"
+                                   class="inline-flex items-center justify-center w-8 h-8 bg-purple-100 text-purple-600 rounded-full hover:bg-purple-200 transition-colors duration-150"
+                                   title="Report as Lost">
+                                    <i class="fas fa-search text-xs"></i>
+                                </a>
                                 @endif
                                 <button @click="showModal = true; deleteAssetId = {{ $asset->id }}; deleteAssetCode = '{{ addslashes($asset->asset_code) }}'"
                                         class="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors duration-150"

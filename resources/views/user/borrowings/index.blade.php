@@ -130,6 +130,11 @@
                                             <i class="fas fa-map-marker-alt mr-1"></i>
                                             {{ $borrowing->location->building }} - Floor {{ $borrowing->location->floor }} - Room {{ $borrowing->location->room }}
                                         </div>
+                                        @elseif($borrowing->custom_location)
+                                        <div class="text-xs text-orange-600 mt-1">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>
+                                            {{ $borrowing->custom_location }} <span class="text-gray-500">(Custom)</span>
+                                        </div>
                                         @endif
                                     </div>
                                 </div>
@@ -139,8 +144,8 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ $borrowing->due_date->format('M d, Y') }}</div>
-                                @if($borrowing->isOverdue())
-                                    <div class="text-xs text-red-600 font-medium">Overdue by {{ now()->diffInDays($borrowing->due_date) }} days</div>
+                                @if($borrowing->getOverdueText())
+                                    <div class="text-xs text-red-600 font-medium">{{ $borrowing->getOverdueText() }}</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -198,24 +203,6 @@
 <!-- Include Modals -->
 @include('components.borrowing-modals')
 
-<!-- Toast Messages -->
-@if(session('success'))
-    <div class="fixed top-6 right-6 z-50 bg-green-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-fade-in min-w-[300px] border border-green-700"
-         x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)">
-        <i class="fas fa-check-circle text-2xl text-green-300"></i>
-        <span class="font-semibold">{{ session('success') }}</span>
-        <button @click="show = false" class="ml-auto text-green-200 hover:text-white"><i class="fas fa-times"></i></button>
-    </div>
-@endif
-@if(session('error'))
-    <div class="fixed top-6 right-6 z-50 bg-red-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4 animate-fade-in min-w-[300px] border border-red-700"
-         x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)">
-        <i class="fas fa-times-circle text-2xl text-red-300"></i>
-        <span class="font-semibold">{{ session('error') }}</span>
-        <button @click="show = false" class="ml-auto text-red-200 hover:text-white"><i class="fas fa-times"></i></button>
-    </div>
-@endif
-
 <style>
 @keyframes fade-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
 .animate-fade-in { animation: fade-in 0.5s; }
@@ -246,5 +233,48 @@
         
         window.location.href = currentUrl.toString();
     });
+
+    // Cancel request modal functionality
+    function openCancelRequestModal(requestId) {
+        const confirmBtn = document.getElementById('cancelRequestConfirm');
+        confirmBtn.onclick = function() {
+            // Submit the cancel form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/user/borrowings/${requestId}`;
+            
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            const methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
+            methodField.value = 'DELETE';
+            
+            form.appendChild(csrfToken);
+            form.appendChild(methodField);
+            document.body.appendChild(form);
+            form.submit();
+        };
+        
+        // Show the modal
+        document.getElementById('cancelRequestModal').style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        const modals = document.querySelectorAll('[id$="Modal"]');
+        modals.forEach(modal => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
 </script>
 @endsection 

@@ -39,7 +39,7 @@
                     @if($borrowing->isOverdue())
                         <div class="mt-2 text-sm text-red-600 font-medium">
                             <i class="fas fa-exclamation-triangle mr-1"></i>
-                            Overdue by {{ now()->diffInDays($borrowing->due_date) }} days
+                            {{ $borrowing->getOverdueText() }}
                         </div>
                     @endif
                 </div>
@@ -195,6 +195,20 @@
                                 <p class="text-xs font-medium text-blue-700 uppercase tracking-wide mb-1">Usage Location</p>
                                 <p class="text-sm text-blue-900 font-medium">
                                     {{ $borrowing->location->building }} - Floor {{ $borrowing->location->floor }} - Room {{ $borrowing->location->room }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    @elseif($borrowing->custom_location)
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-map-marker-alt text-orange-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-orange-700 uppercase tracking-wide mb-1">Usage Location</p>
+                                <p class="text-sm text-orange-900 font-medium">
+                                    {{ $borrowing->custom_location }} <span class="text-gray-500">(Custom Location)</span>
                                 </p>
                             </div>
                         </div>
@@ -369,7 +383,7 @@
                     <div class="ml-3">
                         <h3 class="text-sm font-medium text-red-800">Overdue Item</h3>
                         <div class="mt-2 text-sm text-red-700">
-                            <p>This item is overdue by <strong>{{ now()->diffInDays($borrowing->due_date) }} days</strong>. Please return it as soon as possible to avoid any penalties.</p>
+                            <p>This item is <strong>{{ $borrowing->getOverdueText() }}</strong>. Please return it as soon as possible to avoid any penalties.</p>
                         </div>
                     </div>
                 </div>
@@ -404,4 +418,49 @@
 @keyframes fade-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
 .animate-fade-in { animation: fade-in 0.5s; }
 </style>
+
+<script>
+    // Cancel request modal functionality
+    function openCancelRequestModal(requestId) {
+        const confirmBtn = document.getElementById('cancelRequestConfirm');
+        confirmBtn.onclick = function() {
+            // Submit the cancel form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/user/borrowings/${requestId}`;
+            
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            const methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
+            methodField.value = 'DELETE';
+            
+            form.appendChild(csrfToken);
+            form.appendChild(methodField);
+            document.body.appendChild(form);
+            form.submit();
+        };
+        
+        // Show the modal
+        document.getElementById('cancelRequestModal').style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        const modals = document.querySelectorAll('[id$="Modal"]');
+        modals.forEach(modal => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+</script>
 @endsection 

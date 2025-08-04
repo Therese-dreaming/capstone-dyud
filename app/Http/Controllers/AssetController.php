@@ -15,13 +15,13 @@ class AssetController extends Controller
 {
     public function index()
     {
-        $assets = Asset::with(['category', 'location', 'warranty'])->paginate(10);
+        $assets = Asset::with(['category', 'location', 'originalLocation', 'warranty'])->paginate(10);
         return view('assets.index', compact('assets'));
     }
 
     public function gsuIndex()
     {
-        $assets = Asset::with(['category', 'location', 'warranty'])->paginate(10);
+        $assets = Asset::with(['category', 'location', 'originalLocation', 'warranty'])->paginate(10);
         return view('assets.gsu-index', compact('assets'));
     }
 
@@ -63,7 +63,13 @@ class AssetController extends Controller
                 
                 // Get the latest asset for this category to determine starting sequence
                 $category = Category::find($request->category_id);
-                $latestAsset = Asset::where('category_id', $category->id)->latest()->first();
+                
+                // Get the highest sequence number for this category by examining asset codes
+                $latestAsset = Asset::where('category_id', $category->id)
+                    ->where('asset_code', 'like', $category->code . '%')
+                    ->orderByRaw('CAST(SUBSTRING(asset_code, -4) AS UNSIGNED) DESC')
+                    ->first();
+                    
                 $startingSequence = $latestAsset ? (int)substr($latestAsset->asset_code, -4) + 1 : 1;
                 
                 for ($i = 0; $i < $quantity; $i++) {
@@ -77,6 +83,7 @@ class AssetController extends Controller
                         'name' => $validated['name'],
                         'category_id' => $validated['category_id'],
                         'location_id' => $validated['location_id'],
+                        'original_location_id' => $validated['location_id'], // Set original location same as current location
                         'condition' => $validated['condition'],
                         'description' => $validated['description'],
                         'purchase_cost' => $validated['purchase_cost'],
@@ -110,21 +117,35 @@ class AssetController extends Controller
         }
     }
 
-    public function show(Asset $asset)
+    public function show(Asset $asset, Request $request)
     {
-        $asset->load(['category', 'location', 'warranty', 'disposes']);
+        $asset->load([
+            'category', 
+            'location', 
+            'originalLocation', 
+            'warranty'
+        ]);
+        
+        // Get the active tab from request
+        $activeTab = $request->get('tab', 'borrowing');
+        
+        // Paginate history records to prevent overloading
+        $borrowings = $asset->borrowings()->with(['approvedBy', 'location'])->orderBy('created_at', 'desc')->paginate(10);
+        $maintenances = $asset->maintenances()->orderBy('maintenance_date', 'desc')->paginate(10);
+        $disposes = $asset->disposes()->orderBy('disposal_date', 'desc')->paginate(10);
+        $changes = $asset->changes()->with('user')->orderBy('created_at', 'desc')->paginate(10);
         
         // Check if user is GSU and return appropriate view
         if (auth()->user()->role === 'gsu') {
             return view('assets.gsu-show', compact('asset'));
         }
         
-        return view('assets.show', compact('asset'));
+        return view('assets.show', compact('asset', 'borrowings', 'maintenances', 'disposes', 'changes', 'activeTab'));
     }
 
     public function edit(Asset $asset)
     {
-        $asset->load('warranty');
+        $asset->load(['warranty', 'originalLocation']);
         $categories = Category::all();
         $locations = Location::all();
         return view('assets.edit', compact('asset', 'categories', 'locations'));
@@ -151,13 +172,27 @@ class AssetController extends Controller
         $asset->update([
             'name' => $validated['name'],
             'category_id' => $validated['category_id'],
-            'location_id' => $validated['location_id'],
             'condition' => $validated['condition'],
             'description' => $validated['description'],
             'purchase_cost' => $validated['purchase_cost'],
             'purchase_date' => $validated['purchase_date'],
             'status' => $validated['status']
         ]);
+
+        // Handle location update - if asset is not currently borrowed, update both location and original_location
+        // If asset is borrowed, only update the original_location (temporary location remains until return)
+        if ($asset->status !== 'In Use') {
+            // Asset is not borrowed, update both current and original location
+            $asset->update([
+                'location_id' => $validated['location_id'],
+                'original_location_id' => $validated['location_id']
+            ]);
+        } else {
+            // Asset is currently borrowed, only update the original location
+            $asset->update([
+                'original_location_id' => $validated['location_id']
+            ]);
+        }
 
         // Update or create warranty
         $asset->warranty()->updateOrCreate(

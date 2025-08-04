@@ -142,11 +142,13 @@
     <!-- Toast Notifications -->
     @if(session('success'))
         <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" 
-             class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate__animated animate__fadeIn">
-            <div class="flex items-center">
-                <i class="fas fa-check-circle mr-2"></i>
-                {{ session('success') }}
-                <button @click="show = false" class="ml-4 text-white hover:text-gray-200">
+             class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate__animated animate__fadeIn max-w-md">
+            <div class="flex items-start">
+                <i class="fas fa-check-circle mr-2 mt-0.5 flex-shrink-0"></i>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm break-words">{{ session('success') }}</div>
+                </div>
+                <button @click="show = false" class="ml-3 text-white hover:text-gray-200 flex-shrink-0">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -155,11 +157,13 @@
 
     @if(session('error'))
         <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" 
-             class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate__animated animate__fadeIn">
-            <div class="flex items-center">
-                <i class="fas fa-exclamation-circle mr-2"></i>
-                {{ session('error') }}
-                <button @click="show = false" class="ml-4 text-white hover:text-gray-200">
+             class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate__animated animate__fadeIn max-w-md">
+            <div class="flex items-start">
+                <i class="fas fa-exclamation-circle mr-2 mt-0.5 flex-shrink-0"></i>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm break-words">{{ session('error') }}</div>
+                </div>
+                <button @click="show = false" class="ml-3 text-white hover:text-gray-200 flex-shrink-0">
                     <i class="fas fa-times"></i>
                 </button>
             </div>

@@ -65,6 +65,14 @@
                         {{ $borrowing->location->building }} - Floor {{ $borrowing->location->floor }} - Room {{ $borrowing->location->room }}
                     </p>
                 </div>
+                @elseif($borrowing->custom_location)
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700">Usage Location</label>
+                    <p class="mt-1 text-sm text-gray-900 font-medium">
+                        <i class="fas fa-map-marker-alt text-orange-600 mr-2"></i>
+                        {{ $borrowing->custom_location }} <span class="text-gray-500">(Custom)</span>
+                    </p>
+                </div>
                 @endif
                 
                 @if($borrowing->purpose)
@@ -156,43 +164,28 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
                 <div class="space-y-3">
                     @if($borrowing->status === 'pending')
-                        <form action="{{ route('borrowings.approve', $borrowing) }}" method="POST">
-                            @csrf
-                            @method('PUT')
-                            <button type="submit" 
-                                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
-                                    onclick="return confirm('Are you sure you want to approve this borrowing request?')">
-                                <i class="fas fa-check"></i> Approve Request
-                            </button>
-                        </form>
+                        <button onclick="openApproveModal({{ $borrowing->id }}, '{{ addslashes($borrowing->asset->asset_code) }}')"
+                                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                            <i class="fas fa-check"></i> Approve Request
+                        </button>
                         
-                        <button onclick="showRejectModal()"
+                        <button onclick="openRejectModal({{ $borrowing->id }})"
                                 class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
                             <i class="fas fa-times"></i> Reject Request
                         </button>
                     @endif
                     
                     @if($borrowing->status === 'approved')
-                        <form action="{{ route('borrowings.return', $borrowing) }}" method="POST">
-                            @csrf
-                            @method('PUT')
-                            <button type="submit" 
-                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
-                                    onclick="return confirm('Are you sure you want to mark this asset as returned?')">
-                                <i class="fas fa-undo"></i> Mark as Returned
-                            </button>
-                        </form>
+                        <button onclick="openReturnModal({{ $borrowing->id }}, '{{ addslashes($borrowing->asset->asset_code) }}')"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                            <i class="fas fa-undo"></i> Mark as Returned
+                        </button>
                     @endif
                     
-                    <form action="{{ route('borrowings.destroy', $borrowing) }}" method="POST">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" 
-                                class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
-                                onclick="return confirm('Are you sure you want to delete this borrowing request?')">
-                            <i class="fas fa-trash"></i> Delete Request
-                        </button>
-                    </form>
+                    <button onclick="openDeleteModal({{ $borrowing->id }}, '{{ addslashes($borrowing->asset->asset_code) }}')"
+                            class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-trash"></i> Delete Request
+                    </button>
                 </div>
             </div>
 
@@ -206,7 +199,7 @@
                     <div class="ml-3">
                         <h3 class="text-sm font-medium text-red-800">Overdue Item</h3>
                         <div class="mt-2 text-sm text-red-700">
-                            <p>This item is overdue by {{ now()->diffInDays($borrowing->due_date) }} days.</p>
+                            <p>This item is {{ $borrowing->getOverdueText() }}.</p>
                         </div>
                     </div>
                 </div>
@@ -216,10 +209,36 @@
     </div>
 </div>
 
+<!-- Approve Modal -->
+<div id="approveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
+    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative">
+        <button onclick="closeApproveModal()" class="absolute top-3 right-3 text-gray-400 hover:text-green-800 text-xl">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="flex flex-col items-center">
+            <div class="bg-green-100 text-green-800 rounded-full p-4 mb-4">
+                <i class="fas fa-check text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800">Approve Borrowing Request</h3>
+            <p class="text-gray-600 mb-6 text-center">Are you sure you want to approve the borrowing request for <span id="approveAssetCode" class="font-semibold text-green-800"></span>?</p>
+            <form id="approveForm" method="POST" class="w-full flex flex-col items-center gap-3">
+                @csrf
+                @method('PUT')
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-check"></i> Approve Request
+                </button>
+                <button type="button" onclick="closeApproveModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Reject Modal -->
 <div id="rejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
     <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative">
-        <button onclick="hideRejectModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-800 text-xl">
+        <button onclick="closeRejectModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-800 text-xl">
             <i class="fas fa-times"></i>
         </button>
         <div class="flex flex-col items-center">
@@ -228,19 +247,71 @@
             </div>
             <h3 class="text-xl font-bold mb-2 text-gray-800">Reject Borrowing Request</h3>
             <p class="text-gray-600 mb-6 text-center">Please provide a reason for rejecting this request.</p>
-            <form action="{{ route('borrowings.reject', $borrowing) }}" method="POST" class="w-full flex flex-col items-center gap-3">
+            <form id="rejectForm" method="POST" class="w-full flex flex-col items-center gap-3">
                 @csrf
                 @method('PUT')
                 <div class="w-full mb-4">
-                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason</label>
-                    <textarea name="notes" id="notes" rows="3" required
+                    <label for="rejectNotes" class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason</label>
+                    <textarea name="notes" id="rejectNotes" rows="3" required
                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
                               placeholder="Please provide a reason for rejecting this request..."></textarea>
                 </div>
                 <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
                     <i class="fas fa-times"></i> Reject Request
                 </button>
-                <button type="button" onclick="hideRejectModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                <button type="button" onclick="closeRejectModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Return Modal -->
+<div id="returnModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
+    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative">
+        <button onclick="closeReturnModal()" class="absolute top-3 right-3 text-gray-400 hover:text-blue-800 text-xl">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="flex flex-col items-center">
+            <div class="bg-blue-100 text-blue-800 rounded-full p-4 mb-4">
+                <i class="fas fa-undo text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800">Mark Asset as Returned</h3>
+            <p class="text-gray-600 mb-6 text-center">Are you sure you want to mark the asset <span id="returnAssetCode" class="font-semibold text-blue-800"></span> as returned? The asset will be restored to its original location.</p>
+            <form id="returnForm" method="POST" class="w-full flex flex-col items-center gap-3">
+                @csrf
+                @method('PUT')
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-undo"></i> Mark as Returned
+                </button>
+                <button type="button" onclick="closeReturnModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
+    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative">
+        <button onclick="closeDeleteModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-800 text-xl">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="flex flex-col items-center">
+            <div class="bg-red-100 text-red-800 rounded-full p-4 mb-4">
+                <i class="fas fa-exclamation-triangle text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800">Delete Borrowing Request</h3>
+            <p class="text-gray-600 mb-6 text-center">Are you sure you want to delete the borrowing request for <span id="deleteAssetCode" class="font-semibold text-red-800"></span>? This action cannot be undone.</p>
+            <form id="deleteForm" method="POST" class="w-full flex flex-col items-center gap-3">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="w-full bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-trash-alt"></i> Delete Request
+                </button>
+                <button type="button" onclick="closeDeleteModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
                     <i class="fas fa-times"></i> Cancel
                 </button>
             </form>
@@ -272,12 +343,66 @@
 </style>
 
 <script>
-function showRejectModal() {
-    document.getElementById('rejectModal').style.display = 'flex';
-}
+    // Modal functions
+    function openApproveModal(borrowingId, assetCode) {
+        document.getElementById('approveAssetCode').textContent = assetCode;
+        document.getElementById('approveForm').action = '/borrowings/' + borrowingId + '/approve';
+        document.getElementById('approveModal').style.display = 'flex';
+    }
 
-function hideRejectModal() {
-    document.getElementById('rejectModal').style.display = 'none';
-}
+    function closeApproveModal() {
+        document.getElementById('approveModal').style.display = 'none';
+    }
+
+    function openRejectModal(borrowingId) {
+        document.getElementById('rejectForm').action = '/borrowings/' + borrowingId + '/reject';
+        document.getElementById('rejectModal').style.display = 'flex';
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+        document.getElementById('rejectNotes').value = '';
+    }
+
+    function openReturnModal(borrowingId, assetCode) {
+        document.getElementById('returnAssetCode').textContent = assetCode;
+        document.getElementById('returnForm').action = '/borrowings/' + borrowingId + '/return';
+        document.getElementById('returnModal').style.display = 'flex';
+    }
+
+    function closeReturnModal() {
+        document.getElementById('returnModal').style.display = 'none';
+    }
+
+    function openDeleteModal(borrowingId, assetCode) {
+        document.getElementById('deleteAssetCode').textContent = assetCode;
+        document.getElementById('deleteForm').action = '/borrowings/' + borrowingId;
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        const approveModal = document.getElementById('approveModal');
+        const rejectModal = document.getElementById('rejectModal');
+        const returnModal = document.getElementById('returnModal');
+        const deleteModal = document.getElementById('deleteModal');
+        
+        if (event.target === approveModal) {
+            closeApproveModal();
+        }
+        if (event.target === rejectModal) {
+            closeRejectModal();
+        }
+        if (event.target === returnModal) {
+            closeReturnModal();
+        }
+        if (event.target === deleteModal) {
+            closeDeleteModal();
+        }
+    }
 </script>
 @endsection 

@@ -125,6 +125,24 @@
                                 </div>
                             </a>
                         </div>
+                        @if($asset->originalLocation && $asset->originalLocation->id !== $asset->location->id)
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="text-xs font-medium text-blue-600 mb-1">ORIGINAL LOCATION</div>
+                                    <div class="font-semibold text-gray-900">
+                                        {{ $asset->originalLocation->building }} - Floor {{ $asset->originalLocation->floor }} - Room {{ $asset->originalLocation->room }}
+                                    </div>
+                                    <div class="text-xs text-blue-600 mt-1">
+                                        <i class="fas fa-info-circle mr-1"></i>Currently borrowed - will return here
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <i class="fas fa-home text-blue-600"></i>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -471,6 +489,335 @@
         </div>
     </div>
 
+    <!-- Asset History Section -->
+    <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <i class="fas fa-history text-indigo-600"></i>
+                Asset History
+            </h2>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="border-b border-gray-200">
+            <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                <button onclick="showTab('borrowing')" 
+                        class="tab-button {{ $activeTab === 'borrowing' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+                    <i class="fas fa-handshake"></i>
+                    Borrowing History
+                    @if($borrowings->total() > 0)
+                        <span class="bg-indigo-100 text-indigo-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
+                            {{ $borrowings->total() }}
+                        </span>
+                    @endif
+                </button>
+                
+                <button onclick="showTab('maintenance')" 
+                        class="tab-button {{ $activeTab === 'maintenance' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-4 px-1 border-b-2 font-medium text-sm hover:text-gray-700 flex items-center gap-2">
+                    <i class="fas fa-tools"></i>
+                    Maintenance Records
+                    @if($maintenances->total() > 0)
+                        <span class="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
+                            {{ $maintenances->total() }}
+                        </span>
+                    @endif
+                </button>
+                
+                <button onclick="showTab('disposal')" 
+                        class="tab-button {{ $activeTab === 'disposal' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-4 px-1 border-b-2 font-medium text-sm hover:text-gray-700 flex items-center gap-2">
+                    <i class="fas fa-ban"></i>
+                    Disposal History
+                    @if($disposes->total() > 0)
+                        <span class="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
+                            {{ $disposes->total() }}
+                        </span>
+                    @endif
+                </button>
+                
+                <button onclick="showTab('changes')" 
+                        class="tab-button {{ $activeTab === 'changes' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-4 px-1 border-b-2 font-medium text-sm hover:text-gray-700 flex items-center gap-2">
+                    <i class="fas fa-edit"></i>
+                    Asset Changes
+                    @if($changes->total() > 0)
+                        <span class="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
+                            {{ $changes->total() }}
+                        </span>
+                    @endif
+                </button>
+            </nav>
+        </div>
+        
+        <!-- Tab Content -->
+        <div class="p-6">
+            <!-- Borrowing History Tab -->
+            <div id="borrowing-tab" class="tab-content" style="{{ $activeTab === 'borrowing' ? 'display: block;' : 'display: none;' }}">
+                @if($borrowings->total() > 0)
+                    <div class="space-y-4">
+                        @foreach($borrowings as $borrowing)
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full {{ $borrowing->getStatusBadgeClass() }}">
+                                                {{ ucfirst($borrowing->status) }}
+                                            </span>
+                                            <span class="text-sm text-gray-500">
+                                                {{ $borrowing->created_at->format('M d, Y') }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span class="font-medium text-gray-700">Borrower:</span>
+                                                <span class="text-gray-900">{{ $borrowing->borrower_name }}</span>
+                                                <span class="text-gray-500">({{ $borrowing->borrower_id_number }})</span>
+                                            </div>
+                                            
+                                            <div>
+                                                <span class="font-medium text-gray-700">Borrowed to:</span>
+                                                <span class="text-gray-900">
+                                                    @if($borrowing->location)
+                                                        {{ $borrowing->location->building }} - Floor {{ $borrowing->location->floor }} - Room {{ $borrowing->location->room }}
+                                                    @elseif($borrowing->custom_location)
+                                                        <span class="text-orange-600">{{ $borrowing->custom_location }}</span>
+                                                        <span class="text-xs text-gray-500 ml-1">(Custom Location)</span>
+                                                    @else
+                                                        <span class="text-gray-500">No location specified</span>
+                                                    @endif
+                                                </span>
+                                            </div>
+                                            
+                                            <div>
+                                                <span class="font-medium text-gray-700">Purpose:</span>
+                                                <span class="text-gray-900">{{ $borrowing->purpose }}</span>
+                                            </div>
+                                            
+                                            <div>
+                                                <span class="font-medium text-gray-700">Due Date:</span>
+                                                <span class="text-gray-900">{{ $borrowing->due_date->format('M d, Y') }}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        @if($borrowing->approved_by)
+                                        <div class="mt-2 text-xs text-gray-500">
+                                            <i class="fas fa-user-check mr-1"></i>
+                                            Approved by {{ $borrowing->approvedBy->name }} on {{ $borrowing->approved_at->format('M d, Y g:i A') }}
+                                        </div>
+                                        @endif
+                                        
+                                        @if($borrowing->return_date)
+                                        <div class="mt-2 text-xs text-green-600">
+                                            <i class="fas fa-undo mr-1"></i>
+                                            Returned on {{ $borrowing->return_date->format('M d, Y g:i A') }}
+                                        </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    <!-- Pagination for Borrowing History -->
+                    @if($borrowings->hasPages())
+                        <div class="mt-6">
+                            {{ $borrowings->appends(['tab' => 'borrowing'])->links() }}
+                        </div>
+                    @endif
+                @else
+                    <div class="text-center py-8">
+                        <i class="fas fa-handshake text-4xl text-gray-300 mb-4"></i>
+                        <div class="text-lg font-medium text-gray-600">No borrowing history</div>
+                        <div class="text-sm text-gray-500 mt-1">This asset has never been borrowed</div>
+                    </div>
+                @endif
+            </div>
+            
+            <!-- Maintenance Records Tab -->
+            <div id="maintenance-tab" class="tab-content" style="{{ $activeTab === 'maintenance' ? 'display: block;' : 'display: none;' }}">
+                @if($maintenances->total() > 0)
+                    <div class="space-y-4">
+                        @foreach($maintenances as $maintenance)
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full 
+                                                {{ $maintenance->maintenance_type === 'Preventive' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800' }}">
+                                                {{ $maintenance->maintenance_type }}
+                                            </span>
+                                            <span class="text-sm text-gray-500">
+                                                {{ $maintenance->maintenance_date->format('M d, Y') }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span class="font-medium text-gray-700">Description:</span>
+                                                <span class="text-gray-900">{{ $maintenance->description }}</span>
+                                            </div>
+                                            
+                                            <div>
+                                                <span class="font-medium text-gray-700">Cost:</span>
+                                                <span class="text-gray-900">₱{{ number_format($maintenance->cost, 2) }}</span>
+                                            </div>
+                                            
+                                            <div>
+                                                <span class="font-medium text-gray-700">Performed by:</span>
+                                                <span class="text-gray-900">{{ $maintenance->performed_by }}</span>
+                                            </div>
+                                            
+                                            <div>
+                                                <span class="font-medium text-gray-700">Next Maintenance:</span>
+                                                <span class="text-gray-900">{{ $maintenance->next_maintenance_date ? $maintenance->next_maintenance_date->format('M d, Y') : 'Not scheduled' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    <!-- Pagination for Maintenance Records -->
+                    @if($maintenances->hasPages())
+                        <div class="mt-6">
+                            {{ $maintenances->appends(['tab' => 'maintenance'])->links() }}
+                        </div>
+                    @endif
+                @else
+                    <div class="text-center py-8">
+                        <i class="fas fa-tools text-4xl text-gray-300 mb-4"></i>
+                        <div class="text-lg font-medium text-gray-600">No maintenance records</div>
+                        <div class="text-sm text-gray-500 mt-1">This asset has no maintenance history</div>
+                    </div>
+                @endif
+            </div>
+            
+            <!-- Disposal History Tab -->
+            <div id="disposal-tab" class="tab-content" style="{{ $activeTab === 'disposal' ? 'display: block;' : 'display: none;' }}">
+                @if($disposes->total() > 0)
+                    <div class="space-y-4">
+                        @foreach($disposes as $disposal)
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                                Disposed
+                                            </span>
+                                            <span class="text-sm text-gray-500">
+                                                {{ $disposal->disposal_date->format('M d, Y') }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span class="font-medium text-gray-700">Disposed by:</span>
+                                                <span class="text-gray-900">{{ $disposal->disposed_by }}</span>
+                                            </div>
+                                            
+                                            <div>
+                                                <span class="font-medium text-gray-700">Disposal method:</span>
+                                                <span class="text-gray-900">{{ $disposal->disposal_method }}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <span class="font-medium text-gray-700">Reason:</span>
+                                            <div class="text-gray-900 mt-1 bg-red-50 p-3 rounded-lg border border-red-100">
+                                                {{ $disposal->disposal_reason }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    <!-- Pagination for Disposal History -->
+                    @if($disposes->hasPages())
+                        <div class="mt-6">
+                            {{ $disposes->appends(['tab' => 'disposal'])->links() }}
+                        </div>
+                    @endif
+                @else
+                    <div class="text-center py-8">
+                        <i class="fas fa-ban text-4xl text-gray-300 mb-4"></i>
+                        <div class="text-lg font-medium text-gray-600">No disposal history</div>
+                        <div class="text-sm text-gray-500 mt-1">This asset has not been disposed</div>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Asset Changes Tab -->
+            <div id="changes-tab" class="tab-content" style="{{ $activeTab === 'changes' ? 'display: block;' : 'display: none;' }}">
+                @if($changes->total() > 0)
+                    <div class="space-y-4">
+                        @foreach($changes as $change)
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                                                                 <div class="flex items-center gap-3 mb-2">
+                                             <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                                                 {{ $change->getChangeTypeLabel() }}
+                                             </span>
+                                             <span class="text-sm text-gray-500">
+                                                 {{ $change->created_at->format('M d, Y H:i') }}
+                                             </span>
+                                         </div>
+                                         
+                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                             <div>
+                                                 <span class="font-medium text-gray-700">Field:</span>
+                                                 <span class="text-gray-900">{{ $change->getFieldLabel() }}</span>
+                                             </div>
+                                             
+                                             <div>
+                                                 <span class="font-medium text-gray-700">Changed by:</span>
+                                                 <span class="text-gray-900">{{ $change->changed_by }}</span>
+                                             </div>
+                                             
+                                             <div class="md:col-span-2">
+                                                 <span class="font-medium text-gray-700">Previous Value:</span>
+                                                 <span class="text-gray-900">{{ $change->previous_value ?: 'None' }}</span>
+                                             </div>
+                                             
+                                             <div class="md:col-span-2">
+                                                 <span class="font-medium text-gray-700">New Value:</span>
+                                                 <span class="text-gray-900 font-medium">{{ $change->new_value ?: 'None' }}</span>
+                                             </div>
+                                             
+                                             @if($change->notes)
+                                             <div class="md:col-span-2">
+                                                 <span class="font-medium text-gray-700">Notes:</span>
+                                                 <div class="text-gray-900 mt-1 bg-purple-50 p-3 rounded-lg border border-purple-100">
+                                                     {{ $change->notes }}
+                                                 </div>
+                                             </div>
+                                             @endif
+                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    <!-- Pagination for Asset Changes -->
+                    @if($changes->hasPages())
+                        <div class="mt-6">
+                            {{ $changes->appends(['tab' => 'changes'])->links() }}
+                        </div>
+                    @endif
+                @else
+                    <div class="text-center py-8">
+                        <i class="fas fa-edit text-4xl text-gray-300 mb-4"></i>
+                        <div class="text-lg font-medium text-gray-600">No asset changes</div>
+                        <div class="text-sm text-gray-500 mt-1">This asset has no history of changes</div>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
     <!-- Action Buttons -->
     <div class="mt-6 flex gap-4">
         <a href="{{ route('assets.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition duration-200 flex items-center gap-2">
@@ -538,6 +885,47 @@ function printQRCode() {
         printWindow.close();
     }, 1000);
 }
+
+// Tab functionality
+function showTab(tabName) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(content => {
+        content.style.display = 'none';
+    });
+    
+    // Remove active class from all tab buttons
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
+        button.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Show selected tab content
+    document.getElementById(tabName + '-tab').style.display = 'block';
+    
+    // Add active class to clicked button
+    event.target.classList.add('active', 'border-indigo-500', 'text-indigo-600');
+    event.target.classList.remove('border-transparent', 'text-gray-500');
+    
+    // Update URL with tab parameter for pagination
+    const url = new URL(window.location);
+    url.searchParams.set('tab', tabName);
+    window.history.pushState({}, '', url);
+}
+
+// Initialize tab based on URL parameter for pagination
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab') || 'borrowing';
+    
+    // Update URL if no tab parameter is present
+    if (!urlParams.get('tab')) {
+        const url = new URL(window.location);
+        url.searchParams.set('tab', activeTab);
+        window.history.pushState({}, '', url);
+    }
+});
 </script>
 
 @endsection
