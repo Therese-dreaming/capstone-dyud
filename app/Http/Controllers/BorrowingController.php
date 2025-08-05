@@ -310,4 +310,66 @@ class BorrowingController extends Controller
             $borrowing->update(['status' => Borrowing::STATUS_OVERDUE]);
         }
     }
+
+    /**
+     * Display a listing of all borrowing requests (GSU view).
+     */
+    public function gsuIndex(Request $request)
+    {
+        // Debug: Check if method is being called
+        \Log::info('GSU Borrowing Index method called');
+        
+        // Debug: Check user authentication and role
+        if (auth()->check()) {
+            \Log::info('User authenticated: ' . auth()->user()->name . ' with role: ' . auth()->user()->role);
+        } else {
+            \Log::info('User not authenticated');
+        }
+        
+        $query = Borrowing::with(['user', 'asset.category', 'asset.location', 'approvedBy', 'location']);
+        
+        // Apply filters
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        if ($request->filled('category_id')) {
+            $query->whereHas('asset.category', function($q) use ($request) {
+                $q->where('id', $request->category_id);
+            });
+        }
+        
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('borrower_name', 'like', "%{$search}%")
+                  ->orWhere('borrower_id_number', 'like', "%{$search}%")
+                  ->orWhereHas('asset', function($assetQuery) use ($search) {
+                      $assetQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('asset_code', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        // Check for overdue items and update their status
+        $this->updateOverdueBorrowings();
+        
+        $borrowings = $query->latest()->paginate(15);
+        $categories = Category::all();
+        
+        \Log::info('GSU Borrowing Index - Borrowings count: ' . $borrowings->count());
+        \Log::info('GSU Borrowing Index - Categories count: ' . $categories->count());
+        
+        return view('GSU.borrowings.index', compact('borrowings', 'categories'));
+    }
+
+    /**
+     * Display the specified borrowing request (GSU view).
+     */
+    public function gsuShow(Borrowing $borrowing)
+    {
+        $borrowing->load(['user', 'asset.category', 'asset.location', 'approvedBy', 'location']);
+        
+        return view('GSU.borrowings.show', compact('borrowing'));
+    }
 }

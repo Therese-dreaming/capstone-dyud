@@ -86,6 +86,15 @@
                             </li>
                         </ul>
                     </li>
+                    
+                    <!-- Borrowing Management -->
+                    <li>
+                        <a href="{{ route('gsu.borrowings.index') }}"
+                            class="flex items-center px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 {{ request()->routeIs('gsu.borrowings.*') ? 'bg-red-50 text-red-800' : '' }}">
+                            <i class="fas fa-handshake w-5"></i>
+                            <span class="ml-3 text-sm">Borrowing Requests</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 

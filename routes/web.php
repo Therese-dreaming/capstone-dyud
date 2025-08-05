@@ -144,7 +144,22 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/gsu/qr-scanner', [QRCodeController::class, 'gsuScanner'])->name('gsu.qr.scanner');
         Route::get('/gsu/qrcode/asset/{assetCode}', [QRCodeController::class, 'generateAssetQR'])->name('gsu.qrcode.asset');
         Route::get('/gsu/qrcode/asset/{assetCode}/download', [QRCodeController::class, 'downloadAssetQR'])->name('gsu.qrcode.asset.download');
+        
+        // GSU Borrowing Management (view only + return functionality)
+        Route::get('/gsu/borrowings', [BorrowingController::class, 'gsuIndex'])->name('gsu.borrowings.index');
+        Route::get('/gsu/borrowings/{borrowing}', [BorrowingController::class, 'gsuShow'])->name('gsu.borrowings.show');
+        Route::put('/gsu/borrowings/{borrowing}/return', [BorrowingController::class, 'return'])->name('gsu.borrowings.return');
+        
+        // Debug route to test if GSU routes are working
+        Route::get('/gsu/test', function() {
+            return view('GSU.borrowings.test');
+        })->name('gsu.test');
     });
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    
+    // Test route outside middleware to check if routing is working
+    Route::get('/test-gsu', function() {
+        return 'Test route working!';
+    });
 });
