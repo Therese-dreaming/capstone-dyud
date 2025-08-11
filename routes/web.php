@@ -16,6 +16,7 @@ use App\Http\Controllers\UserBorrowingController;
 use App\Http\Controllers\LostAssetController;
 use App\Http\Controllers\SemesterRecordController;
 use App\Http\Controllers\SemesterSettingController;
+use App\Http\Controllers\MaintenanceChecklistController;
 
 // Default route - redirect to login
 Route::get('/', function () {
@@ -125,7 +126,24 @@ Route::middleware(['auth'])->group(function () {
         // Date Range View
         Route::get('/locations/{location}/date-range', [LocationController::class, 'dateRangeView'])->name('locations.date-range');
 
+        // Maintenance Checklists for admin
+        Route::get('/maintenance-checklists', [MaintenanceChecklistController::class, 'index'])->name('maintenance-checklists.index');
+        Route::get('/maintenance-checklists/create', [MaintenanceChecklistController::class, 'create'])->name('maintenance-checklists.create');
+        Route::post('/maintenance-checklists', [MaintenanceChecklistController::class, 'store'])->name('maintenance-checklists.store');
+        
+        // API route for maintenance checklist items (accessible to authenticated users)
+        Route::get('/maintenance-checklists/common-items', [MaintenanceChecklistController::class, 'getCommonItems'])->name('maintenance-checklists.common-items');
+        
+        Route::get('/maintenance-checklists/{maintenanceChecklist}', [MaintenanceChecklistController::class, 'show'])->name('maintenance-checklists.show');
+        Route::get('/maintenance-checklists/{maintenanceChecklist}/edit', [MaintenanceChecklistController::class, 'edit'])->name('maintenance-checklists.edit');
+        Route::put('/maintenance-checklists/{maintenanceChecklist}', [MaintenanceChecklistController::class, 'update'])->name('maintenance-checklists.update');
+        Route::delete('/maintenance-checklists/{maintenanceChecklist}', [MaintenanceChecklistController::class, 'destroy'])->name('maintenance-checklists.destroy');
+        Route::get('/maintenance-checklists/{maintenanceChecklist}/export', [MaintenanceChecklistController::class, 'exportCsv'])->name('maintenance-checklists.export');
+    });
 
+    // Test route for debugging
+    Route::get('/test-maintenance', function() {
+        return response()->json(['message' => 'Test route working', 'timestamp' => now()]);
     });
 
     // Routes for GSU users only (super admin)
