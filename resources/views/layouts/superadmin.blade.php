@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Superadmin Dashboard</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- Font Awesome Fallback CDN -->
@@ -146,6 +147,12 @@
                                 <a href="{{ route('maintenances.history') }}"
                                     class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('maintenances.history') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
                                     <i class="fas fa-history mr-2 w-4"></i> Maintenance History
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('maintenance-checklists.index') }}"
+                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('maintenance-checklists.*') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
+                                    <i class="fas fa-clipboard-check mr-2 w-4"></i> Maintenance Checklists
                                 </a>
                             </li>
                             <li>

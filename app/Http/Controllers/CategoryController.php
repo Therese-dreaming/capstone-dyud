@@ -22,13 +22,19 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'code' => 'required|string|max:3|unique:categories,code',
             'name' => 'required|string|max:255|unique:categories,name',
         ]);
+        
         try {
             Category::create($validated);
             return redirect()->route('categories.index')->with('success', 'Category added successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Failed to add category.');
+            \Log::error('Category creation failed: ' . $e->getMessage(), [
+                'data' => $validated,
+                'exception' => $e
+            ]);
+            return redirect()->back()->withInput()->with('error', 'Failed to add category. Please try again.');
         }
     }
 
