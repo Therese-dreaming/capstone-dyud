@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.gsu')
 
 @section('content')
 <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-10">
@@ -42,7 +42,7 @@
                     <div>
                         <span class="text-sm font-medium text-gray-500">Type:</span>
                         <span class="inline-block px-3 py-1 text-sm font-medium rounded-full
-                            {{ $maintenance->type === 'Preventive' ? 'bg-red-100 text-red-800' : 
+                            {{ $maintenance->type === 'Preventive' ? 'bg-blue-100 text-blue-800' : 
                                ($maintenance->type === 'Corrective' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                             {{ $maintenance->type }}
                         </span>
@@ -51,8 +51,8 @@
                         <span class="text-sm font-medium text-gray-500">Status:</span>
                         <span class="inline-block px-3 py-1 text-sm font-medium rounded-full
                             {{ $maintenance->status === 'Completed' ? 'bg-green-100 text-green-800' : 
-                               ($maintenance->status === 'In Progress' ? 'bg-red-100 text-red-800' : 
-                               ($maintenance->status === 'Scheduled' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800')) }}">
+                               ($maintenance->status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' : 
+                               ($maintenance->status === 'Scheduled' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800')) }}">
                             {{ $maintenance->status }}
                         </span>
                     </div>
@@ -143,10 +143,10 @@
 
     <!-- Action Buttons -->
     <div class="flex justify-end mt-8 gap-4">
-        <a href="{{ route('maintenances.index', $asset) }}" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600">
+        <a href="{{ route('gsu.maintenances.index', $asset) }}" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600">
             <i class="fas fa-arrow-left"></i> Back to List
         </a>
-        <a href="{{ route('maintenances.edit', [$asset, $maintenance]) }}" class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700">
+        <a href="{{ route('gsu.maintenances.edit', $maintenance) }}" class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700">
             <i class="fas fa-edit"></i> Edit
         </a>
     </div>

@@ -40,9 +40,9 @@
             <!-- Navigation -->
             <nav class="flex-1 p-4">
                 <div class="py-4 overflow-y-auto">
-                    <!-- Update the dashboard link in the navigation section -->
+                    <!-- Dashboard link -->
                     <a href="{{ route('dashboard') }}"
-                        class="flex items-center px-4 py-3 text-gray-700 hover:bg-pink-50 rounded-lg transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-red-100 text-red-800' : '' }}">
+                        class="flex items-center px-4 py-3 text-gray-700 hover:bg-red-50 rounded-lg transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-red-100 text-red-800' : '' }}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20"
                             fill="currentColor">
                             <path
@@ -52,128 +52,18 @@
                     </a>
                 </div>
                 <ul class="space-y-2">
-                    <li x-data="{ open: false }">
+                    <!-- User Management Section -->
+                    <li x-data="{ open: true }">
                         <button @click="open = !open" type="button"
                             class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"
                             :class="{ 'bg-red-50 text-red-800': open }">
                             <span class="flex items-center">
-                                <i class="fas fa-boxes w-5"></i>
-                                <span class="ml-3 text-sm">Asset Management</span>
-                            </span>
-                            <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
-                        </button>
-                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
-                            <li>
-                                <a href="{{ route('assets.create') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('assets.create') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-plus mr-2 w-4"></i> Create Asset
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('assets.index') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('assets.index') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-list mr-2 w-4"></i> Asset List
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li x-data="{ open: false }">
-                        <button @click="open = !open" type="button"
-                            class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"
-                            :class="{ 'bg-red-50 text-red-800': open }">
-                            <span class="flex items-center">
-                                <i class="fas fa-handshake w-5"></i>
-                                <span class="ml-3 text-sm">Borrowings</span>
-                            </span>
-                            <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
-                        </button>
-                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
-                            <li>
-                                <a href="{{ route('borrowings.index') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('borrowings.index') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-list mr-2 w-4"></i> All Requests
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('borrowings.ongoing') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('borrowings.ongoing') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-clock mr-2 w-4"></i> Ongoing Borrowings
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('borrowings.index', ['status' => 'pending']) }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->get('status') === 'pending' ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-clock mr-2 w-4"></i> Pending Approval
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('borrowings.index', ['status' => 'approved']) }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->get('status') === 'approved' ? 'bg-red-100 text-red-800' : 'text-gray-800' }}">
-                                    <i class="fas fa-check mr-2 w-4"></i> Approved
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('borrowings.index', ['status' => 'overdue']) }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->get('status') === 'overdue' ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-exclamation-triangle mr-2 w-4"></i> Overdue
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li x-data="{ open: false }">
-                        <button @click="open = !open" type="button"
-                            class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"
-                            :class="{ 'bg-red-50 text-red-800': open }">
-                            <span class="flex items-center">
-                                <i class="fas fa-chart-bar w-5"></i>
-                                <span class="ml-3 text-sm">Reports</span>
-                            </span>
-                            <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
-                        </button>
-                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
-                            <li>
-                                <a href="{{ route('assets.report') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('assets.report') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-file-alt mr-2 w-4"></i> Asset Report
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('disposals.history') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('disposals.history') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-trash-restore mr-2 w-4"></i> Disposal History
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('maintenances.history') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('maintenances.history') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-history mr-2 w-4"></i> Maintenance History
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('maintenance-checklists.index') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('maintenance-checklists.*') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-clipboard-check mr-2 w-4"></i> Maintenance Checklists
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('lost-assets.index') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('lost-assets.*') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-search mr-2 w-4"></i> Lost Assets
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li x-data="{ open: false }">
-                        <button @click="open = !open" type="button"
-                            class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"
-                            :class="{ 'bg-red-50 text-red-800': open }">
-                            <span class="flex items-center">
-                                <i class="fas fa-users w-5"></i>
+                                <i class="fas fa-users-cog w-5"></i>
                                 <span class="ml-3 text-sm">User Management</span>
                             </span>
                             <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
                         </button>
-                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
+                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1">
                             <li>
                                 <a href="{{ route('users.create') }}"
                                     class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('users.create') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
@@ -188,59 +78,17 @@
                             </li>
                         </ul>
                     </li>
-                    <li x-data="{ open: false }">
-                        <button @click="open = !open" type="button"
-                            class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"
-                            :class="{ 'bg-red-50 text-red-800': open }">
-                            <span class="flex items-center">
-                                <i class="fas fa-folder-open w-5"></i>
-                                <span class="ml-3 text-sm">Categories</span>
-                            </span>
-                            <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
-                        </button>
-                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
-                            <li>
-                                <a href="{{ route('categories.create') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('categories.create') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-folder-plus mr-2 w-4"></i> Add Category
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('categories.index') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('categories.index') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-list mr-2 w-4"></i> Category List
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li x-data="{ open: false }">
-                        <button @click="open = !open" type="button"
-                            class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"
-                            :class="{ 'bg-red-50 text-red-800': open }">
-                            <span class="flex items-center">
-                                <i class="fas fa-map-marker-alt w-5"></i>
-                                <span class="ml-3 text-sm">Locations</span>
-                            </span>
-                            <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
-                        </button>
-                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
-                            <li>
-                                <a href="{{ route('locations.create') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('locations.create') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-plus-circle mr-2 w-4"></i> Add Location
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('locations.index') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('locations.index') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-list mr-2 w-4"></i> Location List
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-
                     
-
+                    <!-- Access Restricted Notice -->
+                    <li class="px-4 py-2">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div class="flex items-center">
+                                <i class="fas fa-lock text-yellow-600 mr-2"></i>
+                                <span class="text-xs text-yellow-800 font-medium">User Management Only</span>
+                            </div>
+                            <p class="text-xs text-yellow-700 mt-1">Access limited to user operations</p>
+                        </div>
+                    </li>
                 </ul>
             </nav>
 

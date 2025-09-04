@@ -97,7 +97,7 @@ trait TracksAssetChanges
         return $category ? $category->name : "Category ID: {$categoryId}";
     }
     
-    // Method to manually record changes (for borrowing approvals, returns, etc.)
+    // Method to manually record changes
     public static function recordChange($assetId, $changeType, $field, $previousValue = null, $newValue = null, $notes = null)
     {
         return AssetChange::create([

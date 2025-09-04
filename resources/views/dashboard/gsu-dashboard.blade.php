@@ -58,8 +58,8 @@
                 </div>
                 <div class="flex items-center justify-between">
                     <span class="text-xs text-gray-500">All roles</span>
-                    <a href="#" onclick="alert('User management is not available for GSU users')" class="text-gray-400 hover:text-gray-500 text-sm font-medium">
-                        Not Available <i class="fas fa-lock ml-1"></i>
+                    <a href="#" onclick="alert('User management is now handled by Super Admin only')" class="text-gray-400 hover:text-gray-500 text-sm font-medium">
+                        Super Admin Only <i class="fas fa-lock ml-1"></i>
                     </a>
                 </div>
             </div>

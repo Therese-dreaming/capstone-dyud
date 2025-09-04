@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.gsu')
 
 @section('content')
 <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-10">
@@ -16,7 +16,7 @@
         </div>
     @endif
 
-    <form action="{{ route('maintenances.store', $asset) }}" method="POST">
+    <form action="{{ route('gsu.maintenances.store', $asset) }}" method="POST">
         @csrf
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -52,21 +52,23 @@
             </div>
             <div>
                 <label class="block text-gray-700 font-semibold mb-2" for="cost">Cost</label>
-                <input type="number" step="0.01" name="cost" id="cost" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" value="{{ old('cost') }}">
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-gray-700 font-semibold mb-2" for="description">Description</label>
-                <textarea name="description" id="description" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" rows="3">{{ old('description') }}</textarea>
-            </div>
-            <div class="md:col-span-2">
-                <label class="block text-gray-700 font-semibold mb-2" for="notes">Notes</label>
-                <textarea name="notes" id="notes" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" rows="3">{{ old('notes') }}</textarea>
+                <input type="number" name="cost" id="cost" step="0.01" min="0" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" value="{{ old('cost') }}">
             </div>
         </div>
-        <div class="flex justify-end mt-8 gap-4">
-            <a href="{{ route('maintenances.index', $asset) }}" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600">Cancel</a>
-            <button type="submit" class="bg-red-800 text-white px-6 py-3 rounded-lg hover:bg-red-900">
-                <i class="fas fa-save"></i> Add Maintenance Record
+        <div class="mt-6">
+            <label class="block text-gray-700 font-semibold mb-2" for="description">Description</label>
+            <textarea name="description" id="description" rows="4" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" placeholder="Describe the maintenance work to be performed...">{{ old('description') }}</textarea>
+        </div>
+        <div class="mt-6">
+            <label class="block text-gray-700 font-semibold mb-2" for="notes">Notes</label>
+            <textarea name="notes" id="notes" rows="3" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" placeholder="Additional notes or observations...">{{ old('notes') }}</textarea>
+        </div>
+        <div class="flex justify-end gap-4 mt-8">
+            <a href="{{ route('gsu.maintenances.index', $asset) }}" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                Cancel
+            </a>
+            <button type="submit" class="bg-gradient-to-r from-red-800 to-red-900 hover:from-red-900 hover:to-red-950 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2">
+                <i class="fas fa-save"></i> Create Maintenance Record
             </button>
         </div>
     </form>

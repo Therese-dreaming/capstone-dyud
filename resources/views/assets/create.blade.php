@@ -1,4 +1,4 @@
-@extends('layouts.superadmin')
+@extends('layouts.admin')
 
 @section('content')
 <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-10">
@@ -8,6 +8,9 @@
     
     <form action="{{ route('assets.store') }}" method="POST">
         @csrf
+        @if(isset($selectedLocationId))
+            <input type="hidden" name="redirect_to_location" value="{{ $selectedLocationId }}">
+        @endif
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <label class="block text-gray-700 font-semibold mb-2" for="name">Name</label>
@@ -34,11 +37,16 @@
                 <select name="location_id" id="location_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" required>
                     <option value="">Select Location</option>
                     @foreach($locations as $location)
-                        <option value="{{ $location->id }}" {{ old('location_id') == $location->id ? 'selected' : '' }}>
+                        <option value="{{ $location->id }}" {{ (old('location_id') == $location->id || (isset($selectedLocationId) && $selectedLocationId == $location->id)) ? 'selected' : '' }}>
                             {{ $location->building }} - Floor {{ $location->floor }} - Room {{ $location->room }}
                         </option>
                     @endforeach
                 </select>
+                @if(isset($selectedLocationId))
+                    <p class="text-sm text-green-600 mt-1">
+                        <i class="fas fa-info-circle"></i> Location pre-selected from the location page
+                    </p>
+                @endif
             </div>
             <div>
                 <label class="block text-gray-700 font-semibold mb-2" for="condition">Condition</label>

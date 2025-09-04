@@ -11,9 +11,8 @@ use App\Http\Controllers\QRCodeController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\DisposalController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\BorrowingController;
-use App\Http\Controllers\UserBorrowingController;
 use App\Http\Controllers\LostAssetController;
+use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\SemesterRecordController;
 use App\Http\Controllers\SemesterSettingController;
 use App\Http\Controllers\MaintenanceChecklistController;
@@ -32,17 +31,6 @@ Route::post('/register', [AuthController::class, 'storeRegister']);
 Route::middleware(['auth'])->group(function () {
     // Dashboard - accessible by all authenticated users
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
-    // User borrowing routes - accessible by all authenticated users
-    Route::get('/user/borrowings', [UserBorrowingController::class, 'index'])->name('user.borrowings.index');
-    Route::get('/user/borrowings/create', [UserBorrowingController::class, 'create'])->name('user.borrowings.create');
-    Route::post('/user/borrowings', [UserBorrowingController::class, 'store'])->name('user.borrowings.store');
-    Route::post('/user/borrowings/bulk', [UserBorrowingController::class, 'storeBulk'])->name('user.borrowings.store-bulk');
-    Route::get('/user/borrowings/{borrowing}', [UserBorrowingController::class, 'show'])->name('user.borrowings.show');
-    Route::delete('/user/borrowings/{borrowing}', [UserBorrowingController::class, 'cancel'])->name('user.borrowings.cancel');
-    
-    // API route for getting available assets by category (for user borrowing)
-    Route::get('/user/borrowings/available-assets', [UserBorrowingController::class, 'getAvailableAssets'])->name('user.borrowings.available-assets');
     
     // API route for getting asset details (for modals)
     Route::get('/api/assets/{asset}', function (App\Models\Asset $asset) {
@@ -89,6 +77,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/assets/{asset}/maintenances', [MaintenanceController::class, 'index'])->name('maintenances.index');
         Route::get('/assets/{asset}/maintenances/create', [MaintenanceController::class, 'create'])->name('maintenances.create');
         Route::post('/assets/{asset}/maintenances', [MaintenanceController::class, 'store'])->name('maintenances.store');
+        Route::get('/maintenances/batch-create', [MaintenanceController::class, 'batchCreate'])->name('maintenances.batch-create');
+        Route::post('/maintenances/batch-store', [MaintenanceController::class, 'batchStore'])->name('maintenances.batch-store');
         Route::get('/assets/{asset}/maintenances/{maintenance}', [MaintenanceController::class, 'show'])->name('maintenances.show');
         Route::get('/assets/{asset}/maintenances/{maintenance}/edit', [MaintenanceController::class, 'edit'])->name('maintenances.edit');
         Route::put('/assets/{asset}/maintenances/{maintenance}', [MaintenanceController::class, 'update'])->name('maintenances.update');
@@ -97,23 +87,7 @@ Route::middleware(['auth'])->group(function () {
         // Disposal routes for admin
         Route::get('/disposal-history', [DisposalController::class, 'history'])->name('disposals.history');
 
-        // User Management (Admin and GSU)
-        Route::get('/users', [UserController::class, 'index'])->name('users.index');
-        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
-        Route::post('/users/create', [UserController::class, 'store'])->name('users.create');
-        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
-        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-        Route::delete('/users/{user}/delete', [UserController::class, 'destroy'])->name('users.destroy');
-
-        // Admin Borrowing Management
-        Route::get('/borrowings', [BorrowingController::class, 'index'])->name('borrowings.index');
-        Route::get('/borrowings/ongoing', [BorrowingController::class, 'ongoing'])->name('borrowings.ongoing');
-        Route::get('/borrowings/{borrowing}', [BorrowingController::class, 'show'])->name('borrowings.show');
-        Route::put('/borrowings/{borrowing}/approve', [BorrowingController::class, 'approve'])->name('borrowings.approve');
-        Route::put('/borrowings/{borrowing}/reject', [BorrowingController::class, 'reject'])->name('borrowings.reject');
-        Route::put('/borrowings/{borrowing}/return', [BorrowingController::class, 'return'])->name('borrowings.return');
-        Route::delete('/borrowings/{borrowing}', [BorrowingController::class, 'destroy'])->name('borrowings.destroy');
-        Route::get('/borrowings-statistics', [BorrowingController::class, 'statistics'])->name('borrowings.statistics');
+        // User Management moved to Super Admin only
 
         // Lost Assets Management
         Route::get('/lost-assets', [LostAssetController::class, 'index'])->name('lost-assets.index');
@@ -134,6 +108,9 @@ Route::middleware(['auth'])->group(function () {
         // API route for maintenance checklist items (accessible to authenticated users)
         Route::get('/maintenance-checklists/common-items', [MaintenanceChecklistController::class, 'getCommonItems'])->name('maintenance-checklists.common-items');
         
+        Route::get('/maintenance-checklists/{maintenanceChecklist}/batch-update', [MaintenanceChecklistController::class, 'batchUpdateView'])->name('maintenance-checklists.batch-update-view');
+        Route::put('/maintenance-checklists/{maintenanceChecklist}/batch-update', [MaintenanceChecklistController::class, 'batchUpdate'])->name('maintenance-checklists.batch-update');
+        
         Route::get('/maintenance-checklists/{maintenanceChecklist}', [MaintenanceChecklistController::class, 'show'])->name('maintenance-checklists.show');
         Route::get('/maintenance-checklists/{maintenanceChecklist}/edit', [MaintenanceChecklistController::class, 'edit'])->name('maintenance-checklists.edit');
         Route::put('/maintenance-checklists/{maintenanceChecklist}', [MaintenanceChecklistController::class, 'update'])->name('maintenance-checklists.update');
@@ -144,6 +121,29 @@ Route::middleware(['auth'])->group(function () {
     // Test route for debugging
     Route::get('/test-maintenance', function() {
         return response()->json(['message' => 'Test route working', 'timestamp' => now()]);
+    });
+    
+    // Debug route to check admin user role
+    Route::get('/admin/debug-user', function() {
+        $user = auth()->user();
+        return response()->json([
+            'authenticated' => auth()->check(),
+            'user_id' => $user ? $user->id : null,
+            'user_name' => $user ? $user->name : null,
+            'user_role' => $user ? $user->role : null,
+            'all_attributes' => $user ? $user->getAttributes() : null
+        ]);
+    })->middleware(['role:admin,superadmin']);
+
+    // Routes for Super Admin only (User Management ONLY)
+    Route::middleware(['role:superadmin'])->group(function () {
+        // User Management (Super Admin ONLY - no other access)
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users/create', [UserController::class, 'store'])->name('users.create');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}/delete', [UserController::class, 'destroy'])->name('users.destroy');
     });
 
     // Routes for GSU users only (super admin)
@@ -157,6 +157,19 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/gsu/assets/{asset}', [AssetController::class, 'update'])->name('gsu.assets.update');
         Route::put('/gsu/assets/{asset}/dispose', [AssetController::class, 'dispose'])->name('gsu.assets.dispose');
         Route::delete('/gsu/assets/{asset}', [AssetController::class, 'destroy'])->name('gsu.assets.destroy');
+        
+        // GSU Location Management (view only - no create/edit/delete)
+        Route::get('/gsu/locations', [LocationController::class, 'index'])->name('gsu.locations.index');
+        Route::get('/gsu/locations/{location}', [LocationController::class, 'show'])->name('gsu.locations.show');
+        
+        // GSU Maintenance Management
+        Route::get('/gsu/assets/{asset}/maintenances', [MaintenanceController::class, 'index'])->name('gsu.maintenances.index');
+        Route::get('/gsu/assets/{asset}/maintenances/create', [MaintenanceController::class, 'create'])->name('gsu.maintenances.create');
+        Route::post('/gsu/assets/{asset}/maintenances', [MaintenanceController::class, 'store'])->name('gsu.maintenances.store');
+        Route::get('/gsu/maintenances/{maintenance}', [MaintenanceController::class, 'gsuShow'])->name('gsu.maintenances.show');
+        Route::get('/gsu/maintenances/{maintenance}/edit', [MaintenanceController::class, 'gsuEdit'])->name('gsu.maintenances.edit');
+        Route::put('/gsu/maintenances/{maintenance}', [MaintenanceController::class, 'gsuUpdate'])->name('gsu.maintenances.update');
+        Route::delete('/gsu/maintenances/{maintenance}', [MaintenanceController::class, 'gsuDestroy'])->name('gsu.maintenances.destroy');
         
         // GSU QR Scanner
         Route::get('/gsu/qr-scanner', [QRCodeController::class, 'gsuScanner'])->name('gsu.qr.scanner');
@@ -172,9 +185,30 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/gsu/test', function() {
             return view('GSU.borrowings.test');
         })->name('gsu.test');
+        
+        // Debug route to check user role
+        Route::get('/gsu/debug-user', function() {
+            $user = auth()->user();
+            return response()->json([
+                'authenticated' => auth()->check(),
+                'user_id' => $user ? $user->id : null,
+                'user_name' => $user ? $user->name : null,
+                'user_role' => $user ? $user->role : null,
+                'all_roles' => $user ? $user->getAttributes() : null
+            ]);
+        })->name('gsu.debug-user');
     });
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Public API within auth to resolve asset by asset_code
+    Route::get('/api/assets/by-code/{assetCode}', function (string $assetCode) {
+        $asset = App\Models\Asset::where('asset_code', $assetCode)->first();
+        if (!$asset) {
+            return response()->json(['message' => 'Asset not found'], 404);
+        }
+        return response()->json($asset->load(['category', 'location']));
+    })->name('api.assets.by-code');
     
     // Test route outside middleware to check if routing is working
     Route::get('/test-gsu', function() {

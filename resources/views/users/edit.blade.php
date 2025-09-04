@@ -59,8 +59,9 @@
             <div class="md:col-span-2">
                 <label class="block text-gray-700 font-semibold mb-2" for="role">Role</label>
                 <select name="role" id="role" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" required>
-                    <option value="superadmin" {{ old('role', $user->role) == 'superadmin' ? 'selected' : '' }}>Superadmin</option>
+                    <option value="superadmin" {{ old('role', $user->role) == 'superadmin' ? 'selected' : '' }}>Super Admin</option>
                     <option value="gsu" {{ old('role', $user->role) == 'gsu' ? 'selected' : '' }}>GSU</option>
+                    <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin</option>
                     <option value="user" {{ old('role', $user->role) == 'user' ? 'selected' : '' }}>User</option>
                 </select>
             </div>

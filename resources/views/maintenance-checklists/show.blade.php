@@ -1,4 +1,4 @@
-@extends('layouts.superadmin')
+@extends('layouts.admin')
 
 @section('content')
 <div class="max-w-6xl mx-auto py-8">
@@ -11,6 +11,10 @@
             <p class="text-gray-600 mt-1">{{ $checklist->room_number }} - {{ $checklist->school_year }}</p>
         </div>
         <div class="flex items-center gap-3">
+            <a href="{{ route('maintenance-checklists.batch-update-view', $checklist) }}" 
+               class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
+                <i class="fas fa-tasks"></i> Batch Update
+            </a>
             <a href="{{ route('maintenance-checklists.edit', $checklist) }}" 
                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
                 <i class="fas fa-edit"></i> Edit
@@ -54,6 +58,12 @@
                 <label class="block text-sm font-medium text-gray-600">Instructor</label>
                 <p class="text-lg font-semibold text-gray-900">{{ $checklist->instructor }}</p>
             </div>
+            @if($checklist->instructor_signature)
+            <div>
+                <label class="block text-sm font-medium text-gray-600">Instructor Signature</label>
+                <p class="text-lg font-semibold text-gray-900">{{ $checklist->instructor_signature }}</p>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -150,6 +160,12 @@
                 <label class="block text-sm font-medium text-gray-600">Checked By</label>
                 <p class="text-lg font-semibold text-gray-900">{{ $checklist->checked_by }}</p>
             </div>
+            @if($checklist->checked_by_signature)
+            <div>
+                <label class="block text-sm font-medium text-gray-600">Checked By Signature</label>
+                <p class="text-lg font-semibold text-gray-900">{{ $checklist->checked_by_signature }}</p>
+            </div>
+            @endif
             <div>
                 <label class="block text-sm font-medium text-gray-600">Date Checked</label>
                 <p class="text-lg font-semibold text-gray-900">{{ $checklist->date_checked->format('M d, Y') }}</p>
@@ -158,6 +174,12 @@
                 <label class="block text-sm font-medium text-gray-600">GSU Staff</label>
                 <p class="text-lg font-semibold text-gray-900">{{ $checklist->gsu_staff }}</p>
             </div>
+            @if($checklist->gsu_staff_signature)
+            <div>
+                <label class="block text-sm font-medium text-gray-600">GSU Staff Signature</label>
+                <p class="text-lg font-semibold text-gray-900">{{ $checklist->gsu_staff_signature }}</p>
+            </div>
+            @endif
         </div>
         @if($checklist->notes)
             <div class="mt-4">

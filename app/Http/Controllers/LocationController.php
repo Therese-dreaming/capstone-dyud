@@ -12,6 +12,12 @@ class LocationController extends Controller
     public function index()
     {
         $locations = Location::orderBy('building')->orderBy('floor')->orderBy('room')->get();
+        
+        // Check if user is GSU and return appropriate view
+        if (auth()->user()->role === 'gsu') {
+            return view('locations.gsu-index', compact('locations'));
+        }
+        
         return view('locations.index', compact('locations'));
     }
 
@@ -41,19 +47,12 @@ class LocationController extends Controller
         // Get assets in this location
         $assets = $location->assets;
         
-        // Get borrowings for this location (using location_id or custom_location)
-        $borrowings = \App\Models\Borrowing::where(function($query) use ($location) {
-            // Check borrowings that have this location_id
-            $query->where('location_id', $location->id)
-                  // Or check custom_location that matches this location
-                  ->orWhere('custom_location', 'like', '%' . $location->building . ' - Floor ' . $location->floor . ' - Room ' . $location->room . '%');
-        })
-        ->whereNotIn('status', ['returned', 'rejected'])
-        ->with(['user', 'asset.category', 'asset.location', 'location'])
-        ->latest()
-        ->get();
+        // Check if user is GSU and return appropriate view
+        if (auth()->user()->role === 'gsu') {
+            return view('locations.gsu-show', compact('location', 'assets'));
+        }
         
-        return view('locations.show', compact('location', 'assets', 'borrowings'));
+        return view('locations.show', compact('location', 'assets'));
     }
 
     public function dateRangeView(Request $request, Location $location)

@@ -9,19 +9,25 @@ This Laravel application implements a role-based authentication system with thre
 
 ## User Roles
 
-### 1. GSU (Super Admin)
+### 1. Super Admin
+- **ID Number**: SUPER001
+- **Email**: superadmin@example.com
+- **Password**: password
+- **Access**: User management ONLY (create, edit, delete users, assign roles)
+
+### 2. GSU
 - **ID Number**: GSU001
 - **Email**: gsu@example.com
 - **Password**: password
-- **Access**: Full system access including user management
+- **Access**: Asset management, categories, locations, maintenance, disposals (no user management)
 
-### 2. Admin
+### 3. Admin
 - **ID Number**: ADMIN001
 - **Email**: admin@example.com
 - **Password**: password
-- **Access**: Asset management, categories, locations, maintenance, disposals
+- **Access**: Asset management, categories, locations, maintenance, disposals (no user management)
 
-### 3. User
+### 4. User
 - **ID Number**: USER001
 - **Email**: user@example.com
 - **Password**: password
@@ -59,8 +65,9 @@ This Laravel application implements a role-based authentication system with thre
 - Maintenance history
 - Disposal history
 
-#### GSU Users Only
+#### Super Admin Users Only
 - User management (create, edit, delete users)
+- Role assignment and management
 
 ## Database Structure
 
@@ -70,7 +77,7 @@ This Laravel application implements a role-based authentication system with thre
 - `id_number` - Unique ID for login
 - `email` - Email address
 - `password` - Hashed password
-- `role` - User role (gsu, admin, user)
+- `role` - User role (superadmin, gsu, admin, user)
 - `last_login` - Timestamp of last login
 - `created_at`, `updated_at` - Timestamps
 

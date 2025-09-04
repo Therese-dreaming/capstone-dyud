@@ -1,4 +1,4 @@
-@extends('layouts.superadmin')
+@extends('layouts.admin')
 
 @section('content')
 <div class="container mx-auto py-8">
@@ -93,6 +93,10 @@
                                     <a href="{{ route('maintenance-checklists.show', $checklist) }}" 
                                        class="text-blue-600 hover:text-blue-900">
                                         <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ route('maintenance-checklists.batch-update-view', $checklist) }}" 
+                                       class="text-purple-600 hover:text-purple-900">
+                                        <i class="fas fa-tasks"></i>
                                     </a>
                                     <a href="{{ route('maintenance-checklists.edit', $checklist) }}" 
                                        class="text-green-600 hover:text-green-900">

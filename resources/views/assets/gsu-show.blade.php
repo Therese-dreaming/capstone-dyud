@@ -197,6 +197,38 @@
 
         <!-- RIGHT COLUMN -->
         <div class="space-y-6">
+            <!-- QR Code Card -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-qrcode text-gray-600"></i>
+                        Asset QR Code
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="flex flex-col items-center">
+                        <div class="bg-white p-4 rounded-lg border-2 border-gray-200 shadow-sm">
+                            <img src="{{ route('gsu.qrcode.asset', $asset->asset_code) }}" 
+                                 alt="QR Code for {{ $asset->asset_code }}" 
+                                 class="w-48 h-48">
+                        </div>
+                        <div class="mt-4 text-center">
+                            <div class="text-sm text-gray-600 mb-2">Scan to view asset details</div>
+                            <div class="font-mono text-lg font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded">
+                                {{ $asset->asset_code }}
+                            </div>
+                        </div>
+                        <div class="mt-4 w-full space-y-2">
+                            <a href="{{ route('gsu.qrcode.asset.download', $asset->asset_code) }}" 
+                               class="w-full inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                                <i class="fas fa-download"></i>
+                                Download PNG
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Financial Information Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 px-6 py-4 border-b border-gray-200">

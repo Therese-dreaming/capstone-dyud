@@ -1,10 +1,10 @@
-@extends('layouts.admin')
+@extends('layouts.gsu')
 
 @section('content')
 <div class="container mx-auto py-8">
     <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-4">
-            <a href="{{ route('locations.index') }}" class="text-gray-600 hover:text-red-800 transition-colors">
+            <a href="{{ route('gsu.locations.index') }}" class="text-gray-600 hover:text-red-800 transition-colors">
                 <i class="fas fa-arrow-left text-xl"></i>
             </a>
             <h1 class="text-3xl font-bold flex items-center gap-2">
@@ -16,11 +16,8 @@
             <div class="text-sm text-gray-600">
                 <i class="fas fa-boxes mr-2"></i>{{ $assets->count() }} assets
             </div>
-            <a href="{{ route('assets.create', ['location_id' => $location->id]) }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
+            <a href="{{ route('gsu.assets.create', ['location_id' => $location->id]) }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
                 <i class="fas fa-plus"></i> Create Asset
-            </a>
-            <a href="{{ route('locations.date-range', $location) }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
-                <i class="fas fa-calendar-alt"></i> Date Range View
             </a>
         </div>
     </div>
@@ -52,7 +49,6 @@
     </div>
 
     @if($assets->count())
-        @php $isGsu = request()->routeIs('gsu.*'); @endphp
         <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
             <div class="px-6 py-4 border-b border-gray-200">
                 <h2 class="text-xl font-semibold text-gray-900">Assets in this Location</h2>
@@ -90,17 +86,13 @@
                                         {{ $asset->status }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <div class="flex items-center gap-2">
-                                        <a href="{{ $isGsu ? route('gsu.assets.show', $asset) : route('assets.show', $asset) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs inline-flex items-center gap-1">
-                                            <i class="fas fa-eye"></i>
-                                            View
-                                        </a>
-                                        <a href="{{ $isGsu ? route('gsu.assets.edit', $asset) : route('assets.edit', $asset) }}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md text-xs inline-flex items-center gap-1">
-                                            <i class="fas fa-edit"></i>
-                                            Edit
-                                        </a>
-                                    </div>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="{{ route('gsu.assets.show', $asset) }}" class="text-blue-600 hover:text-blue-900 mr-3">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    <a href="{{ route('gsu.assets.edit', $asset) }}" class="text-indigo-600 hover:text-indigo-900">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
                                 </td>
                             </tr>
                         @endforeach
@@ -108,8 +100,17 @@
                 </table>
             </div>
         </div>
+    @else
+        <div class="bg-white rounded-lg shadow-lg p-8 text-center">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-boxes text-gray-400 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-600 mb-2">No Assets in this Location</h3>
+            <p class="text-gray-500 mb-4">This location doesn't have any assets yet.</p>
+            <a href="{{ route('gsu.assets.create', ['location_id' => $location->id]) }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 inline-flex items-center gap-2">
+                <i class="fas fa-plus"></i> Create First Asset
+            </a>
+        </div>
     @endif
-
-
 </div>
 @endsection

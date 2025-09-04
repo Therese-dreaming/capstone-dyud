@@ -53,6 +53,12 @@ class MaintenanceController extends Controller
     public function index(Asset $asset)
     {
         $maintenances = $asset->maintenances()->orderBy('scheduled_date', 'desc')->paginate(10);
+        
+        // Check if user is GSU and return appropriate view
+        if (auth()->user()->role === 'gsu') {
+            return view('maintenances.gsu-index', compact('asset', 'maintenances'));
+        }
+        
         return view('maintenances.index', compact('asset', 'maintenances'));
     }
 
@@ -61,6 +67,11 @@ class MaintenanceController extends Controller
      */
     public function create(Asset $asset)
     {
+        // Check if user is GSU and return appropriate view
+        if (auth()->user()->role === 'gsu') {
+            return view('maintenances.gsu-create', compact('asset'));
+        }
+        
         return view('maintenances.create', compact('asset'));
     }
 
@@ -84,6 +95,12 @@ class MaintenanceController extends Controller
             $validated['asset_id'] = $asset->id;
             Maintenance::create($validated);
 
+            // Check if user is GSU and redirect appropriately
+            if (auth()->user()->role === 'gsu') {
+                return redirect()->route('gsu.maintenances.index', $asset)
+                    ->with('success', 'Maintenance record created successfully.');
+            }
+            
             return redirect()->route('maintenances.index', $asset)
                 ->with('success', 'Maintenance record created successfully.');
         } catch (\Exception $e) {
@@ -142,12 +159,147 @@ class MaintenanceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    public function batchCreate()
+    {
+        $assets = Asset::with(['category', 'location'])
+            ->where('status', '!=', 'Disposed')
+            ->orderBy('name')
+            ->get();
+        
+        return view('maintenances.batch-create', compact('assets'));
+    }
+
+    public function batchStore(Request $request)
+    {
+        $validated = $request->validate([
+            'type' => 'required|in:Preventive,Corrective,Emergency',
+            'technician' => 'required|string|max:255',
+            'status' => 'required|in:Scheduled,In Progress,Completed,Cancelled',
+            'scheduled_date' => 'required|date',
+            'completed_date' => 'nullable|date|after_or_equal:scheduled_date',
+            'description' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'cost' => 'nullable|numeric|min:0',
+            'selected_assets' => 'required|array|min:1',
+            'selected_assets.*' => 'exists:assets,id'
+        ]);
+
+        try {
+            DB::beginTransaction();
+            
+            $createdCount = 0;
+            foreach ($validated['selected_assets'] as $assetId) {
+                $maintenanceData = [
+                    'asset_id' => $assetId,
+                    'type' => $validated['type'],
+                    'technician' => $validated['technician'],
+                    'status' => $validated['status'],
+                    'scheduled_date' => $validated['scheduled_date'],
+                    'completed_date' => $validated['completed_date'],
+                    'description' => $validated['description'],
+                    'notes' => $validated['notes'],
+                    'cost' => $validated['cost']
+                ];
+                
+                Maintenance::create($maintenanceData);
+                $createdCount++;
+            }
+            
+            DB::commit();
+            
+            return redirect()->route('maintenances.history')
+                ->with('success', "Successfully created {$createdCount} maintenance record(s).");
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Batch maintenance creation failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Failed to create maintenance records: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+    
     public function destroy(Asset $asset, Maintenance $maintenance)
     {
         try {
             $maintenance->delete();
             
             return redirect()->route('maintenances.index', $asset)
+                ->with('success', 'Maintenance record deleted successfully.');
+        } catch (\Exception $e) {
+            Log::error('Maintenance deletion failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Failed to delete maintenance record.');
+        }
+    }
+
+    // GSU-specific methods for routes that don't require asset parameter
+    public function gsuShow(Maintenance $maintenance)
+    {
+        // Debug: Check user role and authentication
+        if (!auth()->check()) {
+            abort(401, 'Not authenticated');
+        }
+        
+        $user = auth()->user();
+        if ($user->role !== 'gsu') {
+            abort(403, 'Unauthorized access. User role: ' . $user->role);
+        }
+        
+        $asset = $maintenance->asset;
+        return view('maintenances.gsu-show', compact('asset', 'maintenance'));
+    }
+
+    public function gsuEdit(Maintenance $maintenance)
+    {
+        // Debug: Check user role and authentication
+        if (!auth()->check()) {
+            abort(401, 'Not authenticated');
+        }
+        
+        $user = auth()->user();
+        if ($user->role !== 'gsu') {
+            abort(403, 'Unauthorized access. User role: ' . $user->role);
+        }
+        
+        $asset = $maintenance->asset;
+        return view('maintenances.gsu-edit', compact('asset', 'maintenance'));
+    }
+
+    public function gsuUpdate(Request $request, Maintenance $maintenance)
+    {
+        $validated = $request->validate([
+            'type' => 'required|in:Preventive,Corrective,Emergency',
+            'technician' => 'required|string|max:255',
+            'status' => 'required|in:Scheduled,In Progress,Completed,Cancelled',
+            'scheduled_date' => 'required|date',
+            'completed_date' => 'nullable|date|after_or_equal:scheduled_date',
+            'description' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'cost' => 'nullable|numeric|min:0'
+        ]);
+
+        try {
+            $maintenance->update($validated);
+            $asset = $maintenance->asset;
+
+            return redirect()->route('gsu.maintenances.index', $asset)
+                ->with('success', 'Maintenance record updated successfully.');
+        } catch (\Exception $e) {
+            Log::error('Maintenance update failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Failed to update maintenance record: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    public function gsuDestroy(Maintenance $maintenance)
+    {
+        try {
+            $asset = $maintenance->asset;
+            $maintenance->delete();
+            
+            return redirect()->route('gsu.maintenances.index', $asset)
                 ->with('success', 'Maintenance record deleted successfully.');
         } catch (\Exception $e) {
             Log::error('Maintenance deletion failed: ' . $e->getMessage());

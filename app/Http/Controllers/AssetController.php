@@ -25,17 +25,20 @@ class AssetController extends Controller
         return view('assets.gsu-index', compact('assets'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $categories = Category::all();
         $locations = Location::all();
         
+        // Get the pre-selected location ID from the request
+        $selectedLocationId = $request->get('location_id');
+        
         // Check if user is GSU and return appropriate view
         if (auth()->user()->role === 'gsu') {
-            return view('assets.gsu-create', compact('categories', 'locations'));
+            return view('assets.gsu-create', compact('categories', 'locations', 'selectedLocationId'));
         }
         
-        return view('assets.create', compact('categories', 'locations'));
+        return view('assets.create', compact('categories', 'locations', 'selectedLocationId'));
     }
 
     public function store(Request $request)
@@ -105,6 +108,13 @@ class AssetController extends Controller
                 $message = $quantity === 1 
                     ? 'Asset and warranty created successfully.' 
                     : "{$quantity} assets and warranties created successfully.";
+                
+                // Check if we should redirect back to a location page
+                $redirectLocation = $request->get('redirect_to_location');
+                if ($redirectLocation) {
+                    return redirect()->route('locations.show', $redirectLocation)
+                        ->with('success', $message);
+                }
                     
                 return redirect()->route(auth()->user()->role === 'gsu' ? 'gsu.assets.index' : 'assets.index')
                     ->with('success', $message);
@@ -126,11 +136,10 @@ class AssetController extends Controller
             'warranty'
         ]);
         
-        // Get the active tab from request
-        $activeTab = $request->get('tab', 'borrowing');
+        // Get the active tab from request (default to maintenance)
+        $activeTab = $request->get('tab', 'maintenance');
         
         // Paginate history records to prevent overloading
-        $borrowings = $asset->borrowings()->with(['approvedBy', 'location'])->orderBy('created_at', 'desc')->paginate(10);
         $maintenances = $asset->maintenances()->orderBy('maintenance_date', 'desc')->paginate(10);
         $disposes = $asset->disposes()->orderBy('disposal_date', 'desc')->paginate(10);
         $changes = $asset->changes()->with('user')->orderBy('created_at', 'desc')->paginate(10);
@@ -140,7 +149,7 @@ class AssetController extends Controller
             return view('assets.gsu-show', compact('asset'));
         }
         
-        return view('assets.show', compact('asset', 'borrowings', 'maintenances', 'disposes', 'changes', 'activeTab'));
+        return view('assets.show', compact('asset', 'maintenances', 'disposes', 'changes', 'activeTab'));
     }
 
     public function edit(Asset $asset)
@@ -247,11 +256,48 @@ class AssetController extends Controller
 
     public function destroy(Asset $asset)
     {
-        $assetCode = $asset->asset_code;
-        $asset->delete();
-        
-        return redirect()->route(auth()->user()->role === 'gsu' ? 'gsu.assets.index' : 'assets.index')
-            ->with('success', "Asset {$assetCode} has been deleted successfully.");
+        try {
+            $assetCode = $asset->asset_code;
+            $userRole = auth()->user()->role;
+            
+            // Log the deletion attempt
+            Log::info('Asset deletion started', [
+                'asset_id' => $asset->id,
+                'asset_code' => $assetCode,
+                'user_role' => $userRole,
+                'user_id' => auth()->id()
+            ]);
+            
+            // Delete the asset
+            $asset->delete();
+            
+            // Log successful deletion
+            Log::info('Asset deleted successfully', [
+                'asset_id' => $asset->id,
+                'asset_code' => $assetCode
+            ]);
+            
+            // Redirect based on user role
+            if ($userRole === 'gsu') {
+                return redirect()->route('gsu.assets.index')
+                    ->with('success', "Asset {$assetCode} has been deleted successfully.");
+            } else {
+                return redirect()->route('assets.index')
+                    ->with('success', "Asset {$assetCode} has been deleted successfully.");
+            }
+        } catch (\Exception $e) {
+            // Log the error
+            Log::error('Asset deletion failed', [
+                'asset_id' => $asset->id,
+                'asset_code' => $asset->asset_code ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Return with error message
+            return redirect()->back()
+                ->with('error', 'Failed to delete asset: ' . $e->getMessage());
+        }
     }
 
     public function report(Request $request)

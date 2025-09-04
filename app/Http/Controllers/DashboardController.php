@@ -7,7 +7,6 @@ use App\Models\Category;
 use App\Models\Location;
 use App\Models\Maintenance;
 use App\Models\User;
-use App\Models\Borrowing;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -21,6 +20,8 @@ class DashboardController extends Controller
             return $this->userDashboard($user);
         } elseif ($user->role === 'gsu') {
             return $this->gsuDashboard($user);
+        } elseif ($user->role === 'superadmin') {
+            return $this->superAdminDashboard($user);
         } else {
             return $this->adminDashboard($user);
         }
@@ -28,36 +29,12 @@ class DashboardController extends Controller
 
     private function userDashboard($user)
     {
-        // Get user-specific borrowing statistics
-        $currentBorrowings = Borrowing::where('user_id', $user->id)
-            ->whereIn('status', ['approved', 'overdue'])
-            ->count();
-        
-        $returnedItems = Borrowing::where('user_id', $user->id)
-            ->where('status', 'returned')
-            ->count();
-        
-        $overdueItems = Borrowing::where('user_id', $user->id)
-            ->where('status', 'overdue')
-            ->count();
-        
-        // Get recent borrowings for the user
-        $recentBorrowings = Borrowing::where('user_id', $user->id)
-            ->with(['asset.category', 'asset.location'])
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-
         // Breadcrumbs for navigation
         $breadcrumbs = [
             ['title' => 'Dashboard', 'url' => route('dashboard')]
         ];
 
         return view('dashboard.user-dashboard', compact(
-            'currentBorrowings',
-            'returnedItems',
-            'overdueItems',
-            'recentBorrowings',
             'breadcrumbs'
         ));
     }
@@ -102,6 +79,31 @@ class DashboardController extends Controller
             'recentAssets',
             'categories',
             'locations'
+        ));
+    }
+
+    private function superAdminDashboard($user)
+    {
+        // Get user counts for dashboard stats
+        $totalUsers = User::count();
+
+        // Get user counts by role
+        $userCounts = [
+            'superadmin' => User::where('role', 'superadmin')->count(),
+            'gsu' => User::where('role', 'gsu')->count(),
+            'admin' => User::where('role', 'admin')->count(),
+            'user' => User::where('role', 'user')->count(),
+        ];
+
+        // Get recent users
+        $recentUsers = User::orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        return view('dashboard.superadmin-dashboard', compact(
+            'totalUsers',
+            'userCounts',
+            'recentUsers'
         ));
     }
 

@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.gsu')
 
 @section('content')
 <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-10">
@@ -16,7 +16,7 @@
         </div>
     @endif
 
-    <form action="{{ route('maintenances.update', [$asset, $maintenance]) }}" method="POST">
+    <form action="{{ route('gsu.maintenances.update', $maintenance) }}" method="POST">
         @csrf
         @method('PUT')
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -65,7 +65,7 @@
             </div>
         </div>
         <div class="flex justify-end mt-8 gap-4">
-            <a href="{{ route('maintenances.index', $asset) }}" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600">Cancel</a>
+            <a href="{{ route('gsu.maintenances.index', $asset) }}" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600">Cancel</a>
             <button type="submit" class="bg-red-800 text-white px-6 py-3 rounded-lg hover:bg-red-900">
                 <i class="fas fa-save"></i> Update Maintenance Record
             </button>

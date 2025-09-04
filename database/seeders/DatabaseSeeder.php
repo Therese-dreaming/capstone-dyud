@@ -16,7 +16,6 @@ class DatabaseSeeder extends Seeder
         // Call the UserSeeder to create the three users
         $this->call([
             UserSeeder::class,
-            SemesterSettingSeeder::class,
         ]);
 
         \App\Models\Category::insert([
@@ -27,7 +26,5 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Religious or Institutional Items', 'code' => 'REL'],
         ]);
         
-        // Seed borrowing data
-        $this->call(BorrowingSeeder::class);
     }
 }

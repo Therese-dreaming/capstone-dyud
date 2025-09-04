@@ -1,4 +1,4 @@
-@extends('layouts.superadmin')
+@extends('layouts.admin')
 
 @section('content')
 <div class="container mx-auto py-8" x-data="{ showToast: {{ session('success') || session('error') ? 'true' : 'false' }}, showModal: false, deleteAssetId: null, deleteAssetCode: '', showDisposeModal: false, disposeAssetId: null, disposeAssetCode: '' }">
@@ -10,9 +10,14 @@
         </h1>
         <p class="text-gray-600 mt-1">Manage and track all your assets</p>
     </div>
-    <a href="{{ route('assets.create') }}" class="bg-gradient-to-r from-red-800 to-red-900 hover:from-red-900 hover:to-red-950 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2 shadow-lg">
-        <i class="fas fa-plus"></i> Add New Asset
-    </a>
+    <div class="flex items-center gap-3">
+        <a href="{{ route('maintenances.batch-create') }}" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2">
+            <i class="fas fa-tasks"></i> Batch Maintenance
+        </a>
+        <a href="{{ route('assets.create') }}" class="bg-gradient-to-r from-red-800 to-red-900 hover:from-red-900 hover:to-red-950 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2 shadow-lg">
+            <i class="fas fa-plus"></i> Add New Asset
+        </a>
+    </div>
 </div>
 
 <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">

@@ -59,6 +59,7 @@ class MaintenanceChecklistController extends Controller
                 'department' => $validated['department'],
                 'date_reported' => $validated['date_reported'],
                 'program' => $validated['program'],
+                'location_id' => $validated['location_id'],
                 'room_number' => $location->room,
                 'instructor' => $validated['instructor'],
                 'instructor_signature' => $validated['instructor_signature'],
@@ -104,7 +105,8 @@ class MaintenanceChecklistController extends Controller
     public function edit(MaintenanceChecklist $maintenanceChecklist)
     {
         $checklist = $maintenanceChecklist->load('items');
-        return view('maintenance-checklists.edit', compact('checklist'));
+        $locations = \App\Models\Location::orderBy('building')->orderBy('floor')->orderBy('room')->get();
+        return view('maintenance-checklists.edit', compact('checklist', 'locations'));
     }
 
     public function update(Request $request, MaintenanceChecklist $maintenanceChecklist)
@@ -128,7 +130,7 @@ class MaintenanceChecklistController extends Controller
             'items.*.particulars' => 'required|string|max:255',
             'items.*.quantity' => 'required|integer|min:0',
             'items.*.start_status' => 'required|in:OK,FOR REPAIR,FOR REPLACEMENT',
-            'items.*.end_status' => 'required|in:OK,FOR REPAIR,FOR REPLACEMENT',
+            'items.*.end_status' => 'nullable|in:OK,FOR REPAIR,FOR REPLACEMENT',
             'items.*.notes' => 'nullable|string'
         ]);
 
@@ -143,6 +145,7 @@ class MaintenanceChecklistController extends Controller
                 'department' => $validated['department'],
                 'date_reported' => $validated['date_reported'],
                 'program' => $validated['program'],
+                'location_id' => $validated['location_id'],
                 'room_number' => $location->room,
                 'instructor' => $validated['instructor'],
                 'instructor_signature' => $validated['instructor_signature'],
@@ -211,36 +214,97 @@ class MaintenanceChecklistController extends Controller
         $callback = function() use ($checklist) {
             $file = fopen('php://output', 'w');
             
+            // Title
+            fputcsv($file, ['MAINTENANCE CHECKLIST']);
+            fputcsv($file, ['']);
+            
             // Header information
-            fputcsv($file, ['SY:', $checklist->school_year, '', '']);
+            fputcsv($file, ['School Year:', $checklist->school_year, '', '']);
             fputcsv($file, ['Department:', $checklist->department, '', '']);
-            fputcsv($file, ['', '', '', '']);
-            fputcsv($file, ['Date Reported:', $checklist->date_reported->format('d-M-y'), '', '']);
+            fputcsv($file, ['Date Reported:', $checklist->date_reported->format('d-M-Y'), '', '']);
             fputcsv($file, ['Program:', $checklist->program ?? 'N/A', '', '']);
             fputcsv($file, ['Room Number:', $checklist->room_number, '', '']);
-            fputcsv($file, ['Instructor', $checklist->instructor, '', '']);
-            fputcsv($file, ['Signature:', '', '', '']);
-            fputcsv($file, ['', '', '', '']);
+            fputcsv($file, ['Instructor:', $checklist->instructor, '', '']);
+            fputcsv($file, ['Instructor Signature:', $checklist->instructor_signature ?? '', '', '']);
+            fputcsv($file, ['']);
             
             // Items header
-            fputcsv($file, ['Particulars/Items', 'QTY', 'Start of SY Status', 'End of SY Status']);
+            fputcsv($file, ['Particulars/Items', 'Quantity', 'Start of SY Status', 'End of SY Status', 'Notes']);
             
             // Items
             foreach ($checklist->items as $item) {
-                fputcsv($file, [$item->particulars, $item->quantity, $item->start_status, $item->end_status]);
+                fputcsv($file, [
+                    $item->particulars, 
+                    $item->quantity, 
+                    $item->start_status, 
+                    $item->end_status ?? '',
+                    $item->notes ?? ''
+                ]);
             }
             
-            fputcsv($file, ['', '', '', '']);
-            fputcsv($file, ['Checked by:', $checklist->checked_by, '', '']);
-            fputcsv($file, ['Signature:', '', '', '']);
-            fputcsv($file, ['Date Checked:', $checklist->date_checked->format('d-M-y'), '', '']);
-            fputcsv($file, ['', '', '', '']);
-            fputcsv($file, ['Printed Name over Signature of GSU Staff:', $checklist->gsu_staff, '', '']);
+            fputcsv($file, ['']);
+            fputcsv($file, ['']);
+            
+            // Footer information
+            fputcsv($file, ['Checked by:', $checklist->checked_by, '', '', '']);
+            fputcsv($file, ['Checked by Signature:', $checklist->checked_by_signature ?? '', '', '', '']);
+            fputcsv($file, ['Date Checked:', $checklist->date_checked->format('d-M-Y'), '', '', '']);
+            fputcsv($file, ['']);
+            fputcsv($file, ['Printed Name over Signature of GSU Staff:', $checklist->gsu_staff, '', '', '']);
+            fputcsv($file, ['GSU Staff Signature:', $checklist->gsu_staff_signature ?? '', '', '', '']);
+            
+            // General notes if any
+            if ($checklist->notes) {
+                fputcsv($file, ['']);
+                fputcsv($file, ['General Notes:', $checklist->notes, '', '', '']);
+            }
             
             fclose($file);
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function batchUpdate(Request $request, MaintenanceChecklist $maintenanceChecklist)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array',
+            'items.*.end_status' => 'nullable|in:OK,FOR REPAIR,FOR REPLACEMENT',
+            'items.*.notes' => 'nullable|string'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($validated['items'] as $index => $itemData) {
+                $checklistItem = $maintenanceChecklist->items[$index] ?? null;
+                if ($checklistItem) {
+                    $checklistItem->update([
+                        'end_status' => $itemData['end_status'] ?? null,
+                        'notes' => $itemData['notes'] ?? null
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('maintenance-checklists.show', $maintenanceChecklist)
+                ->with('success', 'Batch update completed successfully!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Maintenance checklist batch update failed: ' . $e->getMessage());
+            
+            return redirect()->back()
+                ->with('error', 'Failed to update maintenance checklist: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    public function batchUpdateView(MaintenanceChecklist $maintenanceChecklist)
+    {
+        $checklist = $maintenanceChecklist->load('items');
+        return view('maintenance-checklists.batch-update', compact('checklist'));
     }
 
     public function getCommonItems(Request $request)

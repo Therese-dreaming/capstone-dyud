@@ -52,8 +52,9 @@
             <div class="md:col-span-2">
                 <label class="block text-gray-700 font-semibold mb-2" for="role">Role</label>
                 <select name="role" id="role" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" required>
-                    <option value="superadmin">Superadmin</option>
+                    <option value="superadmin">Super Admin</option>
                     <option value="gsu">GSU</option>
+                    <option value="admin">Admin</option>
                     <option value="user">User</option>
                 </select>       
             </div>

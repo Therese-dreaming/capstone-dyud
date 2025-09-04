@@ -7,6 +7,8 @@ use App\Models\User;
 
 class UserController extends Controller
 {
+    // Middleware is applied in routes, no need to duplicate here
+
     public function create()
     {
         return view('users.create');
@@ -19,7 +21,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'id_number' => 'required|string|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'role' => 'required|in:superadmin,gsu,user',
+            'role' => 'required|in:superadmin,gsu,admin,user',
         ]);
 
         try {
@@ -52,7 +54,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'id_number' => 'required|string|max:255|unique:users,id_number,' . $user->id,
             'password' => 'nullable|string|min:8',
-            'role' => 'required|in:superadmin,gsu,user',
+            'role' => 'required|in:superadmin,gsu,admin,user',
         ]);
 
         try {

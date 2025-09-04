@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>GSU Dashboard - Inventory Management System</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- Font Awesome Fallback CDN -->
@@ -78,10 +79,25 @@
                                     <i class="fas fa-list mr-2 w-4"></i> Asset List
                                 </a>
                             </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Location Management (View Only) -->
+                    <li x-data="{ open: false }">
+                        <button @click="open = !open" type="button"
+                            class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"
+                            :class="{ 'bg-red-50 text-red-800': open }">
+                            <span class="flex items-center">
+                                <i class="fas fa-map-marker-alt w-5"></i>
+                                <span class="ml-3 text-sm">Locations</span>
+                            </span>
+                            <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
+                        </button>
+                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
                             <li>
-                                <a href="{{ route('gsu.qr.scanner') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('gsu.qr.scanner') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-qrcode mr-2 w-4"></i> QR Scanner
+                                <a href="{{ route('gsu.locations.index') }}"
+                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('gsu.locations.*') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
+                                    <i class="fas fa-list mr-2 w-4"></i> Location List
                                 </a>
                             </li>
                         </ul>

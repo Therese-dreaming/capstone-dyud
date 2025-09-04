@@ -190,7 +190,7 @@
                                        title="View Details">
                                         <i class="fas fa-eye text-xs"></i>
                                     </a>
-                                    <a href="{{ route('maintenances.index', $asset) }}" 
+                                    <a href="{{ route('gsu.maintenances.index', $asset) }}" 
                                        class="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition-colors duration-150"
                                        title="Maintenance Records">
                                         <i class="fas fa-tools text-xs"></i>
@@ -240,24 +240,159 @@
     </div>
 
     <!-- QR Code Modal -->
-    <div x-show="showQRModal" x-transition class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
-        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="text-center">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Asset QR Code</h3>
+    <div x-show="showQRModal" 
+         x-transition:enter="ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50" 
+         style="display: none;"
+         @click.self="showQRModal = false">
+        
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" 
+             @click="showQRModal = false"></div>
+        
+        <!-- Modal Container -->
+        <div class="flex min-h-full items-center justify-center p-4">
+            <!-- Modal Panel -->
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95">
+                
+                <!-- Header -->
+                <div class="px-8 pt-8 pb-6 text-center">
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-50 mb-4">
+                        <i class="fas fa-qrcode text-blue-500 text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Asset QR Code</h3>
+                    <p class="text-gray-600">Scan to view asset details</p>
+                </div>
+                
+                <!-- Body -->
+                <div class="px-8 pb-6">
+                    <div class="bg-gray-50 rounded-xl p-6 text-center">
                         <div id="qrcode-container" class="flex justify-center mb-4"></div>
-                        <p class="text-sm text-gray-500">Scan this QR code to view asset details</p>
+                        <p class="text-sm text-gray-500">Use your mobile device to scan this QR code</p>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button @click="showQRModal = false" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                
+                <!-- Footer -->
+                <div class="px-8 pb-8">
+                    <button @click="showQRModal = false" 
+                            type="button" 
+                            class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center">
+                        <i class="fas fa-times mr-2"></i>
                         Close
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dispose Modal -->
+    <div x-show="showDisposeModal" 
+         x-transition:enter="ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50" 
+         style="display: none;"
+         @click.self="showDisposeModal = false">
+        
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" 
+             @click="showDisposeModal = false"></div>
+        
+        <!-- Modal Container -->
+        <div class="flex min-h-full items-center justify-center p-4">
+            <!-- Modal Panel -->
+            <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95">
+                
+                <form :action="`/gsu/assets/${disposeAssetId}/dispose`" method="POST">
+                    @csrf
+                    @method('PUT')
+                    
+                    <!-- Header -->
+                    <div class="px-8 pt-8 pb-6 text-center">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-orange-50 mb-4">
+                            <i class="fas fa-ban text-orange-500 text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Dispose Asset</h3>
+                        <p class="text-gray-600">Mark asset as disposed with reason</p>
+                    </div>
+                    
+                    <!-- Body -->
+                    <div class="px-8 pb-6">
+                        <div class="bg-gray-50 rounded-xl p-4 text-center mb-6">
+                            <p class="text-gray-700 mb-2">
+                                Are you sure you want to dispose of
+                            </p>
+                            <p class="text-lg font-semibold text-gray-900" x-text="disposeAssetCode"></p>
+                        </div>
+                        <div>
+                            <label for="disposal_reason" class="block text-sm font-medium text-gray-700 mb-3">Disposal Reason</label>
+                            <textarea name="disposal_reason" 
+                                      id="disposal_reason" 
+                                      rows="4" 
+                                      class="w-full border-gray-300 rounded-xl shadow-sm focus:ring-orange-500 focus:border-orange-500 resize-none" 
+                                      placeholder="Enter reason for disposal..."
+                                      required></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div class="px-8 pb-8 flex gap-3">
+                        <button type="button" 
+                                @click="showDisposeModal = false" 
+                                class="flex-1 px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors duration-200">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="flex-1 px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center">
+                            <i class="fas fa-ban mr-2"></i>
+                            Dispose
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal (aligned with Admin design) -->
+    <div x-show="showModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
+        <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative">
+            <button @click="showModal = false" class="absolute top-3 right-3 text-gray-400 hover:text-red-800 text-xl"><i class="fas fa-times"></i></button>
+            <div class="flex flex-col items-center">
+                <div class="bg-red-100 text-red-800 rounded-full p-4 mb-4">
+                    <i class="fas fa-exclamation-triangle text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2 text-gray-800">Delete Asset</h3>
+                <p class="text-gray-600 mb-6 text-center">Are you sure you want to delete <span class="font-semibold text-red-800" x-text="deleteAssetCode"></span>? This action cannot be undone.</p>
+                <form :action="'/gsu/assets/' + deleteAssetId" method="POST" class="w-full flex flex-col items-center gap-3">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="w-full bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                    <button type="button" @click="showModal = false" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -321,5 +456,7 @@ function showQRCode(assetCode) {
 function openQRScanner() {
     alert('QR Scanner feature coming soon!');
 }
+
+//
 </script>
 @endsection 

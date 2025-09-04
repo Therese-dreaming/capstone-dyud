@@ -3,7 +3,7 @@
 @section('content')
 <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-10">
     <h2 class="text-3xl font-bold mb-8 text-gray-800 flex items-center gap-3">
-        <i class="fas fa-clipboard-plus text-red-800"></i> Create Maintenance Checklist
+        <i class="fas fa-edit text-red-800"></i> Edit Maintenance Checklist
     </h2>
     
     @if($errors->any())
@@ -25,8 +25,9 @@
         </script>
     @endif
 
-    <form action="{{ route('maintenance-checklists.store') }}" method="POST" id="checklistForm">
+    <form action="{{ route('maintenance-checklists.update', $checklist) }}" method="POST" id="checklistForm">
         @csrf
+        @method('PUT')
         
         <!-- Header Information Section -->
         <div class="bg-gray-50 rounded-lg p-6 mb-6">
@@ -36,34 +37,34 @@
                     <label class="block text-gray-700 font-semibold mb-2" for="school_year">School Year *</label>
                     <input type="text" name="school_year" id="school_year" 
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" 
-                           value="{{ old('school_year', '2024-2025') }}" required>
+                           value="{{ old('school_year', $checklist->school_year) }}" required>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2" for="department">Department *</label>
                     <select name="department" id="department" 
                             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" required>
                         <option value="">Select Department</option>
-                        <option value="Grade School" {{ old('department') == 'Grade School' ? 'selected' : '' }}>Grade School</option>
-                        <option value="Junior High School" {{ old('department') == 'Junior High School' ? 'selected' : '' }}>Junior High School</option>
-                        <option value="Senior High School" {{ old('department') == 'Senior High School' ? 'selected' : '' }}>Senior High School</option>
-                        <option value="College" {{ old('department') == 'College' ? 'selected' : '' }}>College</option>
-                        <option value="Administration" {{ old('department') == 'Administration' ? 'selected' : '' }}>Administration</option>
-                        <option value="Library" {{ old('department') == 'Library' ? 'selected' : '' }}>Library</option>
-                        <option value="Laboratory" {{ old('department') == 'Laboratory' ? 'selected' : '' }}>Laboratory</option>
-                        <option value="Other" {{ old('department') == 'Other' ? 'selected' : '' }}>Other</option>
+                        <option value="Grade School" {{ old('department', $checklist->department) == 'Grade School' ? 'selected' : '' }}>Grade School</option>
+                        <option value="Junior High School" {{ old('department', $checklist->department) == 'Junior High School' ? 'selected' : '' }}>Junior High School</option>
+                        <option value="Senior High School" {{ old('department', $checklist->department) == 'Senior High School' ? 'selected' : '' }}>Senior High School</option>
+                        <option value="College" {{ old('department', $checklist->department) == 'College' ? 'selected' : '' }}>College</option>
+                        <option value="Administration" {{ old('department', $checklist->department) == 'Administration' ? 'selected' : '' }}>Administration</option>
+                        <option value="Library" {{ old('department', $checklist->department) == 'Library' ? 'selected' : '' }}>Library</option>
+                        <option value="Laboratory" {{ old('department', $checklist->department) == 'Laboratory' ? 'selected' : '' }}>Laboratory</option>
+                        <option value="Other" {{ old('department', $checklist->department) == 'Other' ? 'selected' : '' }}>Other</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2" for="date_reported">Date Reported *</label>
                     <input type="date" name="date_reported" id="date_reported" 
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" 
-                           value="{{ old('date_reported', date('Y-m-d')) }}" required>
+                           value="{{ old('date_reported', $checklist->date_reported->format('Y-m-d')) }}" required>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2" for="program">Program</label>
                     <input type="text" name="program" id="program" 
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" 
-                           value="{{ old('program', 'N/A') }}">
+                           value="{{ old('program', $checklist->program) }}">
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2" for="location_id">Room Number *</label>
@@ -75,29 +76,23 @@
                                     data-building="{{ $location->building }}" 
                                     data-floor="{{ $location->floor }}"
                                     data-room="{{ $location->room }}"
-                                    {{ old('location_id') == $location->id ? 'selected' : '' }}>
+                                    {{ old('location_id', $checklist->location_id) == $location->id ? 'selected' : '' }}>
                                 {{ $location->building }} - {{ $location->floor }} - {{ $location->room }}
                             </option>
                         @endforeach
                     </select>
-                    <div class="mt-2">
-                        <button type="button" id="loadAssetsBtn" 
-                                class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-3 rounded transition duration-200">
-                            <i class="fas fa-sync-alt"></i> Load Assets from Room
-                        </button>
-                    </div>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2" for="instructor">Instructor *</label>
                     <input type="text" name="instructor" id="instructor" 
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" 
-                           value="{{ old('instructor') }}" required>
+                           value="{{ old('instructor', $checklist->instructor) }}" required>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2" for="instructor_signature">Instructor Signature</label>
                     <input type="text" name="instructor_signature" id="instructor_signature" 
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" 
-                           value="{{ old('instructor_signature') }}" placeholder="Enter signature or leave blank">
+                           value="{{ old('instructor_signature', $checklist->instructor_signature) }}" placeholder="Enter signature or leave blank">
                 </div>
             </div>
         </div>
@@ -110,37 +105,37 @@
                     <label class="block text-gray-700 font-semibold mb-2" for="checked_by">Checked By *</label>
                     <input type="text" name="checked_by" id="checked_by" 
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" 
-                           value="{{ old('checked_by') }}" required>
+                           value="{{ old('checked_by', $checklist->checked_by) }}" required>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2" for="checked_by_signature">Checked By Signature</label>
                     <input type="text" name="checked_by_signature" id="checked_by_signature" 
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" 
-                           value="{{ old('checked_by_signature') }}" placeholder="Enter signature or leave blank">
+                           value="{{ old('checked_by_signature', $checklist->checked_by_signature) }}" placeholder="Enter signature or leave blank">
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2" for="date_checked">Date Checked *</label>
                     <input type="date" name="date_checked" id="date_checked" 
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" 
-                           value="{{ old('date_checked', date('Y-m-d')) }}" required>
+                           value="{{ old('date_checked', $checklist->date_checked->format('Y-m-d')) }}" required>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2" for="gsu_staff">GSU Staff *</label>
                     <input type="text" name="gsu_staff" id="gsu_staff" 
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" 
-                           value="{{ old('gsu_staff') }}" required>
+                           value="{{ old('gsu_staff', $checklist->gsu_staff) }}" required>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2" for="gsu_staff_signature">GSU Staff Signature</label>
                     <input type="text" name="gsu_staff_signature" id="gsu_staff_signature" 
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" 
-                           value="{{ old('gsu_staff_signature') }}" placeholder="Enter signature or leave blank">
+                           value="{{ old('gsu_staff_signature', $checklist->gsu_staff_signature) }}" placeholder="Enter signature or leave blank">
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2" for="notes">General Notes</label>
                     <textarea name="notes" id="notes" rows="3"
                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800"
-                              placeholder="Enter any general notes about this checklist">{{ old('notes') }}</textarea>
+                              placeholder="Enter any general notes about this checklist">{{ old('notes', $checklist->notes) }}</textarea>
                 </div>
             </div>
         </div>
@@ -156,7 +151,7 @@
             </div>
             
             <div id="itemsContainer">
-                <!-- Items will be added here dynamically -->
+                <!-- Items will be loaded here -->
             </div>
         </div>
 
@@ -167,7 +162,7 @@
             </a>
             <button type="submit" 
                     class="bg-gradient-to-r from-red-800 to-red-900 hover:from-red-900 hover:to-red-950 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2">
-                <i class="fas fa-save"></i> Create Checklist
+                <i class="fas fa-save"></i> Update Checklist
             </button>
         </div>
     </form>
@@ -177,80 +172,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     let itemCounter = 0;
     
-    // Load assets button functionality
-    document.getElementById('loadAssetsBtn').addEventListener('click', function() {
-        loadAssetsFromRoom();
-    });
-    
-    // Auto-load assets when room is selected
-    document.getElementById('room_number').addEventListener('change', function() {
-        if (this.value) {
-            loadAssetsFromRoom();
-        }
-    });
-    
-    function loadAssetsFromRoom() {
-        const locationId = document.getElementById('room_number').value;
-        if (!locationId) {
-            alert('Please select a room first.');
-            return;
-        }
-        
-        console.log('Loading assets for location ID:', locationId);
-        
-        // Show loading state
-        const loadBtn = document.getElementById('loadAssetsBtn');
-        const originalText = loadBtn.innerHTML;
-        loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-        loadBtn.disabled = true;
-        
-        const url = `{{ route('maintenance-checklists.common-items') }}?location_id=${locationId}`;
-        console.log('Fetching from URL:', url);
-        
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            credentials: 'same-origin'
-        })
-            .then(response => {
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(assets => {
-                console.log('Assets received:', assets);
-                // Clear existing items
-                document.getElementById('itemsContainer').innerHTML = '';
-                itemCounter = 0;
-                
-                if (assets.length === 0) {
-                    alert('No assets found in this room.');
-                    addItem(); // Add one empty item
-                } else {
-                    // Add items for each asset
-                    assets.forEach(asset => {
-                        addItem(asset);
-                    });
-                }
-                
-                // Reset button
-                loadBtn.innerHTML = originalText;
-                loadBtn.disabled = false;
-            })
-            .catch(error => {
-                console.error('Error loading assets:', error);
-                alert('Error loading assets from room: ' + error.message);
-                loadBtn.innerHTML = originalText;
-                loadBtn.disabled = false;
-            });
-    }
+    // Load existing items
+    @foreach($checklist->items as $item)
+        addItem({
+            asset_code: '{{ $item->asset_code }}',
+            name: '{{ $item->particulars }}',
+            quantity: {{ $item->quantity }},
+            start_status: '{{ $item->start_status }}',
+            end_status: '{{ $item->end_status }}',
+            notes: '{{ $item->notes }}'
+        });
+    @endforeach
     
     // Add item button functionality
     document.getElementById('addItemBtn').addEventListener('click', function() {
@@ -265,8 +197,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const assetCode = assetData ? assetData.asset_code : '';
         const particulars = assetData ? assetData.name : '';
         const quantity = assetData ? assetData.quantity : '';
-        const category = assetData ? assetData.category : '';
-        const condition = assetData ? assetData.condition : '';
+        const startStatus = assetData ? assetData.start_status : '';
+        const endStatus = assetData ? assetData.end_status : '';
+        const notes = assetData ? assetData.notes : '';
         
         itemDiv.innerHTML = `
             <div class="flex justify-between items-center mb-3">
@@ -278,14 +211,13 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Asset Code</label>
-                    <input type="text" name="items[${itemCounter}][asset_code]" value="${assetCode}" readonly
-                           class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 focus:outline-none focus:border-red-800">
+                    <input type="text" name="items[${itemCounter}][asset_code]" value="${assetCode}" 
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800">
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Particulars/Items *</label>
                     <input type="text" name="items[${itemCounter}][particulars]" value="${particulars}" 
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" required>
-                    ${category ? `<small class="text-gray-600">Category: ${category}</small>` : ''}
                 </div>
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Quantity *</label>
@@ -293,54 +225,40 @@ document.addEventListener('DOMContentLoaded', function() {
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" required>
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Current Condition</label>
-                    <input type="text" value="${condition}" readonly
-                           class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-gray-100 focus:outline-none">
-                </div>
-                <div>
                     <label class="block text-gray-700 font-semibold mb-2">Start of SY Status *</label>
                     <select name="items[${itemCounter}][start_status]" 
                             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800" required>
                         <option value="">Select Status</option>
-                        <option value="OK" ${condition === 'Good' ? 'selected' : ''}>OK</option>
-                        <option value="FOR REPAIR" ${condition === 'Fair' ? 'selected' : ''}>FOR REPAIR</option>
-                        <option value="FOR REPLACEMENT" ${condition === 'Poor' ? 'selected' : ''}>FOR REPLACEMENT</option>
+                        <option value="OK" ${startStatus === 'OK' ? 'selected' : ''}>OK</option>
+                        <option value="FOR REPAIR" ${startStatus === 'FOR REPAIR' ? 'selected' : ''}>FOR REPAIR</option>
+                        <option value="FOR REPLACEMENT" ${startStatus === 'FOR REPLACEMENT' ? 'selected' : ''}>FOR REPLACEMENT</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">End of SY Status *</label>
+                    <label class="block text-gray-700 font-semibold mb-2">End of SY Status</label>
                     <select name="items[${itemCounter}][end_status]" 
                             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800">
                         <option value="">Select Status</option>
-                        <option value="OK">OK</option>
-                        <option value="FOR REPAIR">FOR REPAIR</option>
-                        <option value="FOR REPLACEMENT">FOR REPLACEMENT</option>
+                        <option value="OK" ${endStatus === 'OK' ? 'selected' : ''}>OK</option>
+                        <option value="FOR REPAIR" ${endStatus === 'FOR REPAIR' ? 'selected' : ''}>FOR REPAIR</option>
+                        <option value="FOR REPLACEMENT" ${endStatus === 'FOR REPLACEMENT' ? 'selected' : ''}>FOR REPLACEMENT</option>
                     </select>
                 </div>
             </div>
             <div class="mt-3">
                 <label class="block text-gray-700 font-semibold mb-2">Notes</label>
                 <textarea name="items[${itemCounter}][notes]" rows="2" 
-                          class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800"></textarea>
+                          class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-800">${notes}</textarea>
             </div>
         `;
         container.appendChild(itemDiv);
         itemCounter++;
     }
     
-    // Add initial item
-    addItem();
-    
     // Form validation
     document.getElementById('checklistForm').addEventListener('submit', function(e) {
-        console.log('Form submission started');
-        console.log('Form action:', this.action);
-        console.log('Form method:', this.method);
-        
         const itemsContainer = document.getElementById('itemsContainer');
         const items = itemsContainer.querySelectorAll('.border.border-gray-300.rounded-lg.p-4.mb-4.bg-white');
-        
-        console.log('Found items:', items.length);
         
         if (items.length === 0) {
             e.preventDefault();
@@ -350,44 +268,35 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Check if all required fields are filled
         let hasErrors = false;
-        for (let index = 0; index < items.length; index++) {
-            const item = items[index];
-            // Find the actual input elements within this item
-            const particulars = item.querySelector('input[name*="[particulars]"]');
-            const quantity = item.querySelector('input[name*="[quantity]"]');
-            const startStatus = item.querySelector('select[name*="[start_status]"]');
+        items.forEach((item, index) => {
+            const particulars = item.querySelector(`input[name="items[${index}][particulars]"]`);
+            const quantity = item.querySelector(`input[name="items[${index}][quantity]"]`);
+            const startStatus = item.querySelector(`select[name="items[${index}][start_status]"]`);
             
-            if (!particulars || !particulars.value.trim()) {
+            if (!particulars.value.trim()) {
                 alert(`Please fill in the particulars for item ${index + 1}`);
                 hasErrors = true;
-                break;
+                return;
             }
             
-            if (!quantity || !quantity.value || quantity.value <= 0) {
+            if (!quantity.value || quantity.value <= 0) {
                 alert(`Please enter a valid quantity for item ${index + 1}`);
                 hasErrors = true;
-                break;
+                return;
             }
             
-            if (!startStatus || !startStatus.value) {
+            if (!startStatus.value) {
                 alert(`Please select a start status for item ${index + 1}`);
                 hasErrors = true;
-                break;
+                return;
             }
-        }
+        });
         
         if (hasErrors) {
             e.preventDefault();
             return false;
         }
-        
-        console.log('Form validation passed, submitting...');
-        
-        // Add a small delay to ensure all validation is complete
-        setTimeout(() => {
-            console.log('Actually submitting form now...');
-        }, 100);
     });
 });
 </script>
-@endsection 
+@endsection

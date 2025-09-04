@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MaintenanceChecklist extends Model
 {
@@ -13,6 +14,7 @@ class MaintenanceChecklist extends Model
         'date_reported',
         'program',
         'room_number',
+        'location_id',
         'instructor',
         'instructor_signature',
         'checked_by',
@@ -31,6 +33,11 @@ class MaintenanceChecklist extends Model
     public function items(): HasMany
     {
         return $this->hasMany(MaintenanceChecklistItem::class);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function assets()
