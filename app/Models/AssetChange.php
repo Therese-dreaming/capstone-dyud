@@ -28,8 +28,7 @@ class AssetChange extends Model
     const TYPE_CONDITION_CHANGE = 'condition_change';
     const TYPE_PRICE_CHANGE = 'price_change';
     const TYPE_CATEGORY_CHANGE = 'category_change';
-    const TYPE_BORROWING_APPROVED = 'borrowing_approved';
-    const TYPE_BORROWING_RETURNED = 'borrowing_returned';
+
     const TYPE_DISPOSED = 'disposed';
 
     public function asset(): BelongsTo
@@ -51,8 +50,7 @@ class AssetChange extends Model
             self::TYPE_CONDITION_CHANGE => 'Condition Change',
             self::TYPE_PRICE_CHANGE => 'Price Change',
             self::TYPE_CATEGORY_CHANGE => 'Category Change',
-            self::TYPE_BORROWING_APPROVED => 'Borrowing Approved',
-            self::TYPE_BORROWING_RETURNED => 'Borrowing Returned',
+
             self::TYPE_DISPOSED => 'Asset Disposed',
             default => ucfirst(str_replace('_', ' ', $this->change_type))
         };

@@ -77,49 +77,7 @@
                             </li>
                         </ul>
                     </li>
-                    <li x-data="{ open: false }">
-                        <button @click="open = !open" type="button"
-                            class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"
-                            :class="{ 'bg-red-50 text-red-800': open }">
-                            <span class="flex items-center">
-                                <i class="fas fa-handshake w-5"></i>
-                                <span class="ml-3 text-sm">Borrowings</span>
-                            </span>
-                            <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
-                        </button>
-                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
-                            <li>
-                                <a href="{{ route('borrowings.index') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('borrowings.index') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-list mr-2 w-4"></i> All Requests
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('borrowings.ongoing') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('borrowings.ongoing') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-clock mr-2 w-4"></i> Ongoing Borrowings
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('borrowings.index', ['status' => 'pending']) }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->get('status') === 'pending' ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-clock mr-2 w-4"></i> Pending Approval
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('borrowings.index', ['status' => 'approved']) }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->get('status') === 'approved' ? 'bg-red-100 text-red-800' : 'text-gray-800' }}">
-                                    <i class="fas fa-check mr-2 w-4"></i> Approved
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('borrowings.index', ['status' => 'overdue']) }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->get('status') === 'overdue' ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-exclamation-triangle mr-2 w-4"></i> Overdue
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+
                     <li x-data="{ open: false }">
                         <button @click="open = !open" type="button"
                             class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"

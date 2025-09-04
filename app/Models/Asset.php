@@ -60,19 +60,6 @@ class Asset extends Model
         return $this->hasMany(Dispose::class);
     }
 
-    public function borrowings(): HasMany
-    {
-        return $this->hasMany(Borrowing::class);
-    }
-
-    public function currentBorrowing()
-    {
-        return $this->borrowings()
-            ->whereIn('status', [Borrowing::STATUS_APPROVED, Borrowing::STATUS_OVERDUE])
-            ->latest()
-            ->first();
-    }
-
     public function changes(): HasMany
     {
         return $this->hasMany(AssetChange::class);

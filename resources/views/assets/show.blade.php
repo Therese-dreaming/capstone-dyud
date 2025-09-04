@@ -501,16 +501,7 @@
         <!-- Tab Navigation -->
         <div class="border-b border-gray-200">
             <nav class="flex space-x-8 px-6" aria-label="Tabs">
-                <button onclick="showTab('borrowing')" 
-                        class="tab-button {{ $activeTab === 'borrowing' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
-                    <i class="fas fa-handshake"></i>
-                    Borrowing History
-                    @if($borrowings->total() > 0)
-                        <span class="bg-indigo-100 text-indigo-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
-                            {{ $borrowings->total() }}
-                        </span>
-                    @endif
-                </button>
+
                 
                 <button onclick="showTab('maintenance')" 
                         class="tab-button {{ $activeTab === 'maintenance' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-4 px-1 border-b-2 font-medium text-sm hover:text-gray-700 flex items-center gap-2">
@@ -549,88 +540,7 @@
         
         <!-- Tab Content -->
         <div class="p-6">
-            <!-- Borrowing History Tab -->
-            <div id="borrowing-tab" class="tab-content" style="{{ $activeTab === 'borrowing' ? 'display: block;' : 'display: none;' }}">
-                @if($borrowings->total() > 0)
-                    <div class="space-y-4">
-                        @foreach($borrowings as $borrowing)
-                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-3 mb-2">
-                                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full {{ $borrowing->getStatusBadgeClass() }}">
-                                                {{ ucfirst($borrowing->status) }}
-                                            </span>
-                                            <span class="text-sm text-gray-500">
-                                                {{ $borrowing->created_at->format('M d, Y') }}
-                                            </span>
-                                        </div>
-                                        
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <span class="font-medium text-gray-700">Borrower:</span>
-                                                <span class="text-gray-900">{{ $borrowing->borrower_name }}</span>
-                                                <span class="text-gray-500">({{ $borrowing->borrower_id_number }})</span>
-                                            </div>
-                                            
-                                            <div>
-                                                <span class="font-medium text-gray-700">Borrowed to:</span>
-                                                <span class="text-gray-900">
-                                                    @if($borrowing->location)
-                                                        {{ $borrowing->location->building }} - Floor {{ $borrowing->location->floor }} - Room {{ $borrowing->location->room }}
-                                                    @elseif($borrowing->custom_location)
-                                                        <span class="text-orange-600">{{ $borrowing->custom_location }}</span>
-                                                        <span class="text-xs text-gray-500 ml-1">(Custom Location)</span>
-                                                    @else
-                                                        <span class="text-gray-500">No location specified</span>
-                                                    @endif
-                                                </span>
-                                            </div>
-                                            
-                                            <div>
-                                                <span class="font-medium text-gray-700">Purpose:</span>
-                                                <span class="text-gray-900">{{ $borrowing->purpose }}</span>
-                                            </div>
-                                            
-                                            <div>
-                                                <span class="font-medium text-gray-700">Due Date:</span>
-                                                <span class="text-gray-900">{{ $borrowing->due_date->format('M d, Y') }}</span>
-                                            </div>
-                                        </div>
-                                        
-                                        @if($borrowing->approved_by)
-                                        <div class="mt-2 text-xs text-gray-500">
-                                            <i class="fas fa-user-check mr-1"></i>
-                                            Approved by {{ $borrowing->approvedBy->name }} on {{ $borrowing->approved_at->format('M d, Y g:i A') }}
-                                        </div>
-                                        @endif
-                                        
-                                        @if($borrowing->return_date)
-                                        <div class="mt-2 text-xs text-green-600">
-                                            <i class="fas fa-undo mr-1"></i>
-                                            Returned on {{ $borrowing->return_date->format('M d, Y g:i A') }}
-                                        </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                    
-                    <!-- Pagination for Borrowing History -->
-                    @if($borrowings->hasPages())
-                        <div class="mt-6">
-                            {{ $borrowings->appends(['tab' => 'borrowing'])->links() }}
-                        </div>
-                    @endif
-                @else
-                    <div class="text-center py-8">
-                        <i class="fas fa-handshake text-4xl text-gray-300 mb-4"></i>
-                        <div class="text-lg font-medium text-gray-600">No borrowing history</div>
-                        <div class="text-sm text-gray-500 mt-1">This asset has never been borrowed</div>
-                    </div>
-                @endif
-            </div>
+
             
             <!-- Maintenance Records Tab -->
             <div id="maintenance-tab" class="tab-content" style="{{ $activeTab === 'maintenance' ? 'display: block;' : 'display: none;' }}">

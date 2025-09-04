@@ -27,7 +27,5 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Religious or Institutional Items', 'code' => 'REL'],
         ]);
         
-        // Seed borrowing data
-        $this->call(BorrowingSeeder::class);
     }
 }

@@ -41,19 +41,7 @@ class LocationController extends Controller
         // Get assets in this location
         $assets = $location->assets;
         
-        // Get borrowings for this location (using location_id or custom_location)
-        $borrowings = \App\Models\Borrowing::where(function($query) use ($location) {
-            // Check borrowings that have this location_id
-            $query->where('location_id', $location->id)
-                  // Or check custom_location that matches this location
-                  ->orWhere('custom_location', 'like', '%' . $location->building . ' - Floor ' . $location->floor . ' - Room ' . $location->room . '%');
-        })
-        ->whereNotIn('status', ['returned', 'rejected'])
-        ->with(['user', 'asset.category', 'asset.location', 'location'])
-        ->latest()
-        ->get();
-        
-        return view('locations.show', compact('location', 'assets', 'borrowings'));
+        return view('locations.show', compact('location', 'assets'));
     }
 
     public function dateRangeView(Request $request, Location $location)

@@ -11,8 +11,6 @@ use App\Http\Controllers\QRCodeController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\DisposalController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\BorrowingController;
-use App\Http\Controllers\UserBorrowingController;
 use App\Http\Controllers\LostAssetController;
 use App\Http\Controllers\SemesterRecordController;
 use App\Http\Controllers\SemesterSettingController;
@@ -32,17 +30,6 @@ Route::post('/register', [AuthController::class, 'storeRegister']);
 Route::middleware(['auth'])->group(function () {
     // Dashboard - accessible by all authenticated users
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
-    // User borrowing routes - accessible by all authenticated users
-    Route::get('/user/borrowings', [UserBorrowingController::class, 'index'])->name('user.borrowings.index');
-    Route::get('/user/borrowings/create', [UserBorrowingController::class, 'create'])->name('user.borrowings.create');
-    Route::post('/user/borrowings', [UserBorrowingController::class, 'store'])->name('user.borrowings.store');
-    Route::post('/user/borrowings/bulk', [UserBorrowingController::class, 'storeBulk'])->name('user.borrowings.store-bulk');
-    Route::get('/user/borrowings/{borrowing}', [UserBorrowingController::class, 'show'])->name('user.borrowings.show');
-    Route::delete('/user/borrowings/{borrowing}', [UserBorrowingController::class, 'cancel'])->name('user.borrowings.cancel');
-    
-    // API route for getting available assets by category (for user borrowing)
-    Route::get('/user/borrowings/available-assets', [UserBorrowingController::class, 'getAvailableAssets'])->name('user.borrowings.available-assets');
     
     // API route for getting asset details (for modals)
     Route::get('/api/assets/{asset}', function (App\Models\Asset $asset) {
@@ -104,16 +91,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}/delete', [UserController::class, 'destroy'])->name('users.destroy');
-
-        // Admin Borrowing Management
-        Route::get('/borrowings', [BorrowingController::class, 'index'])->name('borrowings.index');
-        Route::get('/borrowings/ongoing', [BorrowingController::class, 'ongoing'])->name('borrowings.ongoing');
-        Route::get('/borrowings/{borrowing}', [BorrowingController::class, 'show'])->name('borrowings.show');
-        Route::put('/borrowings/{borrowing}/approve', [BorrowingController::class, 'approve'])->name('borrowings.approve');
-        Route::put('/borrowings/{borrowing}/reject', [BorrowingController::class, 'reject'])->name('borrowings.reject');
-        Route::put('/borrowings/{borrowing}/return', [BorrowingController::class, 'return'])->name('borrowings.return');
-        Route::delete('/borrowings/{borrowing}', [BorrowingController::class, 'destroy'])->name('borrowings.destroy');
-        Route::get('/borrowings-statistics', [BorrowingController::class, 'statistics'])->name('borrowings.statistics');
 
         // Lost Assets Management
         Route::get('/lost-assets', [LostAssetController::class, 'index'])->name('lost-assets.index');

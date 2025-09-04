@@ -126,11 +126,10 @@ class AssetController extends Controller
             'warranty'
         ]);
         
-        // Get the active tab from request
-        $activeTab = $request->get('tab', 'borrowing');
+        // Get the active tab from request (default to maintenance)
+        $activeTab = $request->get('tab', 'maintenance');
         
         // Paginate history records to prevent overloading
-        $borrowings = $asset->borrowings()->with(['approvedBy', 'location'])->orderBy('created_at', 'desc')->paginate(10);
         $maintenances = $asset->maintenances()->orderBy('maintenance_date', 'desc')->paginate(10);
         $disposes = $asset->disposes()->orderBy('disposal_date', 'desc')->paginate(10);
         $changes = $asset->changes()->with('user')->orderBy('created_at', 'desc')->paginate(10);
@@ -140,7 +139,7 @@ class AssetController extends Controller
             return view('assets.gsu-show', compact('asset'));
         }
         
-        return view('assets.show', compact('asset', 'borrowings', 'maintenances', 'disposes', 'changes', 'activeTab'));
+        return view('assets.show', compact('asset', 'maintenances', 'disposes', 'changes', 'activeTab'));
     }
 
     public function edit(Asset $asset)
