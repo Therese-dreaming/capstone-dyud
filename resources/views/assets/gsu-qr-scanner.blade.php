@@ -195,13 +195,24 @@ function scanLoop() {
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // Here you would implement QR code detection
-    // For now, we'll simulate a scan
-    setTimeout(() => {
-        if (isScanning) {
-            scanLoop();
+    // Try to decode with jsQR if available
+    try {
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        if (window.jsQR) {
+            const result = window.jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+            if (result && result.data) {
+                isScanning = false;
+                document.getElementById('scanner-status').textContent = 'QR detected';
+                // Expect QR to contain asset code only
+                const assetCode = result.data.trim();
+                fetchAssetDetails(assetCode);
+                return;
+            }
         }
-    }, 100);
+    } catch (e) {
+        console.warn('QR decode error:', e);
+    }
+    requestAnimationFrame(scanLoop);
 }
 
 function toggleFlash() {
@@ -220,62 +231,7 @@ function lookupAsset() {
         alert('Please enter an asset code');
         return;
     }
-    
-    // Simulate asset lookup
-    simulateAssetLookup(assetCode);
-}
-
-function simulateAssetLookup(assetCode) {
-    // Simulate API call to get asset details
-    const assetData = {
-        asset_code: assetCode,
-        name: 'Sample Asset',
-        category: 'Electronics',
-        location: 'Building A - Floor 1 - Room 101',
-        status: 'Available',
-        condition: 'Good',
-        purchase_date: '2024-01-15',
-        purchase_cost: '$1,500.00'
-    };
-    
-    displayAssetResult(assetData);
-}
-
-function displayAssetResult(assetData) {
-    const resultsContainer = document.getElementById('results-container');
-    const noResults = document.getElementById('no-results');
-    
-    noResults.classList.add('hidden');
-    resultsContainer.classList.remove('hidden');
-    
-    const resultHtml = `
-        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <div class="flex items-center justify-between mb-3">
-                <h4 class="font-semibold text-gray-900">${assetData.asset_code}</h4>
-                <span class="px-2 py-1 text-xs font-medium rounded-full ${assetData.status === 'Available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                    ${assetData.status}
-                </span>
-            </div>
-            <div class="space-y-2 text-sm">
-                <div><strong>Name:</strong> ${assetData.name}</div>
-                <div><strong>Category:</strong> ${assetData.category}</div>
-                <div><strong>Location:</strong> ${assetData.location}</div>
-                <div><strong>Condition:</strong> ${assetData.condition}</div>
-                <div><strong>Purchase Date:</strong> ${assetData.purchase_date}</div>
-                <div><strong>Purchase Cost:</strong> ${assetData.purchase_cost}</div>
-            </div>
-            <div class="mt-3 flex space-x-2">
-                <button onclick="viewAssetDetails('${assetData.asset_code}')" class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-sm hover:bg-blue-200 transition-colors">
-                    <i class="fas fa-eye mr-1"></i>View Details
-                </button>
-                <button onclick="generateQR('${assetData.asset_code}')" class="px-3 py-1 bg-green-100 text-green-600 rounded text-sm hover:bg-green-200 transition-colors">
-                    <i class="fas fa-qrcode mr-1"></i>Generate QR
-                </button>
-            </div>
-        </div>
-    `;
-    
-    resultsContainer.innerHTML = resultHtml;
+    fetchAssetDetails(assetCode);
 }
 
 function viewAssetDetails(assetCode) {
@@ -349,6 +305,60 @@ function generateQR(assetCode) {
 // Initialize scanner when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('GSU QR Scanner initialized');
+    // Load jsQR if not present
+    if (!window.jsQR) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+        script.async = true;
+        script.onload = () => console.log('jsQR loaded');
+        document.body.appendChild(script);
+    }
 });
+
+async function fetchAssetDetails(assetCode) {
+    document.getElementById('scanner-status').textContent = `Fetching ${assetCode}...`;
+    try {
+        const res = await fetch(`/api/assets/code/${encodeURIComponent(assetCode)}`);
+        if (!res.ok) throw new Error('Asset not found');
+        const asset = await res.json();
+        renderScanResult(asset);
+        document.getElementById('scanner-status').textContent = 'Scan complete';
+    } catch (err) {
+        document.getElementById('scanner-status').textContent = 'Asset not found';
+        alert('Asset not found for code: ' + assetCode);
+        isScanning = true; // allow continue scanning
+        requestAnimationFrame(scanLoop);
+    }
+}
+
+function renderScanResult(asset) {
+    const resultsContainer = document.getElementById('results-container');
+    const noResults = document.getElementById('no-results');
+    noResults.classList.add('hidden');
+    resultsContainer.classList.remove('hidden');
+    const html = `
+        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+                <h4 class="font-semibold text-gray-900">${asset.asset_code}</h4>
+                <span class="px-2 py-1 text-xs font-medium rounded-full ${asset.status === 'Available' ? 'bg-green-100 text-green-800' : (asset.status === 'In Use' ? 'bg-blue-100 text-blue-800' : (asset.status === 'Lost' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'))}">
+                    ${asset.status}
+                </span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div><strong>Name:</strong> ${asset.name}</div>
+                <div><strong>Category:</strong> ${asset.category?.name ?? ''}</div>
+                <div class="md:col-span-2"><strong>Location:</strong> ${asset.location ? `${asset.location.building} - Floor ${asset.location.floor} - Room ${asset.location.room}` : ''}</div>
+                <div><strong>Condition:</strong> ${asset.condition}</div>
+                <div><strong>Purchase Date:</strong> ${asset.purchase_date}</div>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+                <a href="/gsu/assets/${asset.id}" class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-sm hover:bg-blue-200 transition-colors"><i class="fas fa-eye mr-1"></i>View</a>
+                <a href="/gsu/assets/${asset.id}/edit" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded text-sm hover:bg-yellow-200 transition-colors"><i class="fas fa-edit mr-1"></i>Edit</a>
+                <a href="/gsu/qrcode/asset/${asset.asset_code}" target="_blank" class="px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200 transition-colors"><i class="fas fa-qrcode mr-1"></i>QR</a>
+            </div>
+        </div>
+    `;
+    resultsContainer.innerHTML = html;
+}
 </script>
 @endsection 

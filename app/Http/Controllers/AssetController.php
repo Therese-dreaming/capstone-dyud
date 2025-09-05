@@ -152,6 +152,15 @@ class AssetController extends Controller
         return view('assets.show', compact('asset', 'maintenances', 'disposes', 'changes', 'activeTab'));
     }
 
+    public function gsuShowByCode(string $assetCode, Request $request)
+    {
+        $asset = Asset::where('asset_code', $assetCode)
+            ->with(['category', 'location', 'originalLocation', 'warranty'])
+            ->firstOrFail();
+        // Force GSU view regardless of role, since route is in GSU group
+        return view('assets.gsu-show', compact('asset'));
+    }
+
     public function edit(Asset $asset)
     {
         $asset->load(['warranty', 'originalLocation']);

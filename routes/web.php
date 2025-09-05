@@ -36,6 +36,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/assets/{asset}', function (App\Models\Asset $asset) {
         return response()->json($asset->load(['category', 'location']));
     })->name('api.assets.show');
+    // API route for getting asset by code (for QR scanner)
+    Route::get('/api/assets/code/{assetCode}', function ($assetCode) {
+        $asset = \App\Models\Asset::where('asset_code', $assetCode)
+            ->with(['category', 'location'])
+            ->firstOrFail();
+        return response()->json($asset);
+    })->name('api.assets.show-by-code');
     
     // Routes for admin only (removed user role)
     Route::middleware(['role:admin'])->group(function () {
@@ -153,6 +160,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/gsu/assets/create', [AssetController::class, 'create'])->name('gsu.assets.create');
         Route::post('/gsu/assets', [AssetController::class, 'store'])->name('gsu.assets.store');
         Route::get('/gsu/assets/{asset}', [AssetController::class, 'show'])->name('gsu.assets.show');
+        Route::get('/gsu/assets/code/{assetCode}', [AssetController::class, 'gsuShowByCode'])->name('gsu.assets.show-by-code');
         Route::get('/gsu/assets/{asset}/edit', [AssetController::class, 'edit'])->name('gsu.assets.edit');
         Route::put('/gsu/assets/{asset}', [AssetController::class, 'update'])->name('gsu.assets.update');
         Route::put('/gsu/assets/{asset}/dispose', [AssetController::class, 'dispose'])->name('gsu.assets.dispose');
