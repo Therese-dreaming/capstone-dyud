@@ -142,7 +142,7 @@
                     <!-- User Profile Dropdown -->
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none">
-                            <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                            <div class="w-8 h-8 bg-red-100 rounded-full flex items-center jugstify-center">
                                 <i class="fas fa-user text-red-600"></i>
                             </div>
                             <span class="hidden md:block">{{ auth()->user()->name }}</span>
