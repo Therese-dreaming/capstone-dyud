@@ -6,7 +6,7 @@
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.assets.index' : 'assets.index') }}" 
+                <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.locations.index' : 'locations.index') }}" 
                    class="inline-flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
                     <i class="fas fa-arrow-left"></i>
                 </a>
@@ -251,6 +251,7 @@
                     </div>
                 </div>
             </div>
+
 
             <!-- Financial Information Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -551,35 +552,52 @@
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                         <div class="flex items-center gap-3 mb-2">
-                                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full 
-                                                {{ $maintenance->maintenance_type === 'Preventive' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800' }}">
-                                                {{ $maintenance->maintenance_type }}
+                                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full {{ $maintenance->status_class }}">
+                                                {{ $maintenance->end_status }}
                                             </span>
                                             <span class="text-sm text-gray-500">
-                                                {{ $maintenance->maintenance_date->format('M d, Y') }}
+                                                {{ $maintenance->scanned_at?->format('M d, Y g:i A') }}
                                             </span>
                                         </div>
                                         
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                             <div>
-                                                <span class="font-medium text-gray-700">Description:</span>
-                                                <span class="text-gray-900">{{ $maintenance->description }}</span>
+                                                <span class="font-medium text-gray-700">Checklist:</span>
+                                                <span class="text-gray-900">#{{ $maintenance->maintenance_checklist_id }}</span>
                                             </div>
                                             
                                             <div>
-                                                <span class="font-medium text-gray-700">Cost:</span>
-                                                <span class="text-gray-900">₱{{ number_format($maintenance->cost, 2) }}</span>
+                                                <span class="font-medium text-gray-700">Scanned by:</span>
+                                                <span class="text-gray-900">{{ $maintenance->scanned_by }}</span>
                                             </div>
                                             
                                             <div>
-                                                <span class="font-medium text-gray-700">Performed by:</span>
-                                                <span class="text-gray-900">{{ $maintenance->performed_by }}</span>
+                                                <span class="font-medium text-gray-700">From Status:</span>
+                                                <span class="text-gray-900">{{ $maintenance->start_status }}</span>
                                             </div>
                                             
                                             <div>
-                                                <span class="font-medium text-gray-700">Next Maintenance:</span>
-                                                <span class="text-gray-900">{{ $maintenance->next_maintenance_date ? $maintenance->next_maintenance_date->format('M d, Y') : 'Not scheduled' }}</span>
+                                                <span class="font-medium text-gray-700">To Status:</span>
+                                                <span class="text-gray-900">{{ $maintenance->end_status }}</span>
                                             </div>
+                                            
+                                            @if($maintenance->location_name)
+                                            <div class="md:col-span-2">
+                                                <span class="font-medium text-gray-700">Maintenance Location:</span>
+                                                <span class="text-gray-900 bg-green-50 px-2 py-1 rounded text-sm">
+                                                    <i class="fas fa-map-marker-alt mr-1"></i>{{ $maintenance->location_name }}
+                                                </span>
+                                            </div>
+                                            @endif
+                                            
+                                            @if(!empty($maintenance->notes))
+                                            <div class="md:col-span-2">
+                                                <span class="font-medium text-gray-700">Notes:</span>
+                                                <div class="text-gray-900 mt-1 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                                    {{ $maintenance->notes }}
+                                                </div>
+                                            </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -596,8 +614,8 @@
                 @else
                     <div class="text-center py-8">
                         <i class="fas fa-tools text-4xl text-gray-300 mb-4"></i>
-                        <div class="text-lg font-medium text-gray-600">No maintenance records</div>
-                        <div class="text-sm text-gray-500 mt-1">This asset has no maintenance history</div>
+                        <div class="text-lg font-medium text-gray-600">No maintenance checklist history</div>
+                        <div class="text-sm text-gray-500 mt-1">This asset has no scanning history yet</div>
                     </div>
                 @endif
             </div>
@@ -730,7 +748,7 @@
 
     <!-- Action Buttons -->
     <div class="mt-6 flex gap-4">
-        <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.assets.index' : 'assets.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition duration-200 flex items-center gap-2">
+        <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.locations.index' : 'locations.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition duration-200 flex items-center gap-2">
             <i class="fas fa-list"></i> Back to Assets
         </a>
         

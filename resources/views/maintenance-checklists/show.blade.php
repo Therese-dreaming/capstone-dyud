@@ -60,8 +60,14 @@
                 <p class="text-lg font-semibold text-gray-900">{{ $checklist->program ?? 'N/A' }}</p>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-600">Room Number</label>
-                <p class="text-lg font-semibold text-gray-900">{{ $checklist->room_number }}</p>
+                <label class="block text-sm font-medium text-gray-600">Location</label>
+                <p class="text-lg font-semibold text-gray-900">
+                    @if($checklist->location)
+                        {{ $checklist->location->building }} - Floor {{ $checklist->location->floor }} - Room {{ $checklist->location->room }}
+                    @else
+                        {{ $checklist->room_number }}
+                    @endif
+                </p>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-600">Instructor</label>
@@ -194,6 +200,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Code</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Particulars/Items</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QTY</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start of SY Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End of SY Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scan Status</th>
@@ -219,6 +226,18 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ $item->quantity }}
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                @if($item->location_name)
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-blue-600">{{ $item->location_name }}</span>
+                                        @if($item->location)
+                                            <span class="text-xs text-gray-500">Current: {{ $item->location->building }} - Floor {{ $item->location->floor }} - Room {{ $item->location->room }}</span>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                     {{ $item->start_status === 'OK' ? 'bg-green-100 text-green-800' : 
@@ -230,6 +249,31 @@
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $item->status_class }}">
                                     {{ $item->end_status ?? 'Not Set' }}
                                 </span>
+                                @php
+                                    $resolvedLabel = null;
+                                    $resolvedClass = null;
+                                    if (($item->end_status === 'UNVERIFIED') && optional($item->asset)->status) {
+                                        if (in_array($item->asset->status, [
+                                            \App\Models\Asset::STATUS_AVAILABLE,
+                                            \App\Models\Asset::STATUS_FOR_REPAIR,
+                                            \App\Models\Asset::STATUS_FOR_MAINTENANCE,
+                                        ], true)) {
+                                            // Treat Available, For Repair, For Maintenance as Found/Resolved
+                                            $resolvedLabel = 'Resolved: Found';
+                                            $resolvedClass = 'bg-green-100 text-green-800';
+                                        } elseif ($item->asset->status === \App\Models\Asset::STATUS_LOST) {
+                                            $resolvedLabel = 'Resolved: Lost';
+                                            $resolvedClass = 'bg-red-100 text-red-800';
+                                        }
+                                    }
+                                @endphp
+                                @if($resolvedLabel)
+                                    <div class="mt-1">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $resolvedClass }}">
+                                            {{ $resolvedLabel }}
+                                        </span>
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($item->is_scanned)

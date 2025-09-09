@@ -10,6 +10,12 @@
             </h1>
             <p class="text-gray-600 mt-1">Track and manage missing assets</p>
         </div>
+        <div>
+            <a href="{{ route('lost-assets.export', request()->query()) }}" 
+               class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
+                <i class="fas fa-file-excel"></i> Export to Excel
+            </a>
+        </div>
     </div>
 
     <!-- Statistics Cards -->
@@ -21,7 +27,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600">Under Investigation</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $lostAssets->where('status', 'investigating')->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $counts['investigating'] ?? 0 }}</p>
                 </div>
             </div>
         </div>
@@ -32,7 +38,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600">Found</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $lostAssets->where('status', 'found')->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $counts['found'] ?? 0 }}</p>
                 </div>
             </div>
         </div>
@@ -43,7 +49,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-600">Permanently Lost</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $lostAssets->where('status', 'permanently_lost')->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $counts['permanently_lost'] ?? 0 }}</p>
                 </div>
             </div>
         </div>
@@ -56,17 +62,21 @@
                 <div class="flex-1">
                     <div class="relative">
                         <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" id="searchInput" placeholder="Search by asset name, code, or reporter..." 
-                               class="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <form method="GET" action="{{ route('lost-assets.index') }}">
+                            <input type="text" name="search" value="{{ request('search') }}" id="searchInput" placeholder="Search by asset name, code, or reporter..." 
+                                   class="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        </form>
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <select id="statusFilter" class="px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
-                        <option value="">All Status</option>
-                        <option value="investigating">Under Investigation</option>
-                        <option value="found">Found</option>
-                        <option value="permanently_lost">Permanently Lost</option>
-                    </select>
+                    <form method="GET" action="{{ route('lost-assets.index') }}">
+                        <select name="status" id="statusFilter" class="px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                            <option value="" {{ request('status')==='' ? 'selected' : '' }}>All Status</option>
+                            <option value="investigating" {{ request('status')==='investigating' ? 'selected' : '' }}>Under Investigation</option>
+                            <option value="found" {{ request('status')==='found' ? 'selected' : '' }}>Found</option>
+                            <option value="permanently_lost" {{ request('status')==='permanently_lost' ? 'selected' : '' }}>Permanently Lost</option>
+                        </select>
+                    </form>
                 </div>
             </div>
         </div>
@@ -85,10 +95,10 @@
                             <i class="fas fa-user mr-1"></i>Reported By
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                            <i class="fas fa-calendar mr-1"></i>Last Seen
+                            <i class="fas fa-calendar mr-1"></i>Reported Date
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                            <i class="fas fa-map-marker-alt mr-1"></i>Last Known Location
+                            <i class="fas fa-align-left mr-1"></i>Description
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                             <i class="fas fa-info-circle mr-1"></i>Status
@@ -117,18 +127,14 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">{{ $lostAsset->reportedBy->name }}</div>
-                                <div class="text-sm text-gray-500">{{ $lostAsset->reported_date->format('M d, Y') }}</div>
+                                <div class="text-sm text-gray-500">@if($lostAsset->asset?->location) {{ $lostAsset->asset->location->building }} @endif</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $lostAsset->last_seen_date->format('M d, Y') }}
+                                {{ $lostAsset->reported_date ? $lostAsset->reported_date->format('M d, Y') : '—' }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">
-                                    @if($lostAsset->last_known_location)
-                                        {{ $lostAsset->last_known_location }}
-                                    @else
-                                        <span class="text-gray-400">Not specified</span>
-                                    @endif
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ $lostAsset->description }}">
+                                    {{ Str::limit($lostAsset->description, 80) }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -136,7 +142,7 @@
                                     {{ $lostAsset->getStatusLabel() }}
                                 </span>
                                 @if($lostAsset->isFound())
-                                    <div class="text-xs text-green-600 mt-1">Found on {{ $lostAsset->found_date->format('M d, Y') }}</div>
+                                    <div class="text-xs text-green-600 mt-1">Found on {{ $lostAsset->found_date ? $lostAsset->found_date->format('M d, Y') : '—' }}</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -181,7 +187,7 @@
 
     <!-- Pagination -->
     <div class="mt-6">
-        {{ $lostAssets->links() }}
+        {{ $lostAssets->appends(request()->query())->links() }}
     </div>
 </div>
 
@@ -322,29 +328,15 @@
         }
     }
 
-    // Search functionality
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        const searchValue = this.value.toLowerCase();
-        const rows = document.querySelectorAll('tbody tr');
-        
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchValue) ? '' : 'none';
-        });
-    });
-
-    // Status filter
-    document.getElementById('statusFilter').addEventListener('change', function() {
-        const status = this.value;
-        const currentUrl = new URL(window.location);
-        
-        if (status) {
-            currentUrl.searchParams.set('status', status);
-        } else {
-            currentUrl.searchParams.delete('status');
+    // Submit search and status forms on change/enter
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.form.submit();
         }
-        
-        window.location.href = currentUrl.toString();
+    });
+    document.getElementById('statusFilter').addEventListener('change', function() {
+        this.form.submit();
     });
 </script>
 @endsection 

@@ -19,7 +19,9 @@ class MaintenanceChecklistItem extends Model
         'scanned_at',
         'scanned_by',
         'is_missing',
-        'missing_reason'
+        'missing_reason',
+        'location_id',
+        'location_name'
     ];
 
     protected $casts = [
@@ -34,6 +36,11 @@ class MaintenanceChecklistItem extends Model
     public function asset(): BelongsTo
     {
         return $this->belongsTo(Asset::class, 'asset_code', 'asset_code');
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function getStatusClassAttribute()

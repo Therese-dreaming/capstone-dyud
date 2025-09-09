@@ -8,6 +8,7 @@ use App\Models\LostAsset;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LostAssetController extends Controller
 {
@@ -16,7 +17,7 @@ class LostAssetController extends Controller
      */
     public function index(Request $request)
     {
-        $query = LostAsset::with(['asset.category', 'asset.location', 'reportedBy', 'lastBorrower']);
+        $query = LostAsset::with(['asset.category', 'asset.location', 'reportedBy']);
         
         // Apply filters
         if ($request->filled('status')) {
@@ -38,12 +39,19 @@ class LostAssetController extends Controller
         
         $lostAssets = $query->latest()->paginate(15);
         
+        // Overall counts from database (not page-limited)
+        $counts = [
+            'investigating' => LostAsset::where('status', LostAsset::STATUS_INVESTIGATING)->count(),
+            'found' => LostAsset::where('status', 'found')->count(),
+            'permanently_lost' => LostAsset::where('status', 'permanently_lost')->count(),
+        ];
+        
         // Check if user is GSU and return appropriate view
         if (auth()->user()->role === 'gsu') {
-            return view('lost-assets.gsu-index', compact('lostAssets'));
+            return view('lost-assets.gsu-index', compact('lostAssets', 'counts'));
         }
         
-        return view('lost-assets.index', compact('lostAssets'));
+        return view('lost-assets.index', compact('lostAssets', 'counts'));
     }
 
     /**
@@ -79,6 +87,15 @@ class LostAssetController extends Controller
                 // Borrowings removed; no last borrower information available
                 $lastBorrowing = null;
 
+                // Determine last known location automatically from current location, fallback to original
+                $asset->load(['location', 'originalLocation']);
+                $lastKnownLocation = 'Unknown';
+                if ($asset->location) {
+                    $lastKnownLocation = $asset->location->building . ' - Floor ' . $asset->location->floor . ' - Room ' . $asset->location->room;
+                } elseif ($asset->originalLocation) {
+                    $lastKnownLocation = $asset->originalLocation->building . ' - Floor ' . $asset->originalLocation->floor . ' - Room ' . $asset->originalLocation->room;
+                }
+
                 $lostAsset = LostAsset::create([
                     'asset_id' => $asset->id,
                     'reported_by' => auth()->id(),
@@ -86,7 +103,7 @@ class LostAssetController extends Controller
                     'last_seen_date' => $validated['last_seen_date'],
                     'reported_date' => now()->toDateString(),
                     'description' => $validated['description'],
-                    'last_known_location' => $validated['last_known_location'],
+                    'last_known_location' => $lastKnownLocation,
                     'investigation_notes' => $validated['investigation_notes'],
                     'status' => LostAsset::STATUS_INVESTIGATING,
                 ]);
@@ -119,7 +136,7 @@ class LostAssetController extends Controller
      */
     public function show(LostAsset $lostAsset)
     {
-        $lostAsset->load(['asset.category', 'asset.location', 'reportedBy', 'lastBorrower']);
+        $lostAsset->load(['asset.category', 'asset.location', 'reportedBy']);
         
         // Check if user is GSU and return appropriate view
         if (auth()->user()->role === 'gsu') {
@@ -218,5 +235,87 @@ class LostAssetController extends Controller
             return redirect()->back()
                 ->with('error', 'Failed to delete lost asset record: ' . $e->getMessage());
         }
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $query = LostAsset::with(['asset.category', 'asset.location', 'reportedBy']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('asset', function($assetQuery) use ($search) {
+                    $assetQuery->where('name', 'like', "%{$search}%")
+                              ->orWhere('asset_code', 'like', "%{$search}%");
+                })
+                ->orWhereHas('reportedBy', function($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        $rows = $query->orderBy('reported_date', 'desc')->get();
+
+        $filename = 'lost-assets-' . now()->format('Ymd_His') . '.xls';
+
+        return response()->streamDownload(function() use ($rows) {
+            echo '<?xml version="1.0"?>';
+            echo '<?mso-application progid="Excel.Sheet"?>';
+            echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40">';
+            echo '<Styles>';
+            echo '<Style ss:ID="Title"><Font ss:Bold="1" ss:Size="16" ss:Color="#800000"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>';
+            echo '<Style ss:ID="Subtitle"><Font ss:Size="12" ss:Color="#666666"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>';
+            echo '<Style ss:ID="Header"><Font ss:Bold="1" ss:Size="11" ss:Color="#FFFFFF"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Interior ss:Color="#800000" ss:Pattern="Solid"/><Borders><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CCCCCC"/></Borders></Style>';
+            echo '<Style ss:ID="Cell"><Alignment ss:Vertical="Center"/><Borders><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders></Style>';
+            echo '<Style ss:ID="CellAlt"><Alignment ss:Vertical="Center"/><Interior ss:Color="#F8F9FA" ss:Pattern="Solid"/><Borders><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders></Style>';
+            echo '</Styles>';
+
+            echo '<Worksheet ss:Name="Lost Assets">';
+            echo '<Table>';
+            echo '<Column ss:Width="40"/>';
+            echo '<Column ss:Width="120"/>';
+            echo '<Column ss:Width="240"/>';
+            echo '<Column ss:Width="140"/>';
+            echo '<Column ss:Width="140"/>';
+            echo '<Column ss:Width="100"/>';
+            echo '<Column ss:Width="360"/>';
+            echo '<Column ss:Width="120"/>';
+
+            echo '<Row ss:Height="28"><Cell ss:MergeAcross="7" ss:StyleID="Title"><Data ss:Type="String">LOST ASSETS REPORT</Data></Cell></Row>';
+            echo '<Row ss:Height="20"><Cell ss:MergeAcross="7" ss:StyleID="Subtitle"><Data ss:Type="String">Generated on ' . e(now()->format('F d, Y \\a\\t g:i A')) . '</Data></Cell></Row>';
+            echo '<Row ss:Height="6"/>';
+
+            $headers = ['No.','Asset Code','Asset Name','Category','Reported By','Reported Date','Description','Status'];
+            echo '<Row ss:Height="24">';
+            foreach ($headers as $h) {
+                echo '<Cell ss:StyleID="Header"><Data ss:Type="String">' . e($h) . '</Data></Cell>';
+            }
+            echo '</Row>';
+
+            $i = 0;
+            foreach ($rows as $row) {
+                $i++;
+                $alt = ($i % 2 === 0);
+                $style = $alt ? 'CellAlt' : 'Cell';
+                echo '<Row ss:Height="22">';
+                echo '<Cell ss:StyleID="' . $style . '"><Data ss:Type="Number">' . (int)$i . '</Data></Cell>';
+                echo '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . e($row->asset->asset_code ?? '') . '</Data></Cell>';
+                echo '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . e($row->asset->name ?? '') . '</Data></Cell>';
+                echo '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . e(optional($row->asset->category)->name ?? '') . '</Data></Cell>';
+                echo '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . e(optional($row->reportedBy)->name ?? '') . '</Data></Cell>';
+                echo '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . e(optional($row->reported_date)->format('Y-m-d') ?? '') . '</Data></Cell>';
+                echo '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . e($row->description ?? '') . '</Data></Cell>';
+                echo '<Cell ss:StyleID="' . $style . '"><Data ss:Type="String">' . e($row->getStatusLabel()) . '</Data></Cell>';
+                echo '</Row>';
+            }
+
+            echo '</Table></Worksheet></Workbook>';
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+        ]);
     }
 }

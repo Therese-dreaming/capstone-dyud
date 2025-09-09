@@ -174,6 +174,15 @@
                             <span class="ml-3 text-sm">Lost Assets</span>
                         </a>
                     </li>
+                    
+                    <!-- Notifications -->
+                    <li>
+                        <a href="{{ route('notifications.index') }}"
+                            class="flex items-center px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition {{ request()->routeIs('notifications.*') ? 'bg-red-50 text-red-800' : '' }}">
+                            <i class="fas fa-bell w-5"></i>
+                            <span class="ml-3 text-sm">Notifications</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
@@ -203,11 +212,85 @@
                     <h1 class="text-lg lg:text-xl font-semibold text-gray-800">GSU Inventory Management System</h1>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <!-- Notifications -->
-                    <button class="relative p-2 hover:bg-gray-100 rounded-lg">
-                        <i class="fas fa-bell text-gray-600"></i>
-                        <span class="absolute top-2 right-2 w-2 h-2 bg-red-600 rounded-full"></span>
-                    </button>
+                    <!-- Notifications Dropdown -->
+                    <div class="relative" x-data="{ open: false, notifications: [], unreadCount: 0 }" 
+                         x-init="
+                            loadNotifications();
+                            setInterval(() => {
+                                loadUnreadCount();
+                            }, 30000);
+                         ">
+                        <button @click="open = !open; if(open) loadNotifications()" 
+                                class="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                            <i class="fas fa-bell text-gray-600"></i>
+                            <span x-show="unreadCount > 0" 
+                                  x-text="unreadCount > 9 ? '9+' : unreadCount"
+                                  class="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold"></span>
+                        </button>
+                        
+                        <!-- Notifications Dropdown Panel -->
+                        <div x-show="open" 
+                             @click.away="open = false"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                             style="display: none;">
+                            
+                            <!-- Header -->
+                            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
+                                <button @click="markAllAsRead()" 
+                                        class="text-sm text-red-600 hover:text-red-800 font-medium">
+                                    Mark all as read
+                                </button>
+                            </div>
+                            
+                            <!-- Notifications List -->
+                            <div class="max-h-96 overflow-y-auto">
+                                <template x-for="notification in notifications" :key="notification.id">
+                                    <div @click="markAsRead(notification.id)" 
+                                         class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+                                         :class="{ 'bg-red-50': !notification.is_read }">
+                                        <div class="flex items-start space-x-3">
+                                            <div class="flex-shrink-0">
+                                                <i :class="notification.icon" 
+                                                   :class="notification.color"
+                                                   class="text-lg"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900" x-text="notification.title"></p>
+                                                <p class="text-sm text-gray-600 mt-1" x-text="notification.message"></p>
+                                                <div class="flex items-center justify-between mt-2">
+                                                    <p class="text-xs text-gray-500" x-text="notification.created_at"></p>
+                                                    <span x-show="!notification.is_read" 
+                                                          class="w-2 h-2 bg-red-600 rounded-full"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                
+                                <!-- Empty State -->
+                                <div x-show="notifications.length === 0" 
+                                     class="px-4 py-8 text-center text-gray-500">
+                                    <i class="fas fa-bell-slash text-3xl mb-2"></i>
+                                    <p>No notifications yet</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Footer -->
+                            <div class="px-4 py-3 border-t border-gray-200">
+                                <a href="{{ route('notifications.index') }}" 
+                                   class="block text-center text-sm text-red-600 hover:text-red-800 font-medium">
+                                    View all notifications
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Quick Actions -->
                     <div class="flex space-x-2">
@@ -226,7 +309,78 @@
     </div>
 
     <script src="//unpkg.com/alpinejs" defer></script>
+    
     <script>
+        // Notification functions
+        function loadNotifications() {
+            fetch('{{ route("notifications.recent") }}')
+                .then(response => response.json())
+                .then(data => {
+                    this.notifications = data.notifications;
+                })
+                .catch(error => console.error('Error loading notifications:', error));
+        }
+
+        function loadUnreadCount() {
+            fetch('{{ route("notifications.unread-count") }}')
+                .then(response => response.json())
+                .then(data => {
+                    this.unreadCount = data.count;
+                })
+                .catch(error => console.error('Error loading unread count:', error));
+        }
+
+        function markAsRead(notificationId) {
+            fetch('{{ route("notifications.mark-read") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ notification_id: notificationId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the notification in the list
+                    const notification = this.notifications.find(n => n.id === notificationId);
+                    if (notification) {
+                        notification.is_read = true;
+                    }
+                    // Reload unread count
+                    loadUnreadCount();
+                }
+            })
+            .catch(error => console.error('Error marking notification as read:', error));
+        }
+
+        function markAllAsRead() {
+            fetch('{{ route("notifications.mark-all-read") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mark all notifications as read in the UI
+                    this.notifications.forEach(notification => {
+                        notification.is_read = true;
+                    });
+                    this.unreadCount = 0;
+                }
+            })
+            .catch(error => console.error('Error marking all notifications as read:', error));
+        }
+
+        // Make functions globally available
+        window.loadNotifications = loadNotifications;
+        window.loadUnreadCount = loadUnreadCount;
+        window.markAsRead = markAsRead;
+        window.markAllAsRead = markAllAsRead;
+
         function openQRScanner() {
             window.location.href = "{{ route('gsu.qr.scanner') }}";
         }

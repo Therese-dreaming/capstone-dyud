@@ -162,6 +162,11 @@
                 <div class="font-semibold text-gray-800">{{ $item->asset_code }}</div>
                 <div class="text-sm text-gray-600">{{ $item->particulars }}</div>
                 <div class="text-xs text-gray-500 mt-1">Start Status: {{ $item->start_status }}</div>
+                @if($item->location_name)
+                <div class="text-xs text-blue-600 mt-1">
+                    <i class="fas fa-map-marker-alt mr-1"></i>{{ $item->location_name }}
+                </div>
+                @endif
             </div>
             @endforeach
         </div>
@@ -178,6 +183,11 @@
                 <div class="font-semibold text-gray-800">{{ $item->asset_code }}</div>
                 <div class="text-sm text-gray-600">{{ $item->particulars }}</div>
                 <div class="text-xs text-red-600 mt-1">Reason: {{ $item->missing_reason }}</div>
+                @if($item->location_name)
+                <div class="text-xs text-blue-600 mt-1">
+                    <i class="fas fa-map-marker-alt mr-1"></i>{{ $item->location_name }}
+                </div>
+                @endif
             </div>
             @endforeach
         </div>

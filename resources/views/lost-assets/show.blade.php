@@ -77,11 +77,11 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Reported Date</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $lostAsset->reported_date->format('M d, Y') }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ $lostAsset->reported_date ? $lostAsset->reported_date->format('M d, Y') : '—' }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Last Seen Date</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $lostAsset->last_seen_date->format('M d, Y') }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ $lostAsset->last_seen_date ? $lostAsset->last_seen_date->format('M d, Y') : '—' }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Last Known Location</label>
@@ -122,7 +122,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-green-700">Found Date</label>
-                            <p class="mt-1 text-sm text-green-900 font-medium">{{ $lostAsset->found_date->format('M d, Y') }}</p>
+                            <p class="mt-1 text-sm text-green-900 font-medium">{{ $lostAsset->found_date ? $lostAsset->found_date->format('M d, Y') : '—' }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-green-700">Found Location</label>
@@ -155,35 +155,16 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Days Since Reported</label>
-                            <p class="mt-1 text-sm text-gray-900 font-medium">{{ $lostAsset->reported_date->diffInDays(now()) }} days</p>
+                            <p class="mt-1 text-sm text-gray-900 font-medium">{{ $lostAsset->reported_date ? $lostAsset->reported_date->diffInDays(now()) . ' days' : '—' }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Days Since Last Seen</label>
-                            <p class="mt-1 text-sm text-gray-900 font-medium">{{ $lostAsset->last_seen_date->diffInDays(now()) }} days</p>
+                            <p class="mt-1 text-sm text-gray-900 font-medium">{{ $lostAsset->last_seen_date ? $lostAsset->last_seen_date->diffInDays(now()) . ' days' : '—' }}</p>
                         </div>
                     </div>
                 </div>
 
-                @if($lostAsset->lastBorrower)
-                <!-- Last Borrower Information -->
-                <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Last Borrower</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Borrower Name</label>
-                            <p class="mt-1 text-sm text-gray-900 font-medium">{{ $lostAsset->lastBorrower->name }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Borrower ID</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $lostAsset->lastBorrower->id_number }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Contact</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $lostAsset->lastBorrower->email }}</p>
-                        </div>
-                    </div>
-                </div>
-                @endif
+                
 
                 <!-- Actions -->
                 <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">

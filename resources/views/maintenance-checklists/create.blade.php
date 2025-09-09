@@ -98,6 +98,9 @@ button:hover {
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
             <form action="{{ route('maintenance-checklists.store') }}" method="POST" id="checklistForm" class="space-y-0">
         @csrf
+                @if(isset($maintenanceRequestId))
+                    <input type="hidden" name="maintenance_request_id" value="{{ $maintenanceRequestId }}">
+                @endif
                 <!-- Progress Steps -->
                 <div class="bg-gradient-to-r from-red-600 to-red-700 px-8 py-6">
                     <div class="flex items-center justify-center">
@@ -189,15 +192,41 @@ button:hover {
                                         class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200" required>
                                     <option value="">Select a room or location</option>
                                     @foreach($locations as $location)
+                                        @php
+                                            $isPending = in_array($location->id, $pendingLocationIds);
+                                            $hasRepairAssets = in_array($location->id, $repairMaintenanceLocationIds);
+                                        @endphp
                                         <option value="{{ $location->id }}" 
                                                 data-building="{{ $location->building }}" 
                                                 data-floor="{{ $location->floor }}"
                                                 data-room="{{ $location->room }}"
-                                                {{ old('location_id') == $location->id ? 'selected' : '' }}>
+                                                data-pending="{{ $isPending ? 'true' : 'false' }}"
+                                                data-repair="{{ $hasRepairAssets ? 'true' : 'false' }}"
+                                                {{ old('location_id') == $location->id || (isset($prefillLocationId) && (int)$prefillLocationId === $location->id) ? 'selected' : '' }}
+                                                {{ ($isPending || $hasRepairAssets) ? 'disabled' : '' }}>
                                             {{ $location->building }} - {{ $location->floor }} - {{ $location->room }}
+                                            @if($isPending)
+                                                (⚠️ Pending Maintenance)
+                                            @elseif($hasRepairAssets)
+                                                (🔧 Has Repair/Maintenance Assets)
+                                            @endif
                                         </option>
                                     @endforeach
                                 </select>
+                                <div id="location-warning" class="hidden text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <span class="font-medium">Warning:</span>
+                                        <span>This location already has a pending or in-progress maintenance checklist.</span>
+                                    </div>
+                                </div>
+                                <div id="repair-warning" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-tools"></i>
+                                        <span class="font-medium">Error:</span>
+                                        <span>This location has assets marked as 'For Repair' or 'For Maintenance'. Please resolve these assets first before creating a maintenance checklist.</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -221,7 +250,7 @@ button:hover {
                                 </label>
                                 <input type="text" name="instructor" id="instructor" 
                                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200" 
-                                       value="{{ old('instructor') }}" 
+                                       value="{{ old('instructor', $prefillInstructor ?? '') }}" 
                                        placeholder="Enter instructor's full name" required>
                             </div>
 
@@ -273,7 +302,7 @@ button:hover {
                 </div>
 
                         <!-- Information Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <!-- Asset Information Card -->
                             <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6">
                                 <div class="flex items-start space-x-4">
@@ -285,7 +314,7 @@ button:hover {
                                     <div class="flex-1">
                                         <h3 class="text-lg font-semibold text-blue-900 mb-2">Automatic Asset Population</h3>
                                         <p class="text-blue-800 text-sm leading-relaxed">
-                                            All active assets in the selected room will be automatically added to this checklist with "OK" as the initial status. 
+                                            All active assets in the selected room (excluding disposed and missing assets) will be automatically added to this checklist with "OK" as the initial status. 
                                             GSU staff will scan each asset's QR code during maintenance to determine the final status.
                                         </p>
                 </div>
@@ -307,7 +336,27 @@ button:hover {
                                             and provide their signatures upon completion of the maintenance process.
                                         </p>
                                     </div>
+                                    </div>
             </div>
+        </div>
+
+                            <!-- Restrictions Information Card -->
+                            <div class="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-xl p-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-12 h-12 bg-amber-500 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-exclamation-triangle text-white text-lg"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="text-lg font-semibold text-amber-900 mb-2">Important Restrictions</h3>
+                                        <ul class="text-amber-800 text-sm leading-relaxed space-y-1">
+                                            <li>• Only one maintenance checklist per location at a time</li>
+                                            <li>• Disposed and missing assets are automatically excluded</li>
+                                            <li>• Locations with pending checklists are disabled</li>
+                                            <li>• Locations with 'For Repair' or 'For Maintenance' assets are blocked</li>
+                                        </ul>
+                                    </div>
             </div>
         </div>
 
@@ -423,11 +472,30 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('checklistForm').addEventListener('submit', function(e) {
         const roomSelect = document.getElementById('room_number');
         const instructorInput = document.getElementById('instructor');
+        const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+        const isPending = selectedOption.getAttribute('data-pending') === 'true';
+        const hasRepairAssets = selectedOption.getAttribute('data-repair') === 'true';
         
         // Check required fields
         if (!roomSelect.value) {
             e.preventDefault();
             showFieldError(roomSelect, 'Please select a room first.');
+            roomSelect.focus();
+            return false;
+        }
+        
+        // Check if selected location has pending maintenance
+        if (isPending) {
+            e.preventDefault();
+            showFieldError(roomSelect, 'This location already has a pending or in-progress maintenance checklist. Please select a different location.');
+            roomSelect.focus();
+            return false;
+        }
+        
+        // Check if selected location has repair/maintenance assets
+        if (hasRepairAssets) {
+            e.preventDefault();
+            showFieldError(roomSelect, 'This location has assets marked as "For Repair" or "For Maintenance". Please resolve these assets first before creating a maintenance checklist.');
             roomSelect.focus();
             return false;
         }
@@ -498,6 +566,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Generate initial preview
     generateMaintenanceIdPreview();
+
+    // Handle location selection and show warnings for pending locations or repair assets
+    document.getElementById('room_number').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const isPending = selectedOption.getAttribute('data-pending') === 'true';
+        const hasRepairAssets = selectedOption.getAttribute('data-repair') === 'true';
+        const warningDiv = document.getElementById('location-warning');
+        const repairWarningDiv = document.getElementById('repair-warning');
+        
+        // Hide both warnings first
+        warningDiv.classList.add('hidden');
+        repairWarningDiv.classList.add('hidden');
+        
+        // Show appropriate warning
+        if (isPending) {
+            warningDiv.classList.remove('hidden');
+        } else if (hasRepairAssets) {
+            repairWarningDiv.classList.remove('hidden');
+        }
+    });
 
     // Add smooth scrolling to form sections
     const formSections = document.querySelectorAll('.p-8');

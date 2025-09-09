@@ -16,10 +16,10 @@
                 <i class="fas fa-filter"></i> 
                 <span x-text="showFilters ? 'Hide Filters' : 'Show Filters'"></span>
             </button>
-            <button onclick="window.print()" 
-                    class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
-                <i class="fas fa-print"></i> Print Report
-            </button>
+            <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.disposals.export' : 'disposals.export') }}" 
+               class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
+                <i class="fas fa-file-excel"></i> Export to Excel
+            </a>
         </div>
     </div>
 

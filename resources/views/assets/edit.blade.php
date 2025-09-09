@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends(request()->routeIs('gsu.*') ? 'layouts.gsu' : 'layouts.admin')
 
 @section('content')
 <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-10">
@@ -31,7 +31,7 @@
             </ul>
         </div>
     @endif
-    <form action="{{ route('assets.update', $asset) }}" method="POST">
+    <form action="{{ request()->routeIs('gsu.*') ? route('gsu.assets.update', $asset) : route('assets.update', $asset) }}" method="POST">
         @csrf
         @method('PUT')
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

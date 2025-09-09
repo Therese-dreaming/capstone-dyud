@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Location;
 use App\Models\Warranty;
 use App\Models\Dispose;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -108,14 +109,28 @@ class AssetController extends Controller
                 $message = $quantity === 1 
                     ? 'Asset and warranty created successfully.' 
                     : "{$quantity} assets and warranties created successfully.";
-                
-                // Check if we should redirect back to a location page
+
+                // Send notification to admins for each created asset
+                $notificationService = new NotificationService();
+                foreach ($createdAssets as $asset) {
+                    $notificationService->notifyAssetCreated($asset);
+                }
+
+                // Determine target location for redirection
                 $redirectLocation = $request->get('redirect_to_location');
+                $targetLocationId = $redirectLocation ?: $validated['location_id'];
+
+                // Redirect per role: GSU should always go back to the location's show page
+                if (auth()->user()->role === 'gsu') {
+                    return redirect()->route('gsu.locations.show', $targetLocationId)
+                        ->with('success', $message);
+                }
+
                 if ($redirectLocation) {
                     return redirect()->route('locations.show', $redirectLocation)
                         ->with('success', $message);
                 }
-                    
+                
                 return redirect()->route('locations.index')
                     ->with('success', $message);
             });
@@ -139,8 +154,8 @@ class AssetController extends Controller
         // Get the active tab from request (default to maintenance)
         $activeTab = $request->get('tab', 'maintenance');
         
-        // Paginate history records to prevent overloading
-        $maintenances = $asset->maintenances()->orderBy('maintenance_date', 'desc')->paginate(10);
+        // Use maintenance checklist scanning history instead of legacy maintenances
+        $maintenances = $asset->maintenanceHistory()->orderBy('scanned_at', 'desc')->paginate(10);
         $disposes = $asset->disposes()->orderBy('disposal_date', 'desc')->paginate(10);
         $changes = $asset->changes()->with('user')->orderBy('created_at', 'desc')->paginate(10);
         
@@ -223,6 +238,18 @@ class AssetController extends Controller
                 'warranty_expiry' => $validated['warranty_expiry']
             ]
         );
+
+        // Send notification to admins
+        $notificationService = new NotificationService();
+        $notificationService->notifyAssetEdited($asset);
+
+        // Redirect per role after update
+        if (auth()->user()->role === 'gsu') {
+            // Prefer returning to the asset's location show page in GSU context
+            $targetLocationId = $asset->original_location_id ?: $asset->location_id;
+            return redirect()->route('gsu.locations.show', $targetLocationId)
+                ->with('success', 'Asset updated successfully.');
+        }
 
         return redirect()->route('locations.index')
             ->with('success', 'Asset updated successfully.');

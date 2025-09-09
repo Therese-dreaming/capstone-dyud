@@ -61,6 +61,11 @@ class MaintenanceChecklist extends Model
         return $this->belongsTo(User::class, 'completed_by');
     }
 
+    public function maintenanceRequest(): BelongsTo
+    {
+        return $this->belongsTo(MaintenanceRequest::class, 'id', 'maintenance_checklist_id');
+    }
+
     public function maintenanceHistory(): HasMany
     {
         return $this->hasMany(AssetMaintenanceHistory::class);

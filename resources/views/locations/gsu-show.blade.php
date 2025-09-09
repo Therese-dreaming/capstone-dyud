@@ -2,6 +2,22 @@
 
 @section('content')
 <div class="container mx-auto py-8">
+    @if(session('success'))
+    <div class="mb-4 bg-green-100 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+        <div class="flex items-start gap-2">
+            <i class="fas fa-check-circle mt-0.5"></i>
+            <span class="font-semibold">{{ session('success') }}</span>
+        </div>
+    </div>
+    @endif
+    @if(session('error'))
+    <div class="mb-4 bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+        <div class="flex items-start gap-2">
+            <i class="fas fa-times-circle mt-0.5"></i>
+            <span class="font-semibold">{{ session('error') }}</span>
+        </div>
+    </div>
+    @endif
     <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-4">
             <a href="{{ route('gsu.locations.index') }}" class="text-gray-600 hover:text-red-800 transition-colors">

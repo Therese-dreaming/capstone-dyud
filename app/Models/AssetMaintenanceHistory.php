@@ -16,7 +16,9 @@ class AssetMaintenanceHistory extends Model
         'end_status',
         'scanned_by',
         'scanned_at',
-        'notes'
+        'notes',
+        'location_id',
+        'location_name'
     ];
 
     protected $casts = [
@@ -31,6 +33,11 @@ class AssetMaintenanceHistory extends Model
     public function maintenanceChecklist(): BelongsTo
     {
         return $this->belongsTo(MaintenanceChecklist::class);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function getStatusClassAttribute()

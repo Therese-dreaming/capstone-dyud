@@ -17,6 +17,7 @@ use App\Http\Controllers\SemesterRecordController;
 use App\Http\Controllers\SemesterSettingController;
 use App\Http\Controllers\MaintenanceChecklistController;
 use App\Http\Controllers\AssetScannerController;
+use App\Http\Controllers\MaintenanceRequestController;
 
 // Default route - redirect to login
 Route::get('/', function () {
@@ -48,7 +49,7 @@ Route::middleware(['auth'])->group(function () {
     // Routes for admin only (removed user role)
     Route::middleware(['role:admin'])->group(function () {
         // Asset management for admin
-        // Route::get('/assets', [AssetController::class, 'index'])->name('assets.index');
+        Route::get('/assets', [AssetController::class, 'index'])->name('assets.index');
         Route::get('/assets/create', [AssetController::class, 'create'])->name('assets.create');
         Route::post('/assets', [AssetController::class, 'store'])->name('assets.store');
         Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
@@ -84,6 +85,8 @@ Route::middleware(['auth'])->group(function () {
 
         // Disposal routes for admin
         Route::get('/disposal-history', [DisposalController::class, 'history'])->name('disposals.history');
+        Route::get('/disposal-history/export', [DisposalController::class, 'export'])->name('disposals.export');
+        Route::get('/lost-assets/export', [LostAssetController::class, 'export'])->name('lost-assets.export');
 
         // User Management moved to Super Admin only
 
@@ -102,6 +105,12 @@ Route::middleware(['auth'])->group(function () {
 
     // Maintenance Checklists - accessible to both admin and GSU users (role checking handled in controller)
     Route::middleware(['auth'])->group(function () {
+        // Unverified Assets Management (Admin only) - Must be before parameterized routes
+        Route::get('/maintenance-checklists/unverified-assets', [MaintenanceChecklistController::class, 'unverifiedAssets'])->name('maintenance-checklists.unverified-assets');
+        Route::post('/assets/{asset}/confirm-lost', [MaintenanceChecklistController::class, 'confirmAsLost'])->name('assets.confirm-lost');
+        Route::post('/assets/{asset}/mark-found', [MaintenanceChecklistController::class, 'markAsFound'])->name('assets.mark-found');
+        Route::post('/assets/{asset}/resolve-repair', [MaintenanceChecklistController::class, 'resolveRepair'])->name('assets.resolve-repair');
+        
         Route::get('/maintenance-checklists', [MaintenanceChecklistController::class, 'index'])->name('maintenance-checklists.index');
         Route::get('/maintenance-checklists/create', [MaintenanceChecklistController::class, 'create'])->name('maintenance-checklists.create');
         Route::post('/maintenance-checklists', [MaintenanceChecklistController::class, 'store'])->name('maintenance-checklists.store');
@@ -131,6 +140,25 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/asset-scanner/{maintenanceChecklist}/progress', [AssetScannerController::class, 'getProgress'])->name('asset-scanner.progress');
     });
 
+    // Maintenance Requests
+    Route::get('/maintenance-requests/create', [MaintenanceRequestController::class, 'create'])->name('maintenance-requests.create');
+    Route::post('/maintenance-requests', [MaintenanceRequestController::class, 'store'])->name('maintenance-requests.store');
+    Route::get('/maintenance-requests', [MaintenanceRequestController::class, 'userIndex'])->name('maintenance-requests.user-index');
+    Route::get('/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'userShow'])->name('maintenance-requests.user-show');
+    Route::get('/maintenance-checklists/{maintenanceChecklist}/user-view', [MaintenanceChecklistController::class, 'userShow'])->name('maintenance-checklists.user-show');
+    Route::get('/admin/maintenance-requests', [MaintenanceRequestController::class, 'index'])->name('maintenance-requests.index');
+    Route::get('/admin/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'show'])->name('maintenance-requests.show');
+    Route::post('/admin/maintenance-requests/{maintenanceRequest}/approve', [MaintenanceRequestController::class, 'approve'])->name('maintenance-requests.approve');
+    Route::post('/admin/maintenance-requests/{maintenanceRequest}/reject', [MaintenanceRequestController::class, 'reject'])->name('maintenance-requests.reject');
+    Route::get('/gsu/maintenance-requests/{maintenanceRequest}/acknowledge', [MaintenanceRequestController::class, 'acknowledge'])->name('maintenance-requests.acknowledge');
+    
+    // Notifications
+    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/api/notifications/unread-count', [App\Http\Controllers\NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
+    Route::get('/api/notifications/recent', [App\Http\Controllers\NotificationController::class, 'getRecent'])->name('notifications.recent');
+    Route::post('/api/notifications/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/api/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+
     // Routes for Super Admin only (User Management ONLY)
     Route::middleware(['role:superadmin'])->group(function () {
         // User Management (Super Admin ONLY - no other access)
@@ -145,7 +173,7 @@ Route::middleware(['auth'])->group(function () {
     // Routes for GSU users only (super admin)
     Route::middleware(['role:gsu'])->group(function () {
         // GSU Asset Management (full CRUD)
-        // Route::get('/gsu/assets', [AssetController::class, 'gsuIndex'])->name('gsu.assets.index');
+        Route::get('/gsu/assets', [AssetController::class, 'gsuIndex'])->name('gsu.assets.index');
         Route::get('/gsu/assets/create', [AssetController::class, 'create'])->name('gsu.assets.create');
         Route::post('/gsu/assets', [AssetController::class, 'store'])->name('gsu.assets.store');
         Route::get('/gsu/assets/{asset}', [AssetController::class, 'show'])->name('gsu.assets.show');

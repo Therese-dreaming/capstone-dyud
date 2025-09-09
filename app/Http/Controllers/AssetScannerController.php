@@ -72,7 +72,7 @@ class AssetScannerController extends Controller
                 'scanned_by' => auth()->user()->name
             ]);
 
-            // Create maintenance history record
+            // Create maintenance history record with location information
             AssetMaintenanceHistory::create([
                 'asset_code' => $request->asset_code,
                 'maintenance_checklist_id' => $checklist->id,
@@ -80,12 +80,19 @@ class AssetScannerController extends Controller
                 'end_status' => $request->end_status,
                 'scanned_by' => auth()->user()->name,
                 'scanned_at' => now(),
-                'notes' => $request->notes
+                'notes' => $request->notes,
+                'location_id' => $checklistItem->location_id,
+                'location_name' => $checklistItem->location_name
             ]);
 
-            // Update asset condition based on end status
+            // Update asset condition and status based on end status
             $newCondition = $this->mapStatusToCondition($request->end_status);
-            $asset->update(['condition' => $newCondition]);
+            $newStatus = $this->mapStatusToAssetStatus($request->end_status);
+            
+            $asset->update([
+                'condition' => $newCondition,
+                'status' => $newStatus
+            ]);
 
             // Update checklist status to in_progress if it's still acknowledged
             if ($checklist->status === 'acknowledged') {
@@ -182,13 +189,18 @@ class AssetScannerController extends Controller
                 'end_status' => 'LOST',
                 'scanned_by' => auth()->user()->name,
                 'scanned_at' => now(),
-                'notes' => 'Asset marked as lost during maintenance checklist'
+                'notes' => 'Asset marked as lost during maintenance checklist',
+                'location_id' => $checklistItem->location_id,
+                'location_name' => $checklistItem->location_name
             ]);
 
-            // Get asset location for last_known_location
+            // Get asset location for last_known_location (fallback to original location)
+            $asset->load(['location', 'originalLocation']);
             $lastKnownLocation = 'Unknown';
             if ($asset->location) {
                 $lastKnownLocation = $asset->location->building . ' - Floor ' . $asset->location->floor . ' - Room ' . $asset->location->room;
+            } elseif ($asset->originalLocation) {
+                $lastKnownLocation = $asset->originalLocation->building . ' - Floor ' . $asset->originalLocation->floor . ' - Room ' . $asset->originalLocation->room;
             }
 
             // Create record in lost_assets table
@@ -198,7 +210,7 @@ class AssetScannerController extends Controller
                 'reported_date' => now()->format('Y-m-d'), // Automatic as now()
                 'last_known_location' => $lastKnownLocation, // Automatic from asset location
                 'investigation_notes' => $request->investigation_notes,
-                'status' => 'lost', // Automatic as 'lost'
+                'status' => \App\Models\LostAsset::STATUS_LOST,
                 'found_date' => null,
                 'found_notes' => null
             ]);
@@ -256,6 +268,16 @@ class AssetScannerController extends Controller
             'FOR REPAIR' => 'Fair',
             'FOR REPLACEMENT' => 'Poor',
             default => 'Unknown'
+        };
+    }
+
+    private function mapStatusToAssetStatus($status)
+    {
+        return match($status) {
+            'OK' => 'Available',
+            'FOR REPAIR' => 'For Repair',
+            'FOR REPLACEMENT' => 'For Replacement',
+            default => 'Available'
         };
     }
 }
