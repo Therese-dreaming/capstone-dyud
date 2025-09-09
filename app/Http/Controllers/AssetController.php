@@ -116,7 +116,7 @@ class AssetController extends Controller
                         ->with('success', $message);
                 }
                     
-                return redirect()->route(auth()->user()->role === 'gsu' ? 'gsu.assets.index' : 'assets.index')
+                return redirect()->route('locations.index')
                     ->with('success', $message);
             });
         } catch (\Exception $e) {
@@ -160,6 +160,8 @@ class AssetController extends Controller
         // Force GSU view regardless of role, since route is in GSU group
         return view('assets.gsu-show', compact('asset'));
     }
+
+    
 
     public function edit(Asset $asset)
     {
@@ -222,7 +224,7 @@ class AssetController extends Controller
             ]
         );
 
-        return redirect()->route(auth()->user()->role === 'gsu' ? 'gsu.assets.index' : 'assets.index')
+        return redirect()->route('locations.index')
             ->with('success', 'Asset updated successfully.');
     }
 
@@ -287,13 +289,8 @@ class AssetController extends Controller
             ]);
             
             // Redirect based on user role
-            if ($userRole === 'gsu') {
-                return redirect()->route('gsu.assets.index')
-                    ->with('success', "Asset {$assetCode} has been deleted successfully.");
-            } else {
-                return redirect()->route('assets.index')
-                    ->with('success', "Asset {$assetCode} has been deleted successfully.");
-            }
+            return redirect()->route('locations.index')
+                ->with('success', "Asset {$assetCode} has been deleted successfully.");
         } catch (\Exception $e) {
             // Log the error
             Log::error('Asset deletion failed', [

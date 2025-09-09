@@ -3,7 +3,7 @@
 @section('content')
 <div class="max-w-xl mx-auto bg-white rounded-xl shadow-lg p-10">
     <div class="flex items-center gap-4 mb-8">
-        <a href="{{ route('locations.index') }}" 
+        <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.locations.index' : 'locations.index') }}" 
            class="inline-flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
             <i class="fas fa-arrow-left"></i>
         </a>
@@ -71,7 +71,7 @@
                 <i class="fas fa-save"></i> Update Location
             </button>
             
-            <a href="{{ route('locations.index') }}" 
+            <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.locations.index' : 'locations.index') }}" 
                class="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold rounded-lg transition duration-200 flex items-center justify-center gap-2">
                 <i class="fas fa-times"></i> Cancel
             </a>

@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.gsu')
 
 @section('content')
 <div class="container mx-auto py-8">

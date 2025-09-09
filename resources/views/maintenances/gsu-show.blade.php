@@ -21,7 +21,7 @@
                         <span class="text-sm font-medium text-gray-500">Asset Name:</span>
                         <p class="text-base font-semibold text-gray-900">{{ $asset->name }}</p>
                     </div>
-                    <div>
+                    <div>   
                         <span class="text-sm font-medium text-gray-500">Asset Code:</span>
                         <p class="text-base font-semibold text-gray-900">{{ $asset->asset_code }}</p>
                     </div>

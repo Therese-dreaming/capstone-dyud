@@ -30,7 +30,7 @@
             Filters
         </h3>
         
-        <form method="GET" action="{{ route('disposals.history') }}">
+        <form method="GET" action="{{ route(request()->routeIs('gsu.*') ? 'gsu.disposals.history' : 'disposals.history') }}">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Asset Search -->
                 <div>
@@ -67,7 +67,7 @@
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 flex items-center gap-2">
                     <i class="fas fa-search"></i> Apply Filters
                 </button>
-                <a href="{{ route('disposals.history') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 flex items-center gap-2">
+                <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.disposals.history' : 'disposals.history') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 flex items-center gap-2">
                     <i class="fas fa-times"></i> Clear Filters
                 </a>
             </div>

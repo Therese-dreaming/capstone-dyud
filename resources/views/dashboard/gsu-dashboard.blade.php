@@ -39,7 +39,7 @@
                 </div>
                 <div class="flex items-center justify-between">
                     <span class="text-xs text-gray-500">System-wide</span>
-                    <a href="{{ route('gsu.assets.index') }}" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                    <a href="{{ route('gsu.locations.index') }}" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
                         Manage <i class="fas fa-arrow-right ml-1"></i>
                     </a>
                 </div>

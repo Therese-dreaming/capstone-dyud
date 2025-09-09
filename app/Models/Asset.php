@@ -50,6 +50,11 @@ class Asset extends Model
         return $this->hasOne(Warranty::class);
     }
 
+    public function maintenanceHistory(): HasMany
+    {
+        return $this->hasMany(AssetMaintenanceHistory::class, 'asset_code', 'asset_code');
+    }
+
     public function maintenances(): HasMany
     {
         return $this->hasMany(Maintenance::class);

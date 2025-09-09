@@ -6,7 +6,7 @@
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <a href="{{ route('assets.index') }}" 
+                <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.assets.index' : 'assets.index') }}" 
                    class="inline-flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
                     <i class="fas fa-arrow-left"></i>
                 </a>
@@ -730,9 +730,10 @@
 
     <!-- Action Buttons -->
     <div class="mt-6 flex gap-4">
-        <a href="{{ route('assets.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition duration-200 flex items-center gap-2">
+        <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.assets.index' : 'assets.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition duration-200 flex items-center gap-2">
             <i class="fas fa-list"></i> Back to Assets
         </a>
+        
         <!-- Future: Edit and Delete buttons can be added here -->
     </div>
 </div>

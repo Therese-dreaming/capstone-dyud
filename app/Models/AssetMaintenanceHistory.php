@@ -5,35 +5,32 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class MaintenanceChecklistItem extends Model
+class AssetMaintenanceHistory extends Model
 {
+    protected $table = 'asset_maintenance_history';
+
     protected $fillable = [
-        'maintenance_checklist_id',
         'asset_code',
-        'particulars',
-        'quantity',
+        'maintenance_checklist_id',
         'start_status',
         'end_status',
-        'notes',
-        'is_scanned',
-        'scanned_at',
         'scanned_by',
-        'is_missing',
-        'missing_reason'
+        'scanned_at',
+        'notes'
     ];
 
     protected $casts = [
         'scanned_at' => 'datetime',
     ];
 
-    public function checklist(): BelongsTo
-    {
-        return $this->belongsTo(MaintenanceChecklist::class, 'maintenance_checklist_id');
-    }
-
     public function asset(): BelongsTo
     {
         return $this->belongsTo(Asset::class, 'asset_code', 'asset_code');
+    }
+
+    public function maintenanceChecklist(): BelongsTo
+    {
+        return $this->belongsTo(MaintenanceChecklist::class);
     }
 
     public function getStatusClassAttribute()
@@ -45,4 +42,4 @@ class MaintenanceChecklistItem extends Model
             default => 'bg-gray-100 text-gray-800'
         };
     }
-} 
+}

@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.gsu')
 
 @section('content')
 <div class="container mx-auto py-8">
@@ -11,7 +11,7 @@
                 </h1>
                 <p class="text-gray-600 mt-1">Report missing asset with detailed information</p>
             </div>
-            <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.locations.index' : 'locations.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
+            <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.assets.index' : 'assets.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
                 <i class="fas fa-arrow-left"></i> Back to Assets
             </a>
         </div>
@@ -125,7 +125,18 @@
                         @enderror
                     </div>
                     
-                    
+                    <div>
+                        <label for="last_known_location" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-map-marker-alt mr-1"></i>Last Known Location
+                        </label>
+                        <input type="text" name="last_known_location" id="last_known_location" 
+                               value="{{ old('last_known_location') }}"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                               placeholder="Where was the asset last seen?">
+                        @error('last_known_location')
+                            <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
                 <div class="mt-6">
@@ -154,7 +165,7 @@
                 </div>
 
                 <div class="mt-8 flex justify-end space-x-4">
-                    <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.locations.index' : 'locations.index') }}" 
+                    <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.assets.index' : 'assets.index') }}" 
                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center gap-2">
                         <i class="fas fa-times"></i> Cancel
                     </a>

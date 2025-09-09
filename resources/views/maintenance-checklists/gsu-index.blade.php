@@ -1,18 +1,15 @@
-@extends('layouts.admin')
+@extends('layouts.gsu')
 
 @section('content')
 <div class="container mx-auto py-8">
-    <div class="flex justify-between items-center mb-6">
+    <div class="mb-6">
         <div>
             <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
                 <i class="fas fa-clipboard-check text-red-800"></i>
                 Maintenance Checklists
             </h1>
-            <p class="text-gray-600 mt-1">Room-based maintenance records following the CSV format</p>
+            <p class="text-gray-600 mt-1">View and manage maintenance checklists assigned to you</p>
         </div>
-        <a href="{{ route('maintenance-checklists.create') }}" class="bg-gradient-to-r from-red-800 to-red-900 hover:from-red-900 hover:to-red-950 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2 shadow-lg">
-            <i class="fas fa-plus"></i> Create Checklist
-        </a>
     </div>
 
     @if(session('success'))
@@ -129,27 +126,35 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     
-                                    <!-- Admin actions: Edit (if created), Export (if completed), Delete (if created) -->
                                     @if($checklist->status === 'created')
-                                        <a href="{{ route('maintenance-checklists.edit', $checklist) }}" 
-                                           class="text-green-600 hover:text-green-900" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <form action="{{ route('maintenance-checklists.destroy', $checklist) }}" 
-                                              method="POST" class="inline" 
-                                              onsubmit="return confirm('Are you sure you want to delete this checklist?')">
+                                        <form action="{{ route('maintenance-checklists.acknowledge', $checklist) }}" method="POST" class="inline">
                                             @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900" title="Delete">
-                                                <i class="fas fa-trash"></i>
+                                            <button type="submit" class="text-green-600 hover:text-green-900" title="Acknowledge">
+                                                <i class="fas fa-check"></i>
                                             </button>
                                         </form>
-                                    @elseif($checklist->status === 'completed')
+                                    @elseif($checklist->status === 'acknowledged')
+                                        <form action="{{ route('maintenance-checklists.start', $checklist) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" class="text-yellow-600 hover:text-yellow-900" title="Start Maintenance">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                        </form>
+                                    @elseif($checklist->status === 'in_progress')
+                                        <a href="{{ route('maintenance-checklists.scanner', $checklist) }}" 
+                                           class="text-purple-600 hover:text-purple-900" title="Continue Scanning">
+                                            <i class="fas fa-qrcode"></i>
+                                        </a>
+                                    @endif
+                                    
+                                    @if($checklist->status === 'completed')
                                         <a href="{{ route('maintenance-checklists.export', $checklist) }}" 
-                                           class="text-green-600 hover:text-green-900" title="Export">
+                                           class="text-purple-600 hover:text-purple-900" title="Export">
                                             <i class="fas fa-download"></i>
                                         </a>
                                     @endif
+                                    
+                                    <!-- GSU users can only view and work with checklists, not edit or delete them -->
                                 </div>
                             </td>
                         </tr>

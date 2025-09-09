@@ -53,13 +53,15 @@ class MaintenanceController extends Controller
     public function index(Asset $asset)
     {
         $maintenances = $asset->maintenances()->orderBy('scheduled_date', 'desc')->paginate(10);
+        // Also load scanner-based maintenance history tied to this asset
+        $scanHistory = $asset->maintenanceHistory()->orderBy('scanned_at', 'desc')->paginate(10, ['*'], 'scan_page');
         
         // Check if user is GSU and return appropriate view
         if (auth()->user()->role === 'gsu') {
-            return view('maintenances.gsu-index', compact('asset', 'maintenances'));
+            return view('maintenances.gsu-index', compact('asset', 'maintenances', 'scanHistory'));
         }
         
-        return view('maintenances.index', compact('asset', 'maintenances'));
+        return view('maintenances.index', compact('asset', 'maintenances', 'scanHistory'));
     }
 
     /**

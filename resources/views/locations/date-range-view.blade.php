@@ -43,7 +43,7 @@
 <div class="container mx-auto py-8">
     <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-4">
-            <a href="{{ route('locations.index') }}" class="text-gray-600 hover:text-red-800 transition-colors">
+            <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.locations.index' : 'locations.index') }}" class="text-gray-600 hover:text-red-800 transition-colors">
                 <i class="fas fa-arrow-left text-xl"></i>
             </a>
             <h1 class="text-3xl font-bold flex items-center gap-2">

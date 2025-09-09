@@ -10,12 +10,28 @@
     <!-- Font Awesome Fallback CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
 </head>
 
 <body class="bg-gray-50 min-h-screen font-['Inter']">
-    <div class="flex min-h-screen">
+    <div class="flex min-h-screen" x-data="{ sidebarOpen: false }">
+        <!-- Mobile sidebar overlay -->
+        <div x-show="sidebarOpen" 
+             x-transition:enter="transition-opacity ease-linear duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-linear duration-300"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+             @click="sidebarOpen = false"
+             style="display: none;">
+        </div>
+
         <!-- Sidebar -->
-        <aside class="w-64 bg-white shadow-xl flex flex-col transition-all duration-300" x-data="{ expanded: true }">
+        <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl flex flex-col transition-all duration-300 transform lg:translate-x-0 lg:static lg:inset-0"
+               :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+               x-data="{ expanded: true }">
             <!-- Profile Section -->
             <a href="#" class="block p-4 border-b border-gray-100 hover:bg-red-50 transition" title="Profile Settings">
                 <div class="flex items-center space-x-3 cursor-pointer">
@@ -65,12 +81,7 @@
                             <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
                         </button>
                         <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
-                            <li>
-                                <a href="{{ route('assets.report') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('assets.report') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-file-alt mr-2 w-4"></i> Asset Report
-                                </a>
-                            </li>
+                            
                             <li>
                                 <a href="{{ route('disposals.history') }}"
                                     class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('disposals.history') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
@@ -78,15 +89,9 @@
                                 </a>
                             </li>
                             <li>
-                                <a href="{{ route('maintenances.history') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('maintenances.history') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-history mr-2 w-4"></i> Maintenance History
-                                </a>
-                            </li>
-                            <li>
                                 <a href="{{ route('maintenance-checklists.index') }}"
                                     class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('maintenance-checklists.*') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-clipboard-check mr-2 w-4"></i> Maintenance Checklists
+                                    <i class="fas fa-history mr-2 w-4"></i> Maintenance Checklists
                                 </a>
                             </li>
                             <li>
@@ -168,10 +173,17 @@
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col">
+        <div class="flex-1 flex flex-col lg:ml-0">
             <!-- Header -->
-            <header class="bg-white shadow-sm h-16 flex items-center px-6">
-                <div class="flex-1"></div>
+            <header class="bg-white shadow-sm h-16 flex items-center px-4 lg:px-6">
+                <!-- Mobile menu button -->
+                <button @click="sidebarOpen = true" class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                
+                <div class="flex-1 ml-2 lg:ml-0">
+                    <h1 class="text-lg lg:text-xl font-semibold text-gray-800">Admin Dashboard</h1>
+                </div>
                 <div class="flex items-center space-x-4">
                     <button class="relative p-2 hover:bg-gray-100 rounded-lg">
                         <i class="fas fa-bell text-gray-600"></i>
@@ -181,7 +193,7 @@
             </header>
 
             <!-- Main Content -->
-            <main class="flex-1 p-6">
+            <main class="flex-1 p-4 lg:p-6">
                 @yield('content')
             </main>
         </div>

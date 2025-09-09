@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\AssetChange;
-use App\Models\Borrowing;
 use App\Models\LostAsset;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -39,6 +38,11 @@ class LostAssetController extends Controller
         
         $lostAssets = $query->latest()->paginate(15);
         
+        // Check if user is GSU and return appropriate view
+        if (auth()->user()->role === 'gsu') {
+            return view('lost-assets.gsu-index', compact('lostAssets'));
+        }
+        
         return view('lost-assets.index', compact('lostAssets'));
     }
 
@@ -47,12 +51,14 @@ class LostAssetController extends Controller
      */
     public function create(Asset $asset)
     {
-        // Get the last borrower if the asset was borrowed
-        $lastBorrowing = $asset->borrowings()
-            ->whereIn('status', [Borrowing::STATUS_APPROVED, Borrowing::STATUS_OVERDUE, Borrowing::STATUS_RETURNED])
-            ->latest()
-            ->first();
+        // Borrowings removed; no last borrower information available
+        $lastBorrowing = null;
 
+        // Check if user is GSU and return appropriate view
+        if (auth()->user()->role === 'gsu') {
+            return view('lost-assets.gsu-create', compact('asset', 'lastBorrowing'));
+        }
+        
         return view('lost-assets.create', compact('asset', 'lastBorrowing'));
     }
 
@@ -70,16 +76,13 @@ class LostAssetController extends Controller
 
         try {
             return DB::transaction(function () use ($validated, $asset, $request) {
-                // Get the last borrower if the asset was borrowed
-                $lastBorrowing = $asset->borrowings()
-                    ->whereIn('status', [Borrowing::STATUS_APPROVED, Borrowing::STATUS_OVERDUE, Borrowing::STATUS_RETURNED])
-                    ->latest()
-                    ->first();
+                // Borrowings removed; no last borrower information available
+                $lastBorrowing = null;
 
                 $lostAsset = LostAsset::create([
                     'asset_id' => $asset->id,
                     'reported_by' => auth()->id(),
-                    'last_borrower_id' => $lastBorrowing ? $lastBorrowing->user_id : null,
+                    'last_borrower_id' => null,
                     'last_seen_date' => $validated['last_seen_date'],
                     'reported_date' => now()->toDateString(),
                     'description' => $validated['description'],
@@ -117,6 +120,12 @@ class LostAssetController extends Controller
     public function show(LostAsset $lostAsset)
     {
         $lostAsset->load(['asset.category', 'asset.location', 'reportedBy', 'lastBorrower']);
+        
+        // Check if user is GSU and return appropriate view
+        if (auth()->user()->role === 'gsu') {
+            return view('lost-assets.gsu-show', compact('lostAsset'));
+        }
+        
         return view('lost-assets.show', compact('lostAsset'));
     }
 

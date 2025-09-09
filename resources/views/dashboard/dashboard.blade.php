@@ -89,7 +89,7 @@
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-xs text-gray-500">Across all categories</span>
-                        <a href="{{ route('assets.index') }}" class="text-blue-600 hover:text-blue-700 text-sm font-medium group-hover:underline">
+                        <a href="{{ route('locations.index') }}" class="text-blue-600 hover:text-blue-700 text-sm font-medium group-hover:underline">
                             View all <i class="fa fa-arrow-right ml-1"></i>
                         </a>
                     </div>
@@ -108,7 +108,7 @@
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-xs text-gray-500">Ready for use</span>
-                        <a href="{{ route('assets.index') }}?status=Available" class="text-green-600 hover:text-green-700 text-sm font-medium group-hover:underline">
+                        <a href="{{ route('locations.index') }}" class="text-green-600 hover:text-green-700 text-sm font-medium group-hover:underline">
                             View available <i class="fa fa-arrow-right ml-1"></i>
                         </a>
                     </div>
@@ -127,7 +127,7 @@
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-xs text-gray-500">Scheduled for service</span>
-                        <a href="{{ route('maintenances.history') }}" class="text-yellow-600 hover:text-yellow-700 text-sm font-medium group-hover:underline">
+                        <a href="{{ route('maintenance-checklists.index') }}" class="text-yellow-600 hover:text-yellow-700 text-sm font-medium group-hover:underline">
                             View history <i class="fa fa-arrow-right ml-1"></i>
                         </a>
                     </div>
@@ -254,7 +254,7 @@
                             </table>
                         </div>
                         <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
-                            <a href="{{ route('assets.index') }}" class="text-red-600 hover:text-red-700 text-sm font-medium flex items-center justify-end">
+                            <a href="{{ route('locations.index') }}" class="text-red-600 hover:text-red-700 text-sm font-medium flex items-center justify-end">
                                 View all assets <i class="fa fa-arrow-right ml-1" style="font-family: 'Font Awesome 6 Free'; font-weight: 900;"></i>
                             </a>
                         </div>
@@ -538,7 +538,7 @@
                             </div>
                         </a>
 
-                        <a href="{{ route('assets.index') }}" class="group">
+                        <a href="{{ route('locations.index') }}" class="group">
                             <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 text-center hover:from-red-100 hover:to-red-200 transition-all duration-300 border border-red-200 hover:border-red-300">
                                 <div class="bg-red-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">
                                     <i class="fas fa-tools text-white text-xl"></i>
@@ -548,7 +548,7 @@
                             </div>
                         </a>
 
-                        <a href="{{ route('assets.report') }}" class="group">
+                        <a href="{{ route('locations.index') }}" class="group">
                             <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-6 text-center hover:from-indigo-100 hover:to-indigo-200 transition-all duration-300 border border-indigo-200 hover:border-indigo-300">
                                 <div class="bg-indigo-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">
                                     <i class="fas fa-file-alt text-white text-xl"></i>

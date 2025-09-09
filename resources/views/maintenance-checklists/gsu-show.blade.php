@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.gsu')
 
 @section('content')
 <div class="max-w-6xl mx-auto py-8">
@@ -17,20 +17,33 @@
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <!-- Admin actions: Edit (if created), Export (if completed), and Back -->
             @if($checklist->status === 'created')
-                <a href="{{ route('maintenance-checklists.edit', $checklist) }}" 
-                   class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
-                    <i class="fas fa-edit"></i> Edit
+                <form action="{{ route('maintenance-checklists.acknowledge', $checklist) }}" method="POST" class="inline">
+                    @csrf
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
+                        <i class="fas fa-check"></i> Acknowledge
+                    </button>
+                </form>
+            @elseif($checklist->status === 'acknowledged')
+                <form action="{{ route('maintenance-checklists.start', $checklist) }}" method="POST" class="inline">
+                    @csrf
+                    <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
+                        <i class="fas fa-play"></i> Start Maintenance
+                    </button>
+                </form>
+            @elseif($checklist->status === 'in_progress')
+                <a href="{{ route('maintenance-checklists.scanner', $checklist) }}" 
+                   class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
+                    <i class="fas fa-qrcode"></i> Continue Scanning
                 </a>
-            @endif
-            
-            @if($checklist->status === 'completed')
+            @elseif($checklist->status === 'completed')
                 <a href="{{ route('maintenance-checklists.export', $checklist) }}" 
                    class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
                     <i class="fas fa-download"></i> Export CSV
                 </a>
             @endif
+            
+            <!-- GSU users cannot edit maintenance checklists -->
             
             <a href="{{ route('maintenance-checklists.index') }}" 
                class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">

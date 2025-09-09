@@ -113,6 +113,48 @@
         {{ $maintenances->links() }}
     </div>
 
+    <!-- Scanner History Section -->
+    <div class="mt-10 bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+        <div class="bg-gray-50 p-4 border-b border-gray-200">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-qrcode text-gray-600"></i>
+                <h2 class="text-lg font-semibold text-gray-800">Scanner History</h2>
+                <span class="ml-2 text-sm text-gray-600">Total: <span class="text-red-800 font-bold">{{ $scanHistory->total() }}</span></span>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 font-sans">
+                <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">When</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">End Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">Scanned By</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Notes</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                    @forelse($scanHistory as $record)
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-4 py-3 whitespace-nowrap border-r border-gray-100 text-sm text-gray-900">{{ $record->scanned_at ? $record->scanned_at->format('M d, Y H:i') : '—' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap border-r border-gray-100 text-sm">
+                                <span class="px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full {{ $record->status_class }}">{{ $record->end_status ?? '—' }}</span>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap border-r border-gray-100 text-sm text-gray-900">{{ $record->scanned_by ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ $record->notes ?? '—' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-gray-500">No scanner history</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($scanHistory->hasPages())
+            <div class="p-4">{{ $scanHistory->appends(['scan_page' => $scanHistory->currentPage()])->links() }}</div>
+        @endif
+    </div>
+
     <!-- Delete Modal -->
     <div x-show="showModal" x-transition class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">

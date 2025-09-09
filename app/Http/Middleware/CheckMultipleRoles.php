@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class CheckRole
+class CheckMultipleRoles
 {
     /**
      * Handle an incoming request.
@@ -29,4 +29,4 @@ class CheckRole
 
         return $next($request);
     }
-} 
+}

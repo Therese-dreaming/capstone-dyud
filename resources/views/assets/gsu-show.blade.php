@@ -6,7 +6,7 @@
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <a href="{{ route('gsu.assets.index') }}" 
+                <a href="{{ route('gsu.locations.index') }}" 
                    class="inline-flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
                     <i class="fas fa-arrow-left"></i>
                 </a>
@@ -343,6 +343,8 @@
                             <i class="fas fa-edit mr-2"></i>
                             Edit Asset
                         </a>
+
+                        
                         
                         @if($asset->status !== 'Disposed')
                         <button onclick="showDisposeModal()" 
