@@ -116,6 +116,29 @@ button:hover {
                                    required>
                         </div>
 
+                        <!-- Start/End of SY Dates -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-gray-700">School Year Dates</label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <input type="date" 
+                                           name="start_of_sy_date" 
+                                           id="start_of_sy_date" 
+                                           value="{{ old('start_of_sy_date', $checklist->start_of_sy_date ? $checklist->start_of_sy_date->format('Y-m-d') : '') }}"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                                           placeholder="Start of SY Date">
+                                </div>
+                                <div>
+                                    <input type="date" 
+                                           name="end_of_sy_date" 
+                                           id="end_of_sy_date" 
+                                           value="{{ old('end_of_sy_date', $checklist->end_of_sy_date ? $checklist->end_of_sy_date->format('Y-m-d') : '') }}"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                                           placeholder="End of SY Date">
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Department -->
                         <div class="space-y-2">
                             <label class="block text-sm font-semibold text-gray-700" for="department">

@@ -56,6 +56,14 @@
                 <p class="text-lg font-semibold text-gray-900">{{ $checklist->date_reported->format('M d, Y') }}</p>
             </div>
             <div>
+                <label class="block text-sm font-medium text-gray-600">Start of SY Date</label>
+                <p class="text-lg font-semibold text-gray-900">{{ $checklist->start_of_sy_date ? $checklist->start_of_sy_date->format('M d, Y') : 'Not set' }}</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-600">End of SY Date</label>
+                <p class="text-lg font-semibold text-gray-900">{{ $checklist->end_of_sy_date ? $checklist->end_of_sy_date->format('M d, Y') : 'Not set' }}</p>
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-gray-600">Program</label>
                 <p class="text-lg font-semibold text-gray-900">{{ $checklist->program ?? 'N/A' }}</p>
             </div>
@@ -115,6 +123,11 @@
                     @if($checklist->acknowledgedBy)
                         by {{ $checklist->acknowledgedBy->name }}
                     @endif
+                </span>
+            @endif
+            @if($checklist->started_at)
+                <span class="text-sm text-gray-600">
+                    Started: {{ $checklist->started_at->format('M d, Y H:i') }}
                 </span>
             @endif
             @if($checklist->completed_at)

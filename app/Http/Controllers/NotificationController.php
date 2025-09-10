@@ -86,6 +86,19 @@ class NotificationController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return view('notifications.index', compact('notifications'));
+        // Choose layout based on role
+        $user = auth()->user();
+        $role = $user?->role;
+        $layout = 'layouts.user';
+        if ($role === 'admin' || $role === 'superadmin') {
+            $layout = 'layouts.admin';
+        } elseif ($role === 'gsu') {
+            $layout = 'layouts.gsu';
+        }
+
+        return view('notifications.index', [
+            'notifications' => $notifications,
+            'layout' => $layout,
+        ]);
     }
 }

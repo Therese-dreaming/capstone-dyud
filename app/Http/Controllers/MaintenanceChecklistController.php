@@ -110,6 +110,8 @@ class MaintenanceChecklistController extends Controller
         \Log::info('Entered MaintenanceChecklistController@store');
         $validated = $request->validate([
             'school_year' => 'required|string|max:20',
+            'start_of_sy_date' => 'nullable|date',
+            'end_of_sy_date' => 'nullable|date|after_or_equal:start_of_sy_date',
             'department' => 'required|string|max:100',
             'date_reported' => 'required|date',
             'program' => 'nullable|string|max:100',
@@ -161,6 +163,8 @@ class MaintenanceChecklistController extends Controller
             // Create checklist with status 'created'
             $checklist = MaintenanceChecklist::create([
                 'school_year' => $validated['school_year'],
+                'start_of_sy_date' => $validated['start_of_sy_date'] ?? null,
+                'end_of_sy_date' => $validated['end_of_sy_date'] ?? null,
                 'department' => $validated['department'],
                 'date_reported' => $validated['date_reported'],
                 'program' => $validated['program'],
@@ -273,6 +277,8 @@ class MaintenanceChecklistController extends Controller
         
         $validated = $request->validate([
             'school_year' => 'required|string|max:20',
+            'start_of_sy_date' => 'nullable|date',
+            'end_of_sy_date' => 'nullable|date|after_or_equal:start_of_sy_date',
             'department' => 'required|string|max:100',
             'date_reported' => 'required|date',
             'program' => 'nullable|string|max:100',
@@ -302,6 +308,8 @@ class MaintenanceChecklistController extends Controller
 
             $maintenanceChecklist->update([
                 'school_year' => $validated['school_year'],
+                'start_of_sy_date' => $validated['start_of_sy_date'] ?? null,
+                'end_of_sy_date' => $validated['end_of_sy_date'] ?? null,
                 'department' => $validated['department'],
                 'date_reported' => $validated['date_reported'],
                 'program' => $validated['program'],
@@ -457,7 +465,8 @@ class MaintenanceChecklistController extends Controller
             DB::beginTransaction();
             
             $maintenanceChecklist->update([
-                'status' => 'in_progress'
+                'status' => 'in_progress',
+                'started_at' => now(),
             ]);
 
             // Update related maintenance request status to 'in_progress'

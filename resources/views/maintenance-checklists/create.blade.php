@@ -147,6 +147,25 @@ button:hover {
                                        placeholder="e.g., 2024-2025" required>
                             </div>
 
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-semibold text-gray-700" for="start_of_sy_date">
+                                        Start of SY Date
+                                    </label>
+                                    <input type="date" name="start_of_sy_date" id="start_of_sy_date" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200" 
+                                           value="{{ old('start_of_sy_date') }}">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="block text-sm font-semibold text-gray-700" for="end_of_sy_date">
+                                        End of SY Date
+                                    </label>
+                                    <input type="date" name="end_of_sy_date" id="end_of_sy_date" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200" 
+                                           value="{{ old('end_of_sy_date') }}">
+                                </div>
+                            </div>
+
                             <div class="space-y-2">
                                 <label class="block text-sm font-semibold text-gray-700" for="department">
                                     Department <span class="text-red-500">*</span>

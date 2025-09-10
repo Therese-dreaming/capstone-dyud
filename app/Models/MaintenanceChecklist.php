@@ -11,6 +11,8 @@ class MaintenanceChecklist extends Model
     protected $fillable = [
         'maintenance_id',
         'school_year',
+        'start_of_sy_date',
+        'end_of_sy_date',
         'department',
         'date_reported',
         'program',
@@ -27,6 +29,7 @@ class MaintenanceChecklist extends Model
         'status',
         'acknowledged_at',
         'acknowledged_by',
+        'started_at',
         'completed_at',
         'completed_by',
         'has_missing_assets',
@@ -35,8 +38,11 @@ class MaintenanceChecklist extends Model
 
     protected $casts = [
         'date_reported' => 'date',
+        'start_of_sy_date' => 'date',
+        'end_of_sy_date' => 'date',
         'date_checked' => 'date',
         'acknowledged_at' => 'datetime',
+        'started_at' => 'datetime',
         'completed_at' => 'datetime',
         'missing_assets_acknowledged' => 'array',
     ];
