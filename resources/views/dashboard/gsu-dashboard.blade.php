@@ -115,13 +115,13 @@
             <div class="p-6">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <!-- Asset Management -->
-                    <a href="{{ route('gsu.assets.create') }}" class="group">
+                    <a href="{{ route('gsu.assets.index') }}" class="group">
                         <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 text-center hover:from-blue-100 hover:to-blue-200 transition-all duration-300 border border-blue-200 hover:border-blue-300">
                             <div class="bg-blue-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">
-                                <i class="fas fa-plus-circle text-white text-xl"></i>
+                                <i class="fas fa-boxes text-white text-xl"></i>
                             </div>
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Add Asset</h3>
-                            <p class="text-sm text-gray-600">Register new assets</p>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Deploy Assets</h3>
+                            <p class="text-sm text-gray-600">Manage asset deployment</p>
                         </div>
                     </a>
 

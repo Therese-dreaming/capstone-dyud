@@ -67,7 +67,7 @@
                             <dd>
                                 <span class="inline-flex items-center gap-2 text-blue-600 font-medium">
                                     <i class="fas fa-folder text-sm"></i>
-                                    {{ $asset->category->name }}
+                                    {{ $asset->category->name ?? 'N/A' }}
                                 </span>
                             </dd>
                         </div>
@@ -91,6 +91,7 @@
             </div>
 
             <!-- Location Information Card -->
+            @if($asset->location)
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-green-50 to-green-100 px-6 py-4 border-b border-gray-200">
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -130,6 +131,32 @@
                     </div>
                 </div>
             </div>
+            @else
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+                        Location Status
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-map-marker-alt text-yellow-600 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Location Not Assigned</h3>
+                        <p class="text-gray-600 mb-4">This asset has not been deployed to a location yet.</p>
+                        @if(!$asset->location_id)
+                            <a href="{{ route('gsu.assets.assign-location', $asset) }}" 
+                               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                <i class="fas fa-map-marker-alt mr-2"></i>
+                                Assign Location
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endif
 
             <!-- Status & Condition Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -338,30 +365,27 @@
                 </div>
                 <div class="p-6">
                     <div class="grid grid-cols-1 gap-3">
-                        <a href="{{ route('gsu.assets.edit', $asset) }}" 
-                           class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            <i class="fas fa-edit mr-2"></i>
-                            Edit Asset
-                        </a>
-
-                        
-                        
-                        @if($asset->status !== 'Disposed')
-                        <button onclick="showDisposeModal()" 
-                                class="inline-flex items-center justify-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
-                            <i class="fas fa-ban mr-2"></i>
-                            Dispose Asset
-                        </button>
+                        @if(!$asset->location_id)
+                            <a href="{{ route('gsu.assets.assign-location', $asset) }}" 
+                               class="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                <i class="fas fa-map-marker-alt mr-2"></i>
+                                Assign Location
+                            </a>
+                        @else
+                            <div class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-600 rounded-lg">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Asset Deployed
+                            </div>
                         @endif
                         
-                        <button onclick="showDeleteModal()" 
-                                class="inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                            <i class="fas fa-trash mr-2"></i>
-                            Delete Asset
-                        </button>
+                        <a href="{{ route('gsu.assets.index') }}" 
+                           class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-boxes mr-2"></i>
+                            Back to Assets
+                        </a>
                         
                         <a href="{{ route('gsu.qr.scanner') }}" 
-                           class="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                           class="inline-flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
                             <i class="fas fa-qrcode mr-2"></i>
                             QR Scanner
                         </a>
@@ -372,97 +396,4 @@
     </div>
 </div>
 
-<!-- Dispose Modal -->
-<div id="disposeModal" class="fixed inset-0 z-50 hidden">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <form action="{{ route('gsu.assets.dispose', $asset) }}" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 sm:mx-0 sm:h-10 sm:w-10">
-                            <i class="fas fa-ban text-orange-600"></i>
-                        </div>
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">Dispose Asset</h3>
-                            <div class="mt-2">
-                                <p class="text-sm text-gray-500">Are you sure you want to dispose of asset <strong>{{ $asset->asset_code }}</strong>?</p>
-                                <div class="mt-4">
-                                    <label for="disposal_reason" class="block text-sm font-medium text-gray-700">Disposal Reason</label>
-                                    <textarea name="disposal_reason" id="disposal_reason" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" required></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Dispose Asset
-                    </button>
-                    <button type="button" onclick="hideDisposeModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Modal -->
-<div id="deleteModal" class="fixed inset-0 z-50 hidden">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <i class="fas fa-exclamation-triangle text-red-600"></i>
-                    </div>
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Delete Asset</h3>
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-500">Are you sure you want to delete asset <strong>{{ $asset->asset_code }}</strong>? This action cannot be undone.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <form action="{{ route('gsu.assets.destroy', $asset) }}" method="POST" class="inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Delete Asset
-                    </button>
-                </form>
-                <button type="button" onclick="hideDeleteModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                    Cancel
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-function showDisposeModal() {
-    document.getElementById('disposeModal').classList.remove('hidden');
-}
-
-function hideDisposeModal() {
-    document.getElementById('disposeModal').classList.add('hidden');
-}
-
-function showDeleteModal() {
-    document.getElementById('deleteModal').classList.remove('hidden');
-}
-
-function hideDeleteModal() {
-    document.getElementById('deleteModal').classList.add('hidden');
-}
-</script>
 @endsection 
