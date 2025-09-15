@@ -101,8 +101,9 @@
                 </div>
                 <div class="p-6">
                     <div class="grid grid-cols-1 gap-4">
+                        @if($asset->location)
                         <div class="bg-green-50 rounded-lg p-4">
-                            <a href="{{ route('locations.show', $asset->location) }}" 
+                            <a href="{{ route('locations.show', $asset->location->id) }}" 
                                class="block hover:bg-green-100 transition-colors rounded-lg">
                                 <div class="flex items-center justify-between">
                                     <div class="grid grid-cols-3 gap-4 flex-1">
@@ -125,13 +126,28 @@
                                 </div>
                             </a>
                         </div>
-                        @if($asset->originalLocation && $asset->originalLocation->id !== $asset->location->id)
+                        @else
+                        <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                            <div class="flex items-center justify-center text-yellow-800">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                <span class="font-medium">No location assigned</span>
+                            </div>
+                            <p class="text-sm text-yellow-700 text-center mt-2">
+                                This asset has not been deployed to a location yet.
+                            </p>
+                        </div>
+                        @endif
+                        @if($asset->originalLocation && $asset->location && $asset->originalLocation->id !== $asset->location->id)
                         <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
                             <div class="flex items-center justify-between">
                                 <div class="flex-1">
                                     <div class="text-xs font-medium text-blue-600 mb-1">ORIGINAL LOCATION</div>
                                     <div class="font-semibold text-gray-900">
-                                        {{ $asset->originalLocation->building }} - Floor {{ $asset->originalLocation->floor }} - Room {{ $asset->originalLocation->room }}
+                                        @if($asset->originalLocation)
+                                            {{ $asset->originalLocation->building }} - Floor {{ $asset->originalLocation->floor }} - Room {{ $asset->originalLocation->room }}
+                                        @else
+                                            No original location recorded
+                                        @endif
                                     </div>
                                     <div class="text-xs text-blue-600 mt-1">
                                         <i class="fas fa-info-circle mr-1"></i>Currently borrowed - will return here
@@ -800,7 +816,13 @@ function printQRCode() {
             </div>
             <p><strong>Asset:</strong> {{ $asset->name }}</p>
             <p><strong>Category:</strong> {{ $asset->category->name }}</p>
-            <p><strong>Location:</strong> {{ $asset->location->building }} - Floor {{ $asset->location->floor }} - Room {{ $asset->location->room }}</p>
+            <p><strong>Location:</strong> 
+                @if($asset->location)
+                    {{ $asset->location->building }} - Floor {{ $asset->location->floor }} - Room {{ $asset->location->room }}
+                @else
+                    Not deployed yet
+                @endif
+            </p>
         </body>
         </html>
     `;

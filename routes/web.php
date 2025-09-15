@@ -46,18 +46,21 @@ Route::middleware(['auth'])->group(function () {
         return response()->json($asset);
     })->name('api.assets.show-by-code');
     
-    // Routes for admin only (removed user role)
+    // Routes for admin only (approval workflow only - no asset creation)
     Route::middleware(['role:admin'])->group(function () {
-        // Asset management for admin
+        // Asset management for admin (view and approve only)
         Route::get('/assets', [AssetController::class, 'index'])->name('assets.index');
-        Route::get('/assets/create', [AssetController::class, 'create'])->name('assets.create');
-        Route::post('/assets', [AssetController::class, 'store'])->name('assets.store');
         Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
-        Route::get('/assets/{asset}/edit', [AssetController::class, 'edit'])->name('assets.edit');
-        Route::put('/assets/{asset}', [AssetController::class, 'update'])->name('assets.update');
         Route::put('/assets/{asset}/dispose', [AssetController::class, 'dispose'])->name('assets.dispose');
-        Route::delete('/assets/{asset}', [AssetController::class, 'destroy'])->name('assets.destroy');
         // Route::get('/assets-report', [AssetController::class, 'report'])->name('assets.report');
+        
+        // Admin asset approval routes
+        Route::get('/admin/assets/pending', [AssetController::class, 'pendingAssets'])->name('admin.assets.pending');
+        Route::get('/admin/assets/pending-count', [AssetController::class, 'pendingCount'])->name('admin.assets.pending-count');
+        Route::get('/admin/assets/{asset}', [AssetController::class, 'show'])->name('admin.assets.show');
+        Route::get('/assets/pending', [AssetController::class, 'pendingAssets'])->name('assets.pending'); // Alternative route for dashboard
+        Route::post('/admin/assets/{asset}/approve', [AssetController::class, 'approve'])->name('admin.assets.approve');
+        Route::put('/admin/assets/{asset}/reject', [AssetController::class, 'reject'])->name('admin.assets.reject');
 
         // QR Code routes for admin
         Route::get('/qrcode/asset/{assetCode}', [QRCodeController::class, 'generateAssetQR'])->name('qrcode.asset');
@@ -101,10 +104,30 @@ Route::middleware(['auth'])->group(function () {
         // Date Range View
         Route::get('/locations/{location}/date-range', [LocationController::class, 'dateRangeView'])->name('locations.date-range');
 
+
     });
 
     // Maintenance Checklists - accessible to both admin and GSU users (role checking handled in controller)
     Route::middleware(['auth'])->group(function () {
+
+        // Debug routes for troubleshooting
+        Route::get('/debug/routes', function() {
+            \Log::info('Debug route accessed by user: ' . auth()->user()->email);
+            return response()->json([
+                'user' => auth()->user(),
+                'routes' => [
+                    'admin.assets.pending' => route('admin.assets.pending'),
+                    'admin.assets.pending-count' => route('admin.assets.pending-count'),
+                    'admin.assets.approve' => route('admin.assets.approve', 1),
+                    'admin.assets.reject' => route('admin.assets.reject', 1)
+                ],
+                'middleware' => 'auth',
+                'timestamp' => now()
+            ]);
+        })->name('debug.routes');
+
+        Route::get('/debug/pending-test', [AssetController::class, 'debugPendingAssets'])->name('debug.pending-test');
+
         // Unverified Assets Management (Admin only) - Must be before parameterized routes
         Route::get('/maintenance-checklists/unverified-assets', [MaintenanceChecklistController::class, 'unverifiedAssets'])->name('maintenance-checklists.unverified-assets');
         Route::post('/assets/{asset}/confirm-lost', [MaintenanceChecklistController::class, 'confirmAsLost'])->name('assets.confirm-lost');
@@ -134,10 +157,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/maintenance-checklists/{maintenanceChecklist}/submit', [MaintenanceChecklistController::class, 'submitMaintenance'])->name('maintenance-checklists.submit');
         Route::post('/maintenance-checklists/{maintenanceChecklist}/complete-with-missing', [MaintenanceChecklistController::class, 'completeWithMissing'])->name('maintenance-checklists.complete-with-missing');
         
-        // Asset Scanner API routes
-        Route::post('/asset-scanner/scan', [AssetScannerController::class, 'scan'])->name('asset-scanner.scan');
-        Route::post('/asset-scanner/mark-missing', [AssetScannerController::class, 'markMissing'])->name('asset-scanner.mark-missing');
-        Route::get('/asset-scanner/{maintenanceChecklist}/progress', [AssetScannerController::class, 'getProgress'])->name('asset-scanner.progress');
     });
 
     // Maintenance Requests
@@ -158,6 +177,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/notifications/recent', [App\Http\Controllers\NotificationController::class, 'getRecent'])->name('notifications.recent');
     Route::post('/api/notifications/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('/api/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    
+
+    // Routes for Purchasing users only
+    Route::middleware(['role:purchasing'])->group(function () {
+        // Purchasing Asset Management (create assets without location, pending approval)
+        Route::get('/purchasing/assets', [App\Http\Controllers\PurchasingController::class, 'index'])->name('purchasing.assets.index');
+        Route::get('/purchasing/assets/create', [App\Http\Controllers\PurchasingController::class, 'create'])->name('purchasing.assets.create');
+        Route::post('/purchasing/assets', [App\Http\Controllers\PurchasingController::class, 'store'])->name('purchasing.assets.store');
+        Route::get('/purchasing/assets/{asset}', [App\Http\Controllers\PurchasingController::class, 'show'])->name('purchasing.assets.show');
+        Route::get('/purchasing/assets/{asset}/edit', [App\Http\Controllers\PurchasingController::class, 'edit'])->name('purchasing.assets.edit');
+        Route::put('/purchasing/assets/{asset}', [App\Http\Controllers\PurchasingController::class, 'update'])->name('purchasing.assets.update');
+        Route::delete('/purchasing/assets/{asset}', [App\Http\Controllers\PurchasingController::class, 'destroy'])->name('purchasing.assets.destroy');
+    });
 
     // Routes for Super Admin only (User Management ONLY)
     Route::middleware(['role:superadmin'])->group(function () {
@@ -170,22 +202,18 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/users/{user}/delete', [UserController::class, 'destroy'])->name('users.destroy');
     });
 
-    // Routes for GSU users only (super admin)
-    Route::middleware(['role:gsu'])->group(function () {
-        // GSU Asset Management (full CRUD)
-        Route::get('/gsu/assets', [AssetController::class, 'gsuIndex'])->name('gsu.assets.index');
-        Route::get('/gsu/assets/create', [AssetController::class, 'create'])->name('gsu.assets.create');
-        Route::post('/gsu/assets', [AssetController::class, 'store'])->name('gsu.assets.store');
-        Route::get('/gsu/assets/{asset}', [AssetController::class, 'show'])->name('gsu.assets.show');
-        Route::get('/gsu/assets/code/{assetCode}', [AssetController::class, 'gsuShowByCode'])->name('gsu.assets.show-by-code');
-        Route::get('/gsu/assets/{asset}/edit', [AssetController::class, 'edit'])->name('gsu.assets.edit');
-        Route::put('/gsu/assets/{asset}', [AssetController::class, 'update'])->name('gsu.assets.update');
+    // GSU Routes
+    Route::middleware(['auth', 'role:gsu'])->prefix('gsu')->group(function () {
+        Route::get('/assets', [AssetController::class, 'gsuIndex'])->name('gsu.assets.index');
+        Route::get('/assets/deployment-count', [AssetController::class, 'deploymentCount'])->name('gsu.assets.deployment-count');
+        Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('gsu.assets.show');
+        Route::get('/assets/{asset}/assign-location', [AssetController::class, 'assignLocationForm'])->name('gsu.assets.assign-location');
+        Route::put('/assets/{asset}/location', [AssetController::class, 'assignLocation'])->name('gsu.assets.update-location');
         Route::put('/gsu/assets/{asset}/dispose', [AssetController::class, 'dispose'])->name('gsu.assets.dispose');
-        Route::delete('/gsu/assets/{asset}', [AssetController::class, 'destroy'])->name('gsu.assets.destroy');
         
         // GSU Location Management (view only - no create/edit/delete)
-        Route::get('/gsu/locations', [LocationController::class, 'index'])->name('gsu.locations.index');
-        Route::get('/gsu/locations/{location}', [LocationController::class, 'show'])->name('gsu.locations.show');
+        Route::get('/locations', [LocationController::class, 'index'])->name('gsu.locations.index');
+        Route::get('/locations/{location}', [LocationController::class, 'show'])->name('gsu.locations.show');
         
         // GSU Maintenances removed; maintenance checklists replace them
         
@@ -196,7 +224,7 @@ Route::middleware(['auth'])->group(function () {
         
         // GSU Maintenance Checklists - routes are now shared with admin users above
         
-        // GSU Asset Scanner API routes
+        // Asset Scanner API routes (shared between admin and GSU)
         Route::post('/asset-scanner/scan', [AssetScannerController::class, 'scan'])->name('asset-scanner.scan');
         Route::post('/asset-scanner/mark-missing', [AssetScannerController::class, 'markMissing'])->name('asset-scanner.mark-missing');
         Route::get('/asset-scanner/{maintenanceChecklist}/progress', [AssetScannerController::class, 'getProgress'])->name('asset-scanner.progress');

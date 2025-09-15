@@ -458,4 +458,111 @@ class NotificationService
             'read_at' => now(),
         ]);
     }
+
+    /**
+     * Notify admins of new asset pending approval from purchasing
+     */
+    public function notifyAdminsOfPendingAsset($asset): void
+    {
+        $this->notifyAdmins(
+            Notification::TYPE_ASSET_CREATED,
+            'New Asset Pending Approval',
+            "A new asset '{$asset->name}' (Code: {$asset->asset_code}) has been submitted by Purchasing and is pending your approval.",
+            [
+                'asset_id' => $asset->id,
+                'asset_code' => $asset->asset_code,
+                'asset_name' => $asset->name,
+                'category' => $asset->category->name ?? 'Unknown',
+                'purchase_cost' => $asset->purchase_cost,
+                'created_by_name' => $asset->createdBy->name ?? 'Unknown',
+            ],
+            $asset->created_by
+        );
+    }
+
+    /**
+     * Notify purchasing user when asset is approved
+     */
+    public function notifyAssetApproved($asset): void
+    {
+        $this->notifyUser(
+            $asset->created_by,
+            Notification::TYPE_ASSET_EDITED,
+            'Asset Approved',
+            "Your asset '{$asset->name}' (Code: {$asset->asset_code}) has been approved by admin. It can now be deployed by GSU.",
+            [
+                'asset_id' => $asset->id,
+                'asset_code' => $asset->asset_code,
+                'asset_name' => $asset->name,
+                'approved_by_name' => $asset->approvedBy->name ?? 'Admin',
+                'approved_at' => $asset->approved_at,
+            ],
+            $asset->approved_by
+        );
+    }
+
+    /**
+     * Notify purchasing user when asset is rejected
+     */
+    public function notifyAssetRejected($asset): void
+    {
+        $this->notifyUser(
+            $asset->created_by,
+            Notification::TYPE_ASSET_EDITED,
+            'Asset Rejected',
+            "Your asset '{$asset->name}' (Code: {$asset->asset_code}) has been rejected by admin. Reason: {$asset->rejection_reason}",
+            [
+                'asset_id' => $asset->id,
+                'asset_code' => $asset->asset_code,
+                'asset_name' => $asset->name,
+                'rejection_reason' => $asset->rejection_reason,
+                'rejected_by_name' => $asset->approvedBy->name ?? 'Admin',
+                'rejected_at' => $asset->approved_at,
+            ],
+            $asset->approved_by
+        );
+    }
+
+    /**
+     * Notify purchasing user when asset is deployed by GSU
+     */
+    public function notifyAssetDeployed($asset): void
+    {
+        $this->notifyUser(
+            $asset->created_by,
+            Notification::TYPE_ASSET_EDITED,
+            'Asset Deployed',
+            "Your asset '{$asset->name}' (Code: {$asset->asset_code}) has been deployed by GSU to {$asset->location->building} - Floor {$asset->location->floor} - Room {$asset->location->room}.",
+            [
+                'asset_id' => $asset->id,
+                'asset_code' => $asset->asset_code,
+                'asset_name' => $asset->name,
+                'location' => $asset->location->building . ' - Floor ' . $asset->location->floor . ' - Room ' . $asset->location->room,
+                'deployed_at' => now(),
+            ],
+            auth()->id()
+        );
+    }
+
+    /**
+     * Notify GSU users when asset is approved by admin
+     */
+    public function notifyGSUAssetApproved($asset): void
+    {
+        $this->notifyGSU(
+            Notification::TYPE_ASSET_CREATED,
+            'New Asset Ready for Deployment',
+            "Asset '{$asset->name}' (Code: {$asset->asset_code}) has been approved by admin and is ready for deployment.",
+            [
+                'asset_id' => $asset->id,
+                'asset_code' => $asset->asset_code,
+                'asset_name' => $asset->name,
+                'category' => $asset->category->name ?? 'Unknown',
+                'purchase_cost' => $asset->purchase_cost,
+                'approved_by_name' => $asset->approvedBy->name ?? 'Admin',
+                'approved_at' => $asset->approved_at,
+            ],
+            $asset->approved_by
+        );
+    }
 }

@@ -76,6 +76,28 @@
         <div x-show="activeTab === 'overview'" x-transition>
             <!-- Key Metrics Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Pending Approvals - Priority Card -->
+                <div class="bg-white rounded-xl shadow-lg border-2 border-orange-200 p-6 hover:shadow-xl transition-all duration-300 group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-orange-500 text-white text-xs px-2 py-1 rounded-bl-lg font-medium">
+                        PRIORITY
+                    </div>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-3 rounded-xl animate-pulse">
+                            <i class="fas fa-clock text-white text-xl"></i>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-gray-900">{{ number_format($pendingApprovals ?? 0) }}</div>
+                            <div class="text-sm text-gray-500">Pending Approvals</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-orange-600 font-medium">Requires your attention</span>
+                        <a href="{{ route('assets.pending') }}" class="text-orange-600 hover:text-orange-700 text-sm font-medium group-hover:underline">
+                            Review now <i class="fa fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Total Assets -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 group">
                     <div class="flex items-center justify-between mb-4">
@@ -89,7 +111,7 @@
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-xs text-gray-500">Across all categories</span>
-                        <a href="{{ route('locations.index') }}" class="text-blue-600 hover:text-blue-700 text-sm font-medium group-hover:underline">
+                        <a href="{{ route('assets.index') }}" class="text-blue-600 hover:text-blue-700 text-sm font-medium group-hover:underline">
                             View all <i class="fa fa-arrow-right ml-1"></i>
                         </a>
                     </div>
@@ -216,8 +238,12 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-                                            <div class="text-sm text-gray-900">{{ $asset->location->building }}</div>
-                                            <div class="text-sm text-gray-500">Room {{ $asset->location->room }}</div>
+                                            @if($asset->location)
+                                                <div class="text-sm text-gray-900">{{ $asset->location->building }}</div>
+                                                <div class="text-sm text-gray-500">Room {{ $asset->location->room }}</div>
+                                            @else
+                                                <div class="text-sm text-gray-500 italic">No location assigned</div>
+                                            @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @if($asset->status == 'Available')
@@ -243,9 +269,13 @@
                                                 </div>
                                                 <h3 class="text-lg font-medium text-gray-900 mb-2">No assets found</h3>
                                                 <p class="text-gray-500 text-sm mb-4">Get started by adding your first asset</p>
-                                                <a href="{{ route('assets.create') }}" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
-                                                    Add First Asset
-                                                </a>
+                                                @if(auth()->user()->role === 'purchasing')
+                                                    <a href="{{ route('purchasing.assets.create') }}" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
+                                                        Add First Asset
+                                                    </a>
+                                                @else
+                                                    <span class="text-gray-500 text-sm">Only Purchasing role can create assets</span>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -498,12 +528,24 @@
                 </div>
                 <div class="p-6">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        <a href="{{ route('assets.create') }}" class="group">
-                            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 text-center hover:from-blue-100 hover:to-blue-200 transition-all duration-300 border border-blue-200 hover:border-blue-300">
-                                <div class="bg-blue-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-plus-circle text-white text-xl"></i>
+                        @if(auth()->user()->role === 'purchasing')
+                            <a href="{{ route('purchasing.assets.create') }}" class="group">
+                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 text-center hover:from-blue-100 hover:to-blue-200 transition-all duration-300 border border-blue-200 hover:border-blue-300">
+                                    <div class="bg-blue-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">
+                                        <i class="fas fa-plus-circle text-white text-xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Add Asset</h3>
+                        @else
+                            <div class="group cursor-not-allowed">
+                                <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 text-center border border-gray-200 opacity-60">
+                                    <div class="bg-gray-400 p-3 rounded-full inline-block mb-4">
+                                        <i class="fas fa-lock text-white text-xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-500 mb-2">Add Asset</h3>
+                                    <p class="text-xs text-gray-400">Purchasing role only</p>
                                 </div>
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Add Asset</h3>
+                            </div>
+                        @endif
                                 <p class="text-sm text-gray-600">Register a new asset in the system</p>
                             </div>
                         </a>

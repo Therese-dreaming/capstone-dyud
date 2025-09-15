@@ -22,6 +22,8 @@ class DashboardController extends Controller
             return $this->gsuDashboard($user);
         } elseif ($user->role === 'superadmin') {
             return $this->superAdminDashboard($user);
+        } elseif ($user->role === 'purchasing') {
+            return $this->purchasingDashboard($user);
         } else {
             return $this->adminDashboard($user);
         }
@@ -92,6 +94,7 @@ class DashboardController extends Controller
             'superadmin' => User::where('role', 'superadmin')->count(),
             'gsu' => User::where('role', 'gsu')->count(),
             'admin' => User::where('role', 'admin')->count(),
+            'purchasing' => User::where('role', 'purchasing')->count(),
             'user' => User::where('role', 'user')->count(),
         ];
 
@@ -107,6 +110,44 @@ class DashboardController extends Controller
         ));
     }
 
+    private function purchasingDashboard($user)
+    {
+        // Get asset counts created by this purchasing user
+        $totalAssets = Asset::where('created_by', $user->id)->count();
+        $pendingAssets = Asset::where('created_by', $user->id)
+            ->where('approval_status', Asset::APPROVAL_PENDING)
+            ->count();
+        $approvedAssets = Asset::where('created_by', $user->id)
+            ->where('approval_status', Asset::APPROVAL_APPROVED)
+            ->count();
+        $rejectedAssets = Asset::where('created_by', $user->id)
+            ->where('approval_status', Asset::APPROVAL_REJECTED)
+            ->count();
+
+        // Get recent assets created by this user
+        $recentAssets = Asset::where('created_by', $user->id)
+            ->with(['category', 'location'])
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        // Get asset breakdown by category for this user
+        $assetsByCategory = Asset::where('created_by', $user->id)
+            ->join('categories', 'assets.category_id', '=', 'categories.id')
+            ->selectRaw('categories.name, count(*) as total')
+            ->groupBy('categories.name')
+            ->get();
+
+        return view('dashboard.purchasing-dashboard', compact(
+            'totalAssets',
+            'pendingAssets',
+            'approvedAssets',
+            'rejectedAssets',
+            'recentAssets',
+            'assetsByCategory'
+        ));
+    }
+
     private function adminDashboard($user)
     {
         // Get counts for dashboard stats
@@ -115,6 +156,7 @@ class DashboardController extends Controller
         $inUseAssets = Asset::where('status', 'In Use')->count();
         $disposedAssets = Asset::where('status', 'Disposed')->count();
         $pendingMaintenances = Maintenance::whereIn('status', ['Scheduled', 'In Progress'])->count();
+        $pendingApprovals = Asset::where('approval_status', Asset::APPROVAL_PENDING)->count();
         $totalUsers = User::count();
 
         // Get recent assets
@@ -141,6 +183,7 @@ class DashboardController extends Controller
             'inUseAssets',
             'disposedAssets',
             'pendingMaintenances',
+            'pendingApprovals',
             'totalUsers',
             'recentAssets',
             'categories',

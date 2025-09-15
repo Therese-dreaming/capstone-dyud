@@ -43,7 +43,7 @@
                 </div>
                 
                 <!-- Clickable content -->
-                <a href="{{ route('locations.show', $location) }}" class="block cursor-pointer">
+                <a href="{{ route('locations.show', $location->id) }}" class="block cursor-pointer">
                     <div class="flex flex-col items-center">
                         <div class="mb-2">
                             <i class="fas fa-building text-3xl text-red-800"></i>

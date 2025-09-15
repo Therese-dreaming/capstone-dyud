@@ -32,9 +32,19 @@
             <div class="text-sm text-gray-600">
                 <i class="fas fa-boxes mr-2"></i>{{ $assets->count() }} assets
             </div>
-            <a href="{{ route('assets.create', ['location_id' => $location->id]) }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
-                <i class="fas fa-plus"></i> Create Asset
-            </a>
+            @if(Auth::user()->role === 'purchasing')
+                <a href="{{ route('purchasing.assets.create') }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Create Asset
+                </a>
+            @elseif(Auth::user()->role === 'admin')
+                <div class="bg-gray-100 text-gray-500 font-semibold py-2 px-4 rounded-lg flex items-center gap-2" title="Only Purchasing can create assets">
+                    <i class="fas fa-info-circle"></i> Asset creation restricted to Purchasing role
+                </div>
+            @elseif(Auth::user()->role === 'gsu')
+                <div class="bg-gray-100 text-gray-500 font-semibold py-2 px-4 rounded-lg flex items-center gap-2" title="Only Purchasing can create assets">
+                    <i class="fas fa-info-circle"></i> Asset creation restricted to Purchasing role
+                </div>
+            @endif
             <a href="{{ route('locations.date-range', $location) }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
                 <i class="fas fa-calendar-alt"></i> Date Range View
             </a>

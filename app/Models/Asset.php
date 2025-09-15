@@ -20,6 +20,11 @@ class Asset extends Model
     const STATUS_FOR_MAINTENANCE = 'For Maintenance';
     const STATUS_UNVERIFIED = 'Unverified';
     
+    // Approval status constants
+    const APPROVAL_PENDING = 'pending';
+    const APPROVAL_APPROVED = 'approved';
+    const APPROVAL_REJECTED = 'rejected';
+    
     protected $fillable = [
         'asset_code',
         'name',
@@ -30,12 +35,18 @@ class Asset extends Model
         'description',
         'purchase_cost',
         'purchase_date',
-        'status'
+        'status',
+        'approval_status',
+        'rejection_reason',
+        'approved_at',
+        'approved_by',
+        'created_by'
     ];
 
     protected $casts = [
         'purchase_date' => 'date',
         'purchase_cost' => 'decimal:2',
+        'approved_at' => 'datetime',
     ];
 
     public function category(): BelongsTo
@@ -88,6 +99,16 @@ class Asset extends Model
         return $this->hasMany(AssetRepairResolution::class);
     }
 
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function currentLostAsset()
     {
         return $this->lostAssets()
@@ -127,6 +148,22 @@ class Asset extends Model
         return $this->status === self::STATUS_UNVERIFIED;
     }
 
+    // Approval status helper methods
+    public function isPending()
+    {
+        return $this->approval_status === self::APPROVAL_PENDING;
+    }
+
+    public function isApproved()
+    {
+        return $this->approval_status === self::APPROVAL_APPROVED;
+    }
+
+    public function isRejected()
+    {
+        return $this->approval_status === self::APPROVAL_REJECTED;
+    }
+
     public function getStatusBadgeClass()
     {
         return match($this->status) {
@@ -150,6 +187,26 @@ class Asset extends Model
             self::STATUS_FOR_MAINTENANCE => 'For Maintenance',
             self::STATUS_UNVERIFIED => 'Unverified',
             default => $this->status
+        };
+    }
+
+    public function getApprovalStatusBadgeClass()
+    {
+        return match($this->approval_status) {
+            self::APPROVAL_PENDING => 'bg-yellow-100 text-yellow-800',
+            self::APPROVAL_APPROVED => 'bg-green-100 text-green-800',
+            self::APPROVAL_REJECTED => 'bg-red-100 text-red-800',
+            default => 'bg-gray-100 text-gray-800'
+        };
+    }
+
+    public function getApprovalStatusLabel()
+    {
+        return match($this->approval_status) {
+            self::APPROVAL_PENDING => 'Pending Approval',
+            self::APPROVAL_APPROVED => 'Approved',
+            self::APPROVAL_REJECTED => 'Rejected',
+            default => $this->approval_status
         };
     }
 

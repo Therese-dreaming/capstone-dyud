@@ -70,25 +70,16 @@
                 </div>
                 
                 <ul class="space-y-2">
-                    <!-- Asset Management -->
-                    <li x-data="{ open: false }">
-                        <button @click="open = !open" type="button"
-                            class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"
-                            :class="{ 'bg-red-50 text-red-800': open }">
-                            <span class="flex items-center">
-                                <i class="fas fa-boxes w-5"></i>
-                                <span class="ml-3 text-sm">Asset Management</span>
+                    <!-- Asset Deployment (GSU Priority) -->
+                    <li>
+                        <a href="{{ route('gsu.assets.index') }}"
+                            class="flex items-center px-4 py-2.5 text-gray-600 rounded-lg hover:bg-green-50 hover:text-green-800 focus:outline-none transition {{ request()->routeIs('gsu.assets.*') ? 'bg-green-100 text-green-800' : '' }}">
+                            <i class="fas fa-map-marker-alt w-5 text-green-600"></i>
+                            <span class="ml-3 text-sm">Asset Deployment</span>
+                            <span class="ml-auto bg-green-600 text-white text-xs px-2 py-1 rounded-full" id="deployment-count">
+                                <!-- Will be populated by JavaScript -->
                             </span>
-                            <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
-                        </button>
-                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
-                            <li>
-                                <a href="{{ route('gsu.assets.create') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('gsu.assets.create') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-plus mr-2 w-4"></i> Create Asset
-                                </a>
-                            </li>
-                        </ul>
+                        </a>
                     </li>
                     
                     <!-- Location Management (View Only) -->
@@ -380,6 +371,26 @@
         window.loadUnreadCount = loadUnreadCount;
         window.markAsRead = markAsRead;
         window.markAllAsRead = markAllAsRead;
+
+        // Load deployment count for GSU
+        function loadDeploymentCount() {
+            fetch('{{ route("gsu.assets.deployment-count") }}')
+                .then(response => response.json())
+                .then(data => {
+                    const countElement = document.getElementById('deployment-count');
+                    if (countElement) {
+                        countElement.textContent = data.count;
+                        countElement.style.display = data.count > 0 ? 'inline' : 'none';
+                    }
+                })
+                .catch(error => console.error('Error loading deployment count:', error));
+        }
+
+        // Load deployment count on page load and refresh every 30 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDeploymentCount();
+            setInterval(loadDeploymentCount, 30000);
+        });
 
         function openQRScanner() {
             window.location.href = "{{ route('gsu.qr.scanner') }}";

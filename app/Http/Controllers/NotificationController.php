@@ -94,6 +94,8 @@ class NotificationController extends Controller
             $layout = 'layouts.admin';
         } elseif ($role === 'gsu') {
             $layout = 'layouts.gsu';
+        } elseif ($role === 'purchasing') {
+            $layout = 'layouts.purchasing';
         }
 
         return view('notifications.index', [

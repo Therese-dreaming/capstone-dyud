@@ -22,8 +22,11 @@ class AssetController extends Controller
 
     public function gsuIndex()
     {
-        $assets = Asset::with(['category', 'location', 'originalLocation', 'warranty'])->paginate(10);
-        return view('assets.gsu-index', compact('assets'));
+        // Show only approved assets for GSU (for location assignment and management)
+        $assets = Asset::where('approval_status', Asset::APPROVAL_APPROVED)
+            ->with(['category', 'location', 'originalLocation', 'warranty', 'createdBy'])
+            ->paginate(10);
+        return view('gsu.assets.index', compact('assets'));
     }
 
     public function create(Request $request)
@@ -148,8 +151,14 @@ class AssetController extends Controller
             'category', 
             'location', 
             'originalLocation', 
-            'warranty'
+            'warranty',
+            'createdBy'
         ]);
+        
+        // Check if this is an admin viewing a pending asset (from admin/assets/{asset} route)
+        if (auth()->user()->role === 'admin' && $request->route()->getName() === 'admin.assets.show') {
+            return view('admin.assets.show', compact('asset'));
+        }
         
         // Get the active tab from request (default to maintenance)
         $activeTab = $request->get('tab', 'maintenance');
@@ -414,5 +423,199 @@ class AssetController extends Controller
             'availableAssets', 'disposedAssets', 'inUseAssets', 'lostAssets',
             'goodCondition', 'fairCondition', 'poorCondition', 'assetsByCategory'
         ));
+    }
+
+    /**
+     * Display pending assets for admin approval
+     */
+    public function pendingAssets()
+    {
+        // Check if user is admin
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized. Only admin users can access pending assets.');
+        }
+
+        \Log::info('pendingAssets method called', [
+            'user' => auth()->user()->email,
+            'role' => auth()->user()->role,
+            'timestamp' => now()
+        ]);
+
+        $assets = Asset::where('approval_status', Asset::APPROVAL_PENDING)
+            ->with(['category', 'createdBy'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        \Log::info('Pending assets query result', [
+            'count' => $assets->count(),
+            'total' => $assets->total()
+        ]);
+
+        return view('admin.assets.pending', compact('assets'));
+    }
+
+    /**
+     * Debug method for pending assets
+     */
+    public function debugPendingAssets()
+    {
+        \Log::info('debugPendingAssets method called', [
+            'user' => auth()->user()->email,
+            'role' => auth()->user()->role,
+            'timestamp' => now()
+        ]);
+
+        $pendingCount = Asset::where('approval_status', Asset::APPROVAL_PENDING)->count();
+        $allAssets = Asset::count();
+        
+        return response()->json([
+            'debug_info' => [
+                'user' => auth()->user(),
+                'pending_assets_count' => $pendingCount,
+                'total_assets_count' => $allAssets,
+                'approval_statuses' => Asset::select('approval_status', \DB::raw('count(*) as count'))
+                    ->groupBy('approval_status')
+                    ->get(),
+                'view_exists' => view()->exists('admin.assets.pending'),
+                'timestamp' => now()
+            ]
+        ]);
+    }
+
+    /**
+     * Approve an asset
+     */
+    public function approve(Request $request, Asset $asset)
+    {
+        // Check if user is admin
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized. Only admin users can approve assets.');
+        }
+
+        if (!$asset->isPending()) {
+            return redirect()->back()->with('error', 'Asset is not pending approval.');
+        }
+
+        $asset->update([
+            'approval_status' => Asset::APPROVAL_APPROVED,
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+        ]);
+
+        // Notify the purchasing user and GSU users
+        $notificationService = app(NotificationService::class);
+        $notificationService->notifyAssetApproved($asset);
+        $notificationService->notifyGSUAssetApproved($asset);
+
+        return redirect()->back()->with('success', 'Asset approved successfully.');
+    }
+
+    /**
+     * Reject an asset
+     */
+    public function reject(Request $request, Asset $asset)
+    {
+        // Check if user is admin
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized. Only admin users can reject assets.');
+        }
+
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500'
+        ]);
+
+        if (!$asset->isPending()) {
+            return redirect()->back()->with('error', 'Asset is not pending approval.');
+        }
+
+        $asset->update([
+            'approval_status' => Asset::APPROVAL_REJECTED,
+            'rejection_reason' => $request->rejection_reason,
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+        ]);
+
+        // Notify the purchasing user
+        $notificationService = app(NotificationService::class);
+        $notificationService->notifyAssetRejected($asset);
+
+        return redirect()->back()->with('success', 'Asset rejected successfully.');
+    }
+
+    /**
+     * Show form for GSU to assign location to approved asset
+     */
+    public function assignLocationForm(Asset $asset)
+    {
+        // Only allow location assignment for approved assets without location
+        if (!$asset->isApproved() || $asset->location_id) {
+            return redirect()->back()->with('error', 'Asset is not eligible for location assignment.');
+        }
+
+        $locations = Location::orderBy('building')->orderBy('floor')->orderBy('room')->get();
+        
+        return view('gsu.assets.assign-location', compact('asset', 'locations'));
+    }
+
+    /**
+     * Assign location to approved asset (GSU only)
+     */
+    public function assignLocation(Request $request, Asset $asset)
+    {
+        $request->validate([
+            'location_id' => 'required|exists:locations,id',
+        ]);
+
+        // Only allow location assignment for approved assets without location
+        if (!$asset->isApproved() || $asset->location_id) {
+            return redirect()->back()->with('error', 'Asset is not eligible for location assignment.');
+        }
+
+        $asset->update([
+            'location_id' => $request->location_id,
+            'original_location_id' => $request->location_id,
+            'status' => Asset::STATUS_AVAILABLE, // Set to available once deployed
+        ]);
+
+        // Notify the purchasing user that their asset has been deployed
+        $notificationService = app(NotificationService::class);
+        $notificationService->notifyAssetDeployed($asset);
+
+        return redirect()->route('gsu.assets.index')
+            ->with('success', 'Location assigned successfully. Asset is now deployed and available.');
+    }
+
+    /**
+     * Get pending assets count for admin dashboard
+     */
+    public function pendingCount()
+    {
+        // Check if user is admin
+        if (auth()->user()->role !== 'admin') {
+            return response()->json(['count' => 0]);
+        }
+
+        \Log::info('pendingCount method called', [
+            'user' => auth()->user()->email,
+            'role' => auth()->user()->role,
+            'timestamp' => now()
+        ]);
+
+        $count = Asset::where('approval_status', Asset::APPROVAL_PENDING)->count();
+        
+        \Log::info('Pending count result', ['count' => $count]);
+        
+        return response()->json(['count' => $count]);
+    }
+
+    /**
+     * Get deployment count for GSU dashboard (approved assets without location)
+     */
+    public function deploymentCount()
+    {
+        $count = Asset::where('approval_status', Asset::APPROVAL_APPROVED)
+            ->whereNull('location_id')
+            ->count();
+        return response()->json(['count' => $count]);
     }
 }

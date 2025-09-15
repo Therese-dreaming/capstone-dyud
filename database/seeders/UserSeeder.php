@@ -41,6 +41,15 @@ class UserSeeder extends Seeder
             'role' => 'admin',
         ]);
 
+        // Create Purchasing user
+        User::create([
+            'name' => 'Purchasing',
+            'id_number' => 'PURCH001',
+            'email' => 'purchasing@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'purchasing',
+        ]);
+
         // Create User
         User::create([
             'name' => 'User',
