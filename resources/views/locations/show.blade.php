@@ -158,11 +158,18 @@
                                        title="View Details">
                                         <i class="fas fa-eye text-xs"></i>
                                     </a>
-                                    <a href="{{ $isGsu ? route('gsu.assets.edit', $asset) : route('assets.edit', $asset) }}" 
-                                       class="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 text-yellow-600 rounded-full hover:bg-yellow-200 transition-colors duration-150"
-                                       title="Edit Asset">
-                                        <i class="fas fa-edit text-xs"></i>
-                                    </a>
+                                    @if(Auth::user()->role === 'purchasing' && $asset->isPending())
+                                        <a href="{{ route('purchasing.assets.edit', $asset) }}" 
+                                           class="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 text-yellow-600 rounded-full hover:bg-yellow-200 transition-colors duration-150"
+                                           title="Edit Asset">
+                                            <i class="fas fa-edit text-xs"></i>
+                                        </a>
+                                    @else
+                                        <span class="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-400 rounded-full cursor-not-allowed"
+                                              title="Asset cannot be edited">
+                                            <i class="fas fa-lock text-xs"></i>
+                                        </span>
+                                    @endif
                                     @if($asset->needsRepairResolution())
                                     <button onclick="openRepairResolutionModal({{ $asset->id }}, '{{ $asset->asset_code }}', '{{ $asset->status }}')"
                                             class="inline-flex items-center justify-center w-8 h-8 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-colors duration-150"

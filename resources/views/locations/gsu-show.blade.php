@@ -106,9 +106,6 @@
                                     <a href="{{ route('gsu.assets.show', $asset) }}" class="text-blue-600 hover:text-blue-900 mr-3">
                                         <i class="fas fa-eye"></i> View
                                     </a>
-                                    <a href="{{ route('gsu.assets.edit', $asset) }}" class="text-indigo-600 hover:text-indigo-900">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
                                 </td>
                             </tr>
                         @endforeach

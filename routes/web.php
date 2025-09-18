@@ -41,10 +41,17 @@ Route::middleware(['auth'])->group(function () {
     // API route for getting asset by code (for QR scanner)
     Route::get('/api/assets/code/{assetCode}', function ($assetCode) {
         $asset = \App\Models\Asset::where('asset_code', $assetCode)
+            ->where('approval_status', \App\Models\Asset::APPROVAL_APPROVED)
             ->with(['category', 'location'])
             ->firstOrFail();
         return response()->json($asset);
     })->name('api.assets.show-by-code');
+    
+    // API route for getting locations (for deploy modal)
+    Route::get('/api/locations', function () {
+        $locations = \App\Models\Location::all();
+        return response()->json($locations);
+    })->name('api.locations');
     
     // Routes for admin only (approval workflow only - no asset creation)
     Route::middleware(['role:admin'])->group(function () {

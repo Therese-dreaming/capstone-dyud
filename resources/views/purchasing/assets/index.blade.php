@@ -1,7 +1,7 @@
 @extends('layouts.purchasing')
 
 @section('content')
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto" x-data="{ showDeleteModal: false, deleteAssetId: null, deleteAssetCode: '', deleteAssetName: '' }">
     <!-- Page Header -->
     <div class="mb-8">
         <div class="flex items-center justify-between">
@@ -148,18 +148,11 @@
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         
-                                        <form action="{{ route('purchasing.assets.destroy', $asset) }}" 
-                                              method="POST" 
-                                              class="inline"
-                                              onsubmit="return confirm('Are you sure you want to delete this asset?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" 
-                                                    class="inline-flex items-center p-2 bg-red-100 text-red-600 hover:text-red-900 hover:bg-red-200 rounded-lg transition-colors"
-                                                    title="Delete Asset">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
+                                        <button @click="showDeleteModal = true; deleteAssetId = {{ $asset->id }}; deleteAssetCode = '{{ addslashes($asset->asset_code) }}'; deleteAssetName = '{{ addslashes($asset->name) }}'" 
+                                                class="inline-flex items-center p-2 bg-red-100 text-red-600 hover:text-red-900 hover:bg-red-200 rounded-lg transition-colors"
+                                                title="Delete Asset">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     @endif
                                 </div>
                             </td>
@@ -191,5 +184,37 @@
             {{ $assets->links() }}
         </div>
     @endif
+
+    <!-- Delete Modal -->
+    <div x-show="showDeleteModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" style="display: none;">
+        <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative">
+            <button @click="showDeleteModal = false" class="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="flex flex-col items-center">
+                <div class="bg-red-100 text-red-600 rounded-full p-4 mb-4">
+                    <i class="fas fa-exclamation-triangle text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2 text-gray-800">Delete Asset</h3>
+                <p class="text-gray-600 mb-2 text-center">
+                    Are you sure you want to delete asset <span class="font-semibold text-purple-600" x-text="deleteAssetCode"></span>?
+                </p>
+                <p class="text-sm text-gray-500 mb-6 text-center" x-text="deleteAssetName"></p>
+                <p class="text-sm text-red-600 mb-6 text-center font-medium">
+                    This action cannot be undone.
+                </p>
+                <form :action="'{{ route('purchasing.assets.index') }}/' + deleteAssetId" method="POST" class="w-full flex flex-col items-center gap-3">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-trash-alt"></i> Delete Asset
+                    </button>
+                    <button type="button" @click="showDeleteModal = false" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

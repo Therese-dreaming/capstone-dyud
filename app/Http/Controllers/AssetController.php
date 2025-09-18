@@ -568,6 +568,9 @@ class AssetController extends Controller
 
         // Only allow location assignment for approved assets without location
         if (!$asset->isApproved() || $asset->location_id) {
+            if ($request->expectsJson()) {
+                return response()->json(['error' => 'Asset is not eligible for location assignment.'], 400);
+            }
             return redirect()->back()->with('error', 'Asset is not eligible for location assignment.');
         }
 
@@ -580,6 +583,10 @@ class AssetController extends Controller
         // Notify the purchasing user that their asset has been deployed
         $notificationService = app(NotificationService::class);
         $notificationService->notifyAssetDeployed($asset);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => 'Location assigned successfully. Asset is now deployed and available.']);
+        }
 
         return redirect()->route('gsu.assets.index')
             ->with('success', 'Location assigned successfully. Asset is now deployed and available.');

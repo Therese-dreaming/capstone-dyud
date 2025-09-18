@@ -167,6 +167,16 @@
                                             Floor {{ $asset->location->floor }} • Room {{ $asset->location->room }}
                                         </div>
                                     </div>
+                                @else
+                                    <div class="bg-yellow-50 rounded-lg p-3">
+                                        <div class="text-sm text-yellow-800">
+                                            <i class="fas fa-clock mr-2"></i>
+                                            <strong>Awaiting Deployment</strong>
+                                        </div>
+                                        <div class="text-xs text-yellow-600 mt-1">
+                                            Location will be assigned during deployment
+                                        </div>
+                                    </div>
                                 @endif
                             </div>
 
@@ -182,6 +192,10 @@
                                        class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-2 px-4 rounded-lg transition-colors duration-200 text-sm font-medium">
                                         <i class="fas fa-map-marker-alt mr-2"></i>Deploy
                                     </a>
+                                @else
+                                    <div class="flex-1 bg-gray-100 text-gray-500 text-center py-2 px-4 rounded-lg text-sm font-medium">
+                                        <i class="fas fa-check-circle mr-2"></i>Deployed
+                                    </div>
                                 @endif
                             </div>
                         </div>

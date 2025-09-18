@@ -139,6 +139,126 @@
     </div>
 </div>
 
+<!-- Deploy Asset Modal -->
+<div id="deploy-modal" class="fixed inset-0 z-[9999] hidden" style="display: none;">
+    <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+    <div class="relative flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full relative z-10 transform transition-all duration-300 scale-100">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-5 rounded-t-2xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-white/20 p-2 rounded-lg">
+                            <i class="fas fa-map-marker-alt text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white">Deploy Asset</h3>
+                            <p class="text-purple-100 text-sm">Assign location to asset</p>
+                        </div>
+                    </div>
+                    <button onclick="closeDeployModal()" class="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-6">
+                <form id="deploy-form">
+                    <input type="hidden" id="deploy-asset-id" name="asset_id">
+                    
+                    <!-- Asset Code Display -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-barcode mr-2 text-purple-600"></i>Asset Code
+                        </label>
+                        <div class="bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3">
+                            <span id="deploy-asset-code" class="text-lg font-mono font-bold text-gray-800"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Location Autocomplete -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-building mr-2 text-purple-600"></i>Deploy to Location
+                        </label>
+                        <div class="relative">
+                            <input type="text" 
+                                   id="deploy-location-input" 
+                                   placeholder="Type to search locations..." 
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                   autocomplete="off">
+                            <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            
+                            <!-- Suggestions Dropdown -->
+                            <div id="location-suggestions" class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto hidden">
+                                <!-- Suggestions will be populated here -->
+                            </div>
+                            
+                            <!-- Error Message -->
+                            <div id="location-error" class="mt-2 text-sm text-red-600 hidden">
+                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                <span>Please select a valid location from the suggestions</span>
+                            </div>
+                        </div>
+                        <input type="hidden" id="deploy-location-id" name="location_id">
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-3">
+                        <button type="button" 
+                                onclick="closeDeployModal()" 
+                                class="flex-1 px-4 py-3 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium">
+                            <i class="fas fa-times mr-2"></i>Cancel
+                        </button>
+                        <button type="submit" 
+                                class="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all font-medium shadow-lg">
+                            <i class="fas fa-map-marker-alt mr-2"></i>Deploy Asset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Toast Notification -->
+<div id="success-toast" class="fixed top-6 right-6 z-[9999] transform translate-x-full transition-transform duration-500 ease-in-out">
+    <div class="bg-white rounded-xl shadow-2xl border border-green-200 overflow-hidden max-w-md">
+        <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white/20 p-2 rounded-full">
+                        <i class="fas fa-check-circle text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white font-bold text-lg">Deployment Successful!</h4>
+                        <p class="text-green-100 text-sm">Asset has been deployed</p>
+                    </div>
+                </div>
+                <button onclick="hideSuccessToast()" class="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="px-6 py-4">
+            <p id="toast-message" class="text-gray-700 text-sm leading-relaxed">
+                <!-- Message will be inserted here -->
+            </p>
+            <div class="mt-4 flex items-center space-x-2 text-xs text-gray-500">
+                <i class="fas fa-info-circle"></i>
+                <span>The asset is now available in the system inventory</span>
+            </div>
+        </div>
+        <!-- Progress bar -->
+        <div class="h-1 bg-gray-100">
+            <div id="toast-progress" class="h-full bg-gradient-to-r from-green-400 to-green-500 transition-all duration-[5000ms] ease-linear w-full"></div>
+        </div>
+    </div>
+</div>
+
 <script>
 let scanner = null;
 let currentStream = null;
@@ -296,11 +416,223 @@ function closeAssetModal() {
     document.getElementById('asset-modal').classList.add('hidden');
 }
 
+// Deploy modal functions
+let allLocations = [];
+let selectedLocationId = null;
+
+function openDeployModal(assetId, assetCode) {
+    document.getElementById('deploy-asset-id').value = assetId;
+    document.getElementById('deploy-asset-code').textContent = assetCode;
+    document.getElementById('deploy-location-input').value = '';
+    document.getElementById('deploy-location-id').value = '';
+    selectedLocationId = null;
+    hideLocationError();
+    loadLocations();
+    const modal = document.getElementById('deploy-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'block';
+}
+
+function closeDeployModal() {
+    const modal = document.getElementById('deploy-modal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    document.getElementById('deploy-form').reset();
+    document.getElementById('deploy-location-input').value = '';
+    document.getElementById('deploy-location-id').value = '';
+    selectedLocationId = null;
+    hideSuggestions();
+    hideLocationError();
+}
+
+async function loadLocations() {
+    try {
+        const response = await fetch('/api/locations');
+        allLocations = await response.json();
+        setupLocationAutocomplete();
+    } catch (error) {
+        console.error('Error loading locations:', error);
+        alert('Failed to load locations');
+    }
+}
+
+function setupLocationAutocomplete() {
+    const input = document.getElementById('deploy-location-input');
+    const suggestions = document.getElementById('location-suggestions');
+    
+    input.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        hideLocationError();
+        
+        if (query.length === 0) {
+            hideSuggestions();
+            return;
+        }
+        
+        const filtered = allLocations.filter(location => {
+            const building = location.building?.toLowerCase() || '';
+            const floor = location.floor?.toString() || '';
+            const room = location.room?.toLowerCase() || '';
+            const searchText = `${building} ${floor} ${room}`;
+            return searchText.includes(query);
+        });
+        
+        if (filtered.length > 0) {
+            showSuggestions(filtered);
+        } else {
+            hideSuggestions();
+        }
+    });
+    
+    input.addEventListener('blur', function() {
+        // Delay hiding suggestions to allow clicking on them
+        setTimeout(() => {
+            hideSuggestions();
+        }, 200);
+    });
+    
+    input.addEventListener('focus', function() {
+        if (this.value.trim().length > 0) {
+            const query = this.value.toLowerCase().trim();
+            const filtered = allLocations.filter(location => {
+                const building = location.building?.toLowerCase() || '';
+                const floor = location.floor?.toString() || '';
+                const room = location.room?.toLowerCase() || '';
+                const searchText = `${building} ${floor} ${room}`;
+                return searchText.includes(query);
+            });
+            if (filtered.length > 0) {
+                showSuggestions(filtered);
+            }
+        }
+    });
+}
+
+function showSuggestions(locations) {
+    const suggestions = document.getElementById('location-suggestions');
+    suggestions.innerHTML = '';
+    
+    locations.forEach(location => {
+        const item = document.createElement('div');
+        item.className = 'px-4 py-3 hover:bg-purple-50 cursor-pointer border-b border-gray-100 last:border-b-0';
+        item.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-building text-purple-600"></i>
+                <div>
+                    <div class="font-medium text-gray-900">${location.building}</div>
+                    <div class="text-sm text-gray-500">Floor ${location.floor} - Room ${location.room}</div>
+                </div>
+            </div>
+        `;
+        
+        item.addEventListener('click', function() {
+            selectLocation(location);
+        });
+        
+        suggestions.appendChild(item);
+    });
+    
+    suggestions.classList.remove('hidden');
+}
+
+function hideSuggestions() {
+    document.getElementById('location-suggestions').classList.add('hidden');
+}
+
+function selectLocation(location) {
+    const input = document.getElementById('deploy-location-input');
+    const hiddenInput = document.getElementById('deploy-location-id');
+    
+    input.value = `${location.building} - Floor ${location.floor} - Room ${location.room}`;
+    hiddenInput.value = location.id;
+    selectedLocationId = location.id;
+    
+    hideSuggestions();
+    hideLocationError();
+}
+
+function showLocationError() {
+    document.getElementById('location-error').classList.remove('hidden');
+}
+
+function hideLocationError() {
+    document.getElementById('location-error').classList.add('hidden');
+}
+
+// Date formatting function
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+}
+
 function generateQR(assetCode) {
     // Generate QR code for the asset
     const qrUrl = `/gsu/qrcode/asset/${assetCode}`;
     window.open(qrUrl, '_blank');
 }
+
+// Deploy form submission
+document.getElementById('deploy-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Validate location selection
+    const locationInput = document.getElementById('deploy-location-input').value.trim();
+    const locationId = document.getElementById('deploy-location-id').value;
+    
+    if (!locationId || !selectedLocationId) {
+        showLocationError();
+        return;
+    }
+    
+    // Verify the input matches a valid location
+    const isValidLocation = allLocations.some(location => 
+        location.id == locationId && 
+        `${location.building} - Floor ${location.floor} - Room ${location.room}` === locationInput
+    );
+    
+    if (!isValidLocation) {
+        showLocationError();
+        return;
+    }
+    
+    const formData = new FormData(this);
+    const assetId = formData.get('asset_id');
+    
+    try {
+        const response = await fetch(`/gsu/assets/${assetId}/location`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ location_id: locationId })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showSuccessToast(data.success || 'Asset deployed successfully! The asset is now available in the system.');
+            closeDeployModal();
+            // Refresh the scan results to show updated location
+            const assetCode = document.getElementById('deploy-asset-code').textContent;
+            fetchAssetDetails(assetCode);
+        } else {
+            throw new Error(data.error || 'Failed to deploy asset');
+        }
+    } catch (error) {
+        console.error('Error deploying asset:', error);
+        alert('Failed to deploy asset. Please try again.');
+    }
+});
 
 // Initialize scanner when page loads
 document.addEventListener('DOMContentLoaded', function() {
@@ -349,16 +681,63 @@ function renderScanResult(asset) {
                 <div><strong>Category:</strong> ${asset.category?.name ?? ''}</div>
                 <div class="md:col-span-2"><strong>Location:</strong> ${asset.location ? `${asset.location.building} - Floor ${asset.location.floor} - Room ${asset.location.room}` : ''}</div>
                 <div><strong>Condition:</strong> ${asset.condition}</div>
-                <div><strong>Purchase Date:</strong> ${asset.purchase_date}</div>
+                <div><strong>Purchase Date:</strong> ${formatDate(asset.purchase_date)}</div>
             </div>
             <div class="mt-3 flex flex-wrap gap-2">
                 <a href="/gsu/assets/${asset.id}" class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-sm hover:bg-blue-200 transition-colors"><i class="fas fa-eye mr-1"></i>View</a>
-                <a href="/gsu/assets/${asset.id}/edit" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded text-sm hover:bg-yellow-200 transition-colors"><i class="fas fa-edit mr-1"></i>Edit</a>
+                ${asset.location_id ? 
+                    `<span class="px-3 py-1 bg-gray-100 text-gray-500 rounded text-sm cursor-not-allowed"><i class="fas fa-check-circle mr-1"></i>Already Deployed</span>` :
+                    `<button onclick="openDeployModal('${asset.id}', '${asset.asset_code}')" class="px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200 transition-colors"><i class="fas fa-map-marker-alt mr-1"></i>Deploy</button>`
+                }
                 <a href="/gsu/qrcode/asset/${asset.asset_code}" target="_blank" class="px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200 transition-colors"><i class="fas fa-qrcode mr-1"></i>QR</a>
             </div>
         </div>
     `;
     resultsContainer.innerHTML = html;
+}
+
+// Toast notification functions
+function showSuccessToast(message) {
+    const toast = document.getElementById('success-toast');
+    const messageElement = document.getElementById('toast-message');
+    const progressBar = document.getElementById('toast-progress');
+    
+    // Set the message
+    messageElement.textContent = message;
+    
+    // Reset progress bar
+    progressBar.style.width = '100%';
+    progressBar.style.transition = 'none';
+    
+    // Show toast with slide-in animation
+    toast.classList.remove('translate-x-full');
+    toast.classList.add('translate-x-0');
+    
+    // Start progress bar animation after a brief delay
+    setTimeout(() => {
+        progressBar.style.transition = 'width 5000ms ease-linear';
+        progressBar.style.width = '0%';
+    }, 100);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        hideSuccessToast();
+    }, 5000);
+}
+
+function hideSuccessToast() {
+    const toast = document.getElementById('success-toast');
+    const progressBar = document.getElementById('toast-progress');
+    
+    // Hide toast with slide-out animation
+    toast.classList.remove('translate-x-0');
+    toast.classList.add('translate-x-full');
+    
+    // Reset progress bar after animation
+    setTimeout(() => {
+        progressBar.style.width = '100%';
+        progressBar.style.transition = 'none';
+    }, 500);
 }
 </script>
 @endsection 

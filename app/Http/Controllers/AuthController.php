@@ -22,7 +22,20 @@ class AuthController extends Controller
             $user = Auth::user();
             $user->update(['last_login' => now()]);
             
-            return redirect()->intended('/dashboard')->with('success', 'Welcome back, ' . $user->name . '!');
+            // Clear any intended URL to prevent role-based redirect issues
+            $request->session()->forget('url.intended');
+            
+            // Redirect based on user role to appropriate dashboard
+            $redirectRoute = match($user->role) {
+                'superadmin' => '/dashboard',
+                'admin' => '/dashboard', 
+                'gsu' => '/gsu/assets',
+                'purchasing' => '/purchasing/assets',
+                'user' => '/dashboard',
+                default => '/dashboard'
+            };
+            
+            return redirect($redirectRoute)->with('success', 'Welcome back, ' . $user->name . '!');
         }
 
         return redirect('login')->withErrors([

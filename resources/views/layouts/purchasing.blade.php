@@ -133,8 +133,8 @@
                 </ul>
             </nav>
 
-            <!-- Bottom Section -->
-            <div class="p-4 border-t border-gray-100">
+            <!-- Bottom Section - Sticky Logout -->
+            <div class="p-4 border-t border-gray-100 flex-shrink-0 sticky bottom-0 bg-white">
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
                     <button type="submit"
