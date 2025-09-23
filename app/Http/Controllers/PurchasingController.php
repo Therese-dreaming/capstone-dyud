@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\Category;
+use App\Models\Warranty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\NotificationService;
@@ -23,7 +24,7 @@ class PurchasingController extends Controller
     public function index()
     {
         $assets = Asset::where('created_by', Auth::id())
-            ->with(['category', 'location', 'approvedBy', 'createdBy'])
+            ->with(['category', 'location', 'approvedBy', 'createdBy', 'warranty'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -46,17 +47,23 @@ class PurchasingController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'asset_code' => 'required|string|max:255|unique:assets',
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'condition' => 'required|string|max:255',
             'description' => 'nullable|string',
             'purchase_cost' => 'required|numeric|min:0',
             'purchase_date' => 'required|date',
+            // Warranty validation
+            'manufacturer' => 'required|string|max:255',
+            'model' => 'required|string|max:255',
+            'warranty_expiry' => 'required|date|after:today',
         ]);
 
+        // Generate unique asset code
+        $assetCode = $this->generateAssetCode();
+
         $asset = Asset::create([
-            'asset_code' => $request->asset_code,
+            'asset_code' => $assetCode,
             'name' => $request->name,
             'category_id' => $request->category_id,
             'location_id' => null, // No location for purchasing
@@ -70,11 +77,19 @@ class PurchasingController extends Controller
             'created_by' => Auth::id(),
         ]);
 
+        // Create warranty record
+        Warranty::create([
+            'asset_id' => $asset->id,
+            'manufacturer' => $request->manufacturer,
+            'model' => $request->model,
+            'warranty_expiry' => $request->warranty_expiry,
+        ]);
+
         // Notify all admin users about the new asset pending approval
         $this->notificationService->notifyAdminsOfPendingAsset($asset);
 
         return redirect()->route('purchasing.assets.index')
-            ->with('success', 'Asset created successfully and submitted for approval.');
+            ->with('success', 'Asset and warranty information created successfully and submitted for approval.');
     }
 
     /**
@@ -87,7 +102,7 @@ class PurchasingController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $asset->load(['category', 'location', 'approvedBy', 'createdBy']);
+        $asset->load(['category', 'location', 'approvedBy', 'createdBy', 'warranty']);
         
         return view('purchasing.assets.show', compact('asset'));
     }
@@ -103,6 +118,7 @@ class PurchasingController extends Controller
         }
 
         $categories = Category::orderBy('name')->get();
+        $asset->load(['warranty']);
         
         return view('purchasing.assets.edit', compact('asset', 'categories'));
     }
@@ -118,17 +134,20 @@ class PurchasingController extends Controller
         }
 
         $request->validate([
-            'asset_code' => 'required|string|max:255|unique:assets,asset_code,' . $asset->id,
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'condition' => 'required|string|max:255',
             'description' => 'nullable|string',
             'purchase_cost' => 'required|numeric|min:0',
             'purchase_date' => 'required|date',
+            // Warranty validation
+            'manufacturer' => 'required|string|max:255',
+            'model' => 'required|string|max:255',
+            'warranty_expiry' => 'required|date|after:today',
         ]);
 
         $asset->update([
-            'asset_code' => $request->asset_code,
+            // asset_code is not updatable - it remains the same
             'name' => $request->name,
             'category_id' => $request->category_id,
             'condition' => $request->condition,
@@ -136,6 +155,16 @@ class PurchasingController extends Controller
             'purchase_cost' => $request->purchase_cost,
             'purchase_date' => $request->purchase_date,
         ]);
+
+        // Update warranty record
+        $asset->warranty()->updateOrCreate(
+            ['asset_id' => $asset->id],
+            [
+                'manufacturer' => $request->manufacturer,
+                'model' => $request->model,
+                'warranty_expiry' => $request->warranty_expiry,
+            ]
+        );
 
         return redirect()->route('purchasing.assets.index')
             ->with('success', 'Asset updated successfully.');
@@ -155,5 +184,20 @@ class PurchasingController extends Controller
 
         return redirect()->route('purchasing.assets.index')
             ->with('success', 'Asset deleted successfully.');
+    }
+
+    /**
+     * Generate a unique asset code
+     */
+    private function generateAssetCode()
+    {
+        do {
+            // Generate asset code format: AST-YYYY-XXXXXX (e.g., AST-2024-001234)
+            $year = date('Y');
+            $randomNumber = str_pad(mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
+            $assetCode = "AST-{$year}-{$randomNumber}";
+        } while (Asset::where('asset_code', $assetCode)->exists());
+
+        return $assetCode;
     }
 }

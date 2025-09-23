@@ -163,69 +163,94 @@
                 </div>
             </div>
             
-            <!-- Warranty Information Card (only in left column if asset is disposed) -->
-            @if($asset->warranty && $asset->status === 'Disposed' && $asset->disposes->isNotEmpty())
+            <!-- 🛡️ Warranty Information Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-orange-50 to-orange-100 px-6 py-4 border-b border-gray-200">
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
                         <i class="fas fa-shield-alt text-orange-600"></i>
-                        Warranty Information
+                        Warranty Protection
                     </h2>
                 </div>
-                <div class="p-6 space-y-5">
-                    <div class="flex items-start justify-between py-3 border-b border-gray-100">
-                        <div class="flex-1">
-                            <dt class="text-sm font-medium text-gray-500 mb-1">Manufacturer</dt>
-                            <dd class="text-base font-semibold text-gray-900">{{ $asset->warranty->manufacturer }}</dd>
+                
+                @if($asset->warranty)
+                    <div class="p-6 space-y-5">
+                        <div class="flex items-start justify-between py-3 border-b border-gray-100">
+                            <div class="flex-1">
+                                <dt class="text-sm font-medium text-gray-500 mb-1">Manufacturer</dt>
+                                <dd class="text-base font-semibold text-gray-900">{{ $asset->warranty->manufacturer }}</dd>
+                            </div>
+                            <div class="ml-4">
+                                <i class="fas fa-industry text-gray-400"></i>
+                            </div>
                         </div>
-                        <div class="ml-4">
-                            <i class="fas fa-industry text-gray-400"></i>
+                        
+                        <div class="flex items-start justify-between py-3 border-b border-gray-100">
+                            <div class="flex-1">
+                                <dt class="text-sm font-medium text-gray-500 mb-1">Model</dt>
+                                <dd class="text-base font-semibold text-gray-900">{{ $asset->warranty->model }}</dd>
+                            </div>
+                            <div class="ml-4">
+                                <i class="fas fa-cog text-gray-400"></i>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="flex items-start justify-between py-3 border-b border-gray-100">
-                        <div class="flex-1">
-                            <dt class="text-sm font-medium text-gray-500 mb-1">Model</dt>
-                            <dd class="text-base font-semibold text-gray-900">{{ $asset->warranty->model }}</dd>
-                        </div>
-                        <div class="ml-4">
-                            <i class="fas fa-cog text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-start justify-between py-3">
-                        <div class="flex-1">
-                            <dt class="text-sm font-medium text-gray-500 mb-1">Warranty Expiry</dt>
-                            <dd class="text-base font-medium text-gray-900 flex items-center gap-2">
-                                <i class="fas fa-calendar-times text-gray-400"></i>
-                                {{ \Carbon\Carbon::parse($asset->warranty->warranty_expiry)->format('F d, Y') }}
-                            </dd>
-                            @php
-                                $expiryDate = \Carbon\Carbon::parse($asset->warranty->warranty_expiry);
-                                $isExpired = $expiryDate->isPast();
-                                $isExpiringSoon = !$isExpired && $expiryDate->diffInDays() <= 30;
-                            @endphp
-                            <div class="mt-2">
-                                @if($isExpired)
-                                    <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
-                                        <i class="fas fa-exclamation-triangle mr-1"></i>Expired
-                                    </span>
-                                @elseif($isExpiringSoon)
-                                    <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">
-                                        <i class="fas fa-clock mr-1"></i>Expiring Soon
-                                    </span>
-                                @else
-                                    <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
-                                        <i class="fas fa-check mr-1"></i>Active
-                                    </span>
-                                @endif
-                                <span class="text-xs text-gray-500 ml-2">{{ $expiryDate->diffForHumans() }}</span>
+                        
+                        <div class="flex items-start justify-between py-3">
+                            <div class="flex-1">
+                                <dt class="text-sm font-medium text-gray-500 mb-1">Warranty Expiry</dt>
+                                <dd class="text-base font-medium text-gray-900 flex items-center gap-2">
+                                    <i class="fas fa-calendar-times text-gray-400"></i>
+                                    {{ $asset->warranty->warranty_expiry->format('F d, Y') }}
+                                </dd>
+                                @php
+                                    $isExpired = $asset->warranty->isExpired();
+                                    $isExpiringSoon = $asset->warranty->isExpiringSoon();
+                                @endphp
+                                <div class="mt-2">
+                                    @if($isExpired)
+                                        <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>Expired
+                                        </span>
+                                    @elseif($isExpiringSoon)
+                                        <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                            <i class="fas fa-clock mr-1"></i>Expiring Soon
+                                        </span>
+                                    @else
+                                        <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
+                                            <i class="fas fa-check mr-1"></i>Active
+                                        </span>
+                                    @endif
+                                    <span class="text-xs text-gray-500 ml-2">{{ $asset->warranty->warranty_expiry->diffForHumans() }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                @else
+                    @empty($asset->warranty)
+                        <div class="p-8 text-center">
+                            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-shield-alt text-2xl text-orange-400"></i>
+                            </div>
+                            <h4 class="text-lg font-bold text-gray-900 mb-2">No Warranty Information</h4>
+                            <p class="text-gray-600 mb-4 max-w-sm mx-auto">
+                                Warranty details are not available for this asset. This may affect support and maintenance coverage.
+                            </p>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-md mx-auto">
+                                <div class="flex items-start space-x-2">
+                                    <i class="fas fa-info-circle text-blue-600 mt-0.5 text-sm"></i>
+                                    <div class="text-left">
+                                        <p class="text-xs font-medium text-blue-900 mb-1">Warranty Benefits:</p>
+                                        <ul class="text-xs text-blue-700 space-y-0.5">
+                                            <li>• Manufacturer support coverage</li>
+                                            <li>• Repair and replacement protection</li>
+                                            <li>• Maintenance scheduling alerts</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endempty
+                @endif
             </div>
-            @endif
         </div>
 
         <!-- RIGHT COLUMN -->
@@ -367,86 +392,6 @@
         </div>
     </div>
 
-    <!-- Warranty Information Section (full width when not disposed) -->
-    @if($asset->warranty && !($asset->status === 'Disposed' && $asset->disposes->isNotEmpty()))
-    <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-orange-50 to-orange-100 px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <i class="fas fa-shield-alt text-orange-600"></i>
-                Warranty Information
-            </h2>
-        </div>
-        <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Manufacturer -->
-                <div class="bg-orange-50 rounded-lg p-4 border border-orange-100">
-                    <div class="flex items-center justify-between mb-2">
-                        <dt class="text-sm font-medium text-orange-700">Manufacturer</dt>
-                        <i class="fas fa-industry text-orange-500"></i>
-                    </div>
-                    <dd class="text-base font-semibold text-gray-900">
-                        {{ $asset->warranty->manufacturer }}
-                    </dd>
-                </div>
-                
-                <!-- Model -->
-                <div class="bg-orange-50 rounded-lg p-4 border border-orange-100">
-                    <div class="flex items-center justify-between mb-2">
-                        <dt class="text-sm font-medium text-orange-700">Model</dt>
-                        <i class="fas fa-cog text-orange-500"></i>
-                    </div>
-                    <dd class="text-base font-semibold text-gray-900">
-                        {{ $asset->warranty->model }}
-                    </dd>
-                </div>
-                
-                <!-- Warranty Status -->
-                <div class="bg-orange-50 rounded-lg p-4 border border-orange-100">
-                    <div class="flex items-center justify-between mb-2">
-                        <dt class="text-sm font-medium text-orange-700">Warranty Status</dt>
-                        <i class="fas fa-shield-alt text-orange-500"></i>
-                    </div>
-                    @php
-                        $expiryDate = \Carbon\Carbon::parse($asset->warranty->warranty_expiry);
-                        $isExpired = $expiryDate->isPast();
-                        $isExpiringSoon = !$isExpired && $expiryDate->diffInDays() <= 30;
-                    @endphp
-                    <dd class="text-base font-semibold text-gray-900 mb-2">
-                        @if($isExpired)
-                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
-                                <i class="fas fa-exclamation-triangle mr-1"></i>Expired
-                            </span>
-                        @elseif($isExpiringSoon)
-                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">
-                                <i class="fas fa-clock mr-1"></i>Expiring Soon
-                            </span>
-                        @else
-                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
-                                <i class="fas fa-check mr-1"></i>Active
-                            </span>
-                        @endif
-                    </dd>
-                    <div class="text-xs text-gray-600">
-                        {{ $expiryDate->diffForHumans() }}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Warranty Expiry (full width) -->
-            <div class="mt-6">
-                <dt class="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                    <i class="fas fa-calendar-times text-orange-500"></i>
-                    Warranty Expiry Date
-                </dt>
-                <dd class="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <div class="text-lg font-semibold text-gray-900">
-                        {{ \Carbon\Carbon::parse($asset->warranty->warranty_expiry)->format('F d, Y') }}
-                    </div>
-                </dd>
-            </div>
-        </div>
-    </div>
-    @endif
 
     <!-- QR Code Section -->
     <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">

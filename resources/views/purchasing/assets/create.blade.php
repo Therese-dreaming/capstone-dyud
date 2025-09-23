@@ -29,18 +29,17 @@
             <!-- Asset Code and Name -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                    <label for="asset_code" class="block text-sm font-medium text-gray-700 mb-2">
-                        Asset Code <span class="text-red-500">*</span>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Asset Code
                     </label>
-                    <input type="text" 
-                           id="asset_code" 
-                           name="asset_code" 
-                           value="{{ old('asset_code') }}" 
-                           required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('asset_code') border-red-500 ring-2 ring-red-200 @enderror">
-                    @error('asset_code')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                    <div class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 flex items-center">
+                        <i class="fas fa-magic text-purple-600 mr-2"></i>
+                        <span class="text-gray-600 font-medium">Auto-generated upon creation</span>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        A unique asset code will be automatically assigned when you create this asset
+                    </p>
                 </div>
                 
                 <div>
@@ -52,6 +51,7 @@
                            name="name" 
                            value="{{ old('name') }}" 
                            required
+                           placeholder="Enter descriptive asset name"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('name') border-red-500 ring-2 ring-red-200 @enderror">
                     @error('name')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -138,6 +138,82 @@
                     @error('purchase_date')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                </div>
+            </div>
+
+            <!-- Warranty Information -->
+            <div class="mb-8">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-shield-alt text-purple-600 mr-2"></i>
+                    <h3 class="text-lg font-semibold text-gray-900">Warranty Information</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="manufacturer" class="block text-sm font-medium text-gray-700 mb-2">
+                            Manufacturer <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="manufacturer" 
+                               name="manufacturer" 
+                               value="{{ old('manufacturer') }}" 
+                               required
+                               placeholder="e.g., Dell, HP, Canon"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('manufacturer') border-red-500 ring-2 ring-red-200 @enderror">
+                        @error('manufacturer')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div>
+                        <label for="model" class="block text-sm font-medium text-gray-700 mb-2">
+                            Model <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="model" 
+                               name="model" 
+                               value="{{ old('model') }}" 
+                               required
+                               placeholder="e.g., Latitude 5520, LaserJet Pro"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('model') border-red-500 ring-2 ring-red-200 @enderror">
+                        @error('model')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="warranty_expiry" class="block text-sm font-medium text-gray-700 mb-2">
+                            Warranty Expiry Date <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" 
+                               id="warranty_expiry" 
+                               name="warranty_expiry" 
+                               value="{{ old('warranty_expiry') }}" 
+                               required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('warranty_expiry') border-red-500 ring-2 ring-red-200 @enderror">
+                        @error('warranty_expiry')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Date when the manufacturer's warranty expires
+                        </p>
+                    </div>
+                    
+                    <!-- Warranty Status Indicator -->
+                    <div class="flex items-center">
+                        <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg w-full">
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-check text-purple-600 mr-2"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-purple-900">Warranty Tracking</p>
+                                    <p class="text-xs text-purple-700">System will monitor warranty status automatically</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
