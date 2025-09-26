@@ -25,6 +25,54 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Quick Actions Row -->
+        <div class="mt-4 pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between mb-3">
+                <div class="text-sm text-gray-600">
+                    <i class="fas fa-tools mr-1"></i>Quick Actions
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <!-- Back to Assets Button -->
+                <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.locations.index' : 'locations.index') }}" 
+                   class="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                    <i class="fas fa-list"></i>
+                    <span>Back to Assets</span>
+                </a>
+                
+                <!-- Transfer Asset Button -->
+                @if($asset->isAvailable() && $asset->location_id && (auth()->user()->role === 'admin' || auth()->user()->role === 'gsu'))
+                    <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.assets.transfer-form' : 'assets.transfer-form', $asset) }}" 
+                       class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Transfer Asset</span>
+                    </a>
+                @else
+                    <div class="bg-gray-100 text-gray-500 font-semibold py-2 px-4 rounded-lg flex items-center gap-2 border border-gray-200" 
+                         title="{{ !$asset->isAvailable() ? 'Asset is not available for transfer' : (!$asset->location_id ? 'Asset must be deployed to a location first' : 'Transfer restricted to Admin and GSU roles') }}">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Transfer Asset</span>
+                    </div>
+                @endif
+                
+                <!-- Dispose Asset Button -->
+                @if($asset->isAvailable())
+                    <button onclick="openDisposeModal({{ $asset->id }}, '{{ $asset->asset_code }}')" 
+                            class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                        <i class="fas fa-trash"></i>
+                        <span>Dispose Asset</span>
+                    </button>
+                @endif
+                
+                <!-- Print QR Code Button -->
+                <button onclick="printQRCode()" 
+                        class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                    <i class="fas fa-print"></i>
+                    <span>Print QR Code</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -646,7 +694,8 @@
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                                                                  <div class="flex items-center gap-3 mb-2">
-                                             <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                                             <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full 
+                                                 {{ $change->change_type === 'transfer' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
                                                  {{ $change->getChangeTypeLabel() }}
                                              </span>
                                              <span class="text-sm text-gray-500">
@@ -654,36 +703,69 @@
                                              </span>
                                          </div>
                                          
-                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                             <div>
-                                                 <span class="font-medium text-gray-700">Field:</span>
-                                                 <span class="text-gray-900">{{ $change->getFieldLabel() }}</span>
+                                         @if($change->change_type === 'transfer')
+                                             <!-- Special layout for transfers -->
+                                             <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                                                 <div class="flex items-center gap-2 mb-2">
+                                                     <i class="fas fa-exchange-alt text-blue-600"></i>
+                                                     <span class="font-medium text-blue-900">Asset Transfer</span>
+                                                 </div>
+                                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                                     <div>
+                                                         <span class="font-medium text-blue-700">From:</span>
+                                                         <div class="text-gray-900 bg-white px-2 py-1 rounded border">{{ $change->getEnhancedPreviousValue() }}</div>
+                                                     </div>
+                                                     <div>
+                                                         <span class="font-medium text-blue-700">To:</span>
+                                                         <div class="text-gray-900 bg-white px-2 py-1 rounded border font-medium">{{ $change->getEnhancedNewValue() }}</div>
+                                                     </div>
+                                                     <div class="md:col-span-2">
+                                                         <span class="font-medium text-blue-700">Transferred by:</span>
+                                                         <span class="text-gray-900">{{ $change->changed_by }}</span>
+                                                     </div>
+                                                 </div>
                                              </div>
-                                             
-                                             <div>
-                                                 <span class="font-medium text-gray-700">Changed by:</span>
-                                                 <span class="text-gray-900">{{ $change->changed_by }}</span>
+                                         @else
+                                             <!-- Regular layout for other changes -->
+                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm {{ $change->involvesUnverifiedStatus() ? 'bg-orange-50 p-3 rounded-lg border border-orange-200' : '' }}">
+                                                 @if($change->involvesUnverifiedStatus())
+                                                     <div class="md:col-span-2 mb-2">
+                                                         <div class="flex items-center gap-2">
+                                                             <i class="fas fa-exclamation-triangle text-orange-600"></i>
+                                                             <span class="font-medium text-orange-800 text-sm">Status change involving verification process</span>
+                                                         </div>
+                                                     </div>
+                                                 @endif
+                                                 <div>
+                                                     <span class="font-medium text-gray-700">Field:</span>
+                                                     <span class="text-gray-900">{{ $change->getFieldLabel() }}</span>
+                                                 </div>
+                                                 
+                                                 <div>
+                                                     <span class="font-medium text-gray-700">Changed by:</span>
+                                                     <span class="text-gray-900">{{ $change->changed_by }}</span>
+                                                 </div>
+                                                 
+                                                 <div class="md:col-span-2">
+                                                     <span class="font-medium text-gray-700">Previous Value:</span>
+                                                     <span class="text-gray-900">{{ $change->getEnhancedPreviousValue() }}</span>
+                                                 </div>
+                                                 
+                                                 <div class="md:col-span-2">
+                                                     <span class="font-medium text-gray-700">New Value:</span>
+                                                     <span class="text-gray-900 font-medium">{{ $change->getEnhancedNewValue() }}</span>
+                                                 </div>
                                              </div>
-                                             
-                                             <div class="md:col-span-2">
-                                                 <span class="font-medium text-gray-700">Previous Value:</span>
-                                                 <span class="text-gray-900">{{ $change->previous_value ?: 'None' }}</span>
-                                             </div>
-                                             
-                                             <div class="md:col-span-2">
-                                                 <span class="font-medium text-gray-700">New Value:</span>
-                                                 <span class="text-gray-900 font-medium">{{ $change->new_value ?: 'None' }}</span>
-                                             </div>
-                                             
-                                             @if($change->notes)
-                                             <div class="md:col-span-2">
+                                         @endif
+                                         
+                                         @if($change->notes)
+                                             <div class="mt-3">
                                                  <span class="font-medium text-gray-700">Notes:</span>
-                                                 <div class="text-gray-900 mt-1 bg-purple-50 p-3 rounded-lg border border-purple-100">
+                                                 <div class="text-gray-900 mt-1 bg-{{ $change->change_type === 'transfer' ? 'blue' : 'purple' }}-50 p-3 rounded-lg border border-{{ $change->change_type === 'transfer' ? 'blue' : 'purple' }}-100">
                                                      {{ $change->notes }}
                                                  </div>
                                              </div>
-                                             @endif
-                                         </div>
+                                         @endif
                                     </div>
                                 </div>
                             </div>
@@ -707,17 +789,71 @@
         </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="mt-6 flex gap-4">
-        <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.locations.index' : 'locations.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition duration-200 flex items-center gap-2">
-            <i class="fas fa-list"></i> Back to Assets
-        </a>
-        
-        <!-- Future: Edit and Delete buttons can be added here -->
+</div>
+
+<!-- Dispose Modal -->
+<div id="disposeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div id="disposeModalCard" class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative animate-fade-in">
+        <button onclick="closeDisposeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-800 text-xl"><i class="fas fa-times"></i></button>
+        <div class="flex flex-col items-center">
+            <div class="bg-red-100 text-red-800 rounded-full p-4 mb-4">
+                <i class="fas fa-exclamation-triangle text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800">Dispose Asset</h3>
+            <p class="text-gray-600 mb-6 text-center">Are you sure you want to dispose asset <span class="font-semibold text-red-800" id="dispose-asset-name">CODE</span>? This action cannot be undone.</p>
+            <form id="disposeForm" method="POST" class="w-full flex flex-col gap-3">
+                @csrf
+                @method('PUT')
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Disposal Reason <span class="text-red-600">*</span></label>
+                    <textarea name="disposal_reason" id="disposal_reason" rows="4" required
+                              placeholder="Please provide a reason for disposing this asset..."
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-trash-alt"></i> Dispose
+                </button>
+                <button type="button" onclick="closeDisposeModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 
 <script>
+// Dispose Modal Functions (mirrors index page behavior)
+let currentAssetId = null;
+
+function openDisposeModal(assetId, assetCode) {
+    currentAssetId = assetId;
+    document.getElementById('dispose-asset-name').textContent = assetCode;
+    // Set form action
+    document.getElementById('disposeForm').action = `{{ url('assets') }}/${assetId}/dispose`;
+    // Show modal
+    document.getElementById('disposeModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    // Focus on textarea
+    setTimeout(() => {
+        document.getElementById('disposal_reason').focus();
+    }, 100);
+}
+
+function closeDisposeModal() {
+    document.getElementById('disposeModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    // Reset form
+    document.getElementById('disposeForm').reset();
+    document.getElementById('disposeForm').action = '';
+    currentAssetId = null;
+}
+
+// Close modal when clicking outside
+document.getElementById('disposeModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDisposeModal();
+    }
+});
 function printQRCode() {
     // Create a new window for printing
     const printWindow = window.open('', '_blank');
@@ -813,7 +949,7 @@ function showTab(tabName) {
 // Initialize tab based on URL parameter for pagination
 document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
-    const activeTab = urlParams.get('tab') || 'borrowing';
+    const activeTab = urlParams.get('tab') || 'maintenance';
     
     // Update URL if no tab parameter is present
     if (!urlParams.get('tab')) {
@@ -821,7 +957,39 @@ document.addEventListener('DOMContentLoaded', function() {
         url.searchParams.set('tab', activeTab);
         window.history.pushState({}, '', url);
     }
+    
+    // Ensure the correct tab is shown on page load
+    showTabOnLoad(activeTab);
 });
+
+// Function to show tab on page load without event
+function showTabOnLoad(tabName) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(content => {
+        content.style.display = 'none';
+    });
+    
+    // Remove active class from all tab buttons
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
+        button.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Show selected tab content
+    const targetTab = document.getElementById(tabName + '-tab');
+    if (targetTab) {
+        targetTab.style.display = 'block';
+    }
+    
+    // Add active class to the correct button
+    const targetButton = document.querySelector(`button[onclick="showTab('${tabName}')"]`);
+    if (targetButton) {
+        targetButton.classList.add('active', 'border-indigo-500', 'text-indigo-600');
+        targetButton.classList.remove('border-transparent', 'text-gray-500');
+    }
+}
 </script>
 
 @endsection

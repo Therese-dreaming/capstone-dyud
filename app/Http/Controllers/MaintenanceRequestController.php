@@ -15,35 +15,98 @@ class MaintenanceRequestController extends Controller
     // User: request form
     public function create()
     {
-        $locations = Location::orderBy('building')->orderBy('room')->get();
+        $user = Auth::user();
+        
+        // Only regular users can create maintenance requests
+        if ($user->role !== 'user') {
+            abort(403, 'Only regular users can create maintenance requests.');
+        }
+        
+        // Get only locations owned by this user
+        $locations = $user->ownedLocations()->orderBy('building')->orderBy('room')->get();
+        
+        // If user has no owned locations, show message
+        if ($locations->isEmpty()) {
+            return view('maintenance-requests.create', [
+                'locations' => $locations,
+                'noLocations' => true
+            ]);
+        }
+        
         return view('maintenance-requests.create', compact('locations'));
     }
 
     // User: submit request
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
+            'request_scope' => 'required|in:location,assets',
             'school_year' => 'required|string|max:20',
             'department' => 'required|string|max:100',
             'date_reported' => 'required|date',
             'program' => 'nullable|string|max:100',
-            'location_id' => 'required|exists:locations,id',
+            'location_id' => 'required_if:request_scope,location|nullable|exists:locations,id',
             'instructor_name' => 'required|string|max:100',
             'notes' => 'nullable|string|max:1000',
+            'asset_codes' => 'required_if:request_scope,assets|array',
+            'asset_codes.*' => 'required_if:request_scope,assets|distinct|exists:assets,asset_code',
+            'idempotency_key' => 'nullable|string|max:100',
         ]);
 
-        $location = Location::findOrFail($request->location_id);
+        $user = Auth::user();
+        
+        // Only regular users can create maintenance requests
+        if ($user->role !== 'user') {
+            abort(403, 'Only regular users can create maintenance requests.');
+        }
+        
+        $locationId = $validated['request_scope'] === 'location' ? $validated['location_id'] : null;
+        $location = $locationId ? Location::findOrFail($locationId) : null;
+        
+        // Validate location ownership
+        if ($locationId && !$user->ownsLocation($locationId)) {
+            return back()->withErrors(['location_id' => 'You can only submit maintenance requests for locations you own.'])->withInput();
+        }
+        
+        // For asset-specific requests, validate that user owns the locations of all requested assets
+        if ($validated['request_scope'] === 'assets') {
+            $assetCodes = $validated['asset_codes'];
+            $assets = \App\Models\Asset::whereIn('asset_code', $assetCodes)->get();
+            
+            foreach ($assets as $asset) {
+                if (!$user->ownsLocation($asset->location_id)) {
+                    return back()->withErrors(['asset_codes' => 'You can only request maintenance for assets in locations you own.'])->withInput();
+                }
+            }
+        }
+
+        // Idempotency (avoid duplicate submissions)
+        $idempotencyKey = $validated['idempotency_key'] ?? ($validated['request_scope'] . '|' . ($locationId ?? 'none') . '|' . Auth::id() . '|' . now()->format('YmdHis'));
+
+        // If a request with same key exists and is still pending, return it
+        if ($existing = MaintenanceRequest::where('idempotency_key', $idempotencyKey)->where('status', 'pending')->first()) {
+            return redirect()->route('maintenance-requests.user-index')->with('success', 'Maintenance request submitted successfully. Awaiting admin approval.');
+        }
+
         $maintenanceRequest = MaintenanceRequest::create([
             'requester_id' => Auth::id(),
-            'location_id' => $location->id,
-            'school_year' => $request->school_year,
-            'department' => $request->department,
-            'date_reported' => $request->date_reported,
-            'program' => $request->program,
-            'instructor_name' => $request->instructor_name,
-            'notes' => $request->notes,
+            'location_id' => $locationId, // may be null for specific-assets requests
+            'school_year' => $validated['school_year'],
+            'department' => $validated['department'],
+            'date_reported' => $validated['date_reported'],
+            'program' => $validated['program'] ?? null,
+            'instructor_name' => $validated['instructor_name'],
+            'notes' => $validated['notes'] ?? null,
             'status' => 'pending',
+            'idempotency_key' => $idempotencyKey,
         ]);
+
+        // Persist requested asset codes for admin/GSU approval processing
+        if (($validated['request_scope'] ?? 'location') === 'assets') {
+            $maintenanceRequest->update([
+                'requested_asset_codes' => json_encode($validated['asset_codes']),
+            ]);
+        }
 
         // Send notification to admins
         $notificationService = new NotificationService();
@@ -112,14 +175,18 @@ class MaintenanceRequestController extends Controller
                 'admin_notes' => $request->input('admin_notes'),
             ]);
 
+            // Detect scope: location vs specific assets (location_id can be null)
+            $requestedAssetCodes = $maintenanceRequest->requested_asset_codes ? json_decode($maintenanceRequest->requested_asset_codes, true) : [];
+            $isSpecificAssets = empty($maintenanceRequest->location_id) && !empty($requestedAssetCodes);
+
             // Create maintenance checklist automatically
             $checklist = \App\Models\MaintenanceChecklist::create([
                 'school_year' => $maintenanceRequest->school_year,
                 'department' => $maintenanceRequest->department,
                 'date_reported' => $maintenanceRequest->date_reported,
                 'program' => $maintenanceRequest->program,
-                'location_id' => $maintenanceRequest->location_id,
-                'room_number' => $maintenanceRequest->location->room,
+                'location_id' => $isSpecificAssets ? null : $maintenanceRequest->location_id,
+                'room_number' => $isSpecificAssets ? 'Asset-specific request' : (optional($maintenanceRequest->location)->room ?? 'N/A'),
                 'instructor' => $maintenanceRequest->instructor_name,
                 'instructor_signature' => null, // Will be filled by GSU
                 'checked_by' => 'To be filled by GSU',
@@ -136,24 +203,52 @@ class MaintenanceRequestController extends Controller
                 'maintenance_checklist_id' => $checklist->id
             ]);
 
-            // Auto-populate with existing assets in the location
-            $assets = \App\Models\Asset::where('location_id', $maintenanceRequest->location_id)
-                ->whereNotIn('status', ['Disposed', 'Lost'])
-                ->with('category')
-                ->get();
-            
-            foreach ($assets as $asset) {
-                \App\Models\MaintenanceChecklistItem::create([
-                    'maintenance_checklist_id' => $checklist->id,
-                    'asset_code' => $asset->asset_code,
-                    'particulars' => $asset->name,
-                    'quantity' => 1,
-                    'start_status' => 'OK',
-                    'end_status' => null,
-                    'notes' => null,
-                    'location_id' => $maintenanceRequest->location_id,
-                    'location_name' => "{$maintenanceRequest->location->building} - Floor {$maintenanceRequest->location->floor} - Room {$maintenanceRequest->location->room}"
-                ]);
+            // Initialize assets collection
+            $assets = collect();
+
+            if ($isSpecificAssets) {
+                // Populate with specifically requested assets (validate again for safety)
+                $assets = \App\Models\Asset::whereIn('asset_code', $requestedAssetCodes)
+                    ->whereNotIn('status', ['Disposed', 'Lost'])
+                    ->with('location')
+                    ->get();
+
+                foreach ($assets as $asset) {
+                    $loc = $asset->location;
+                    \App\Models\MaintenanceChecklistItem::create([
+                        'maintenance_checklist_id' => $checklist->id,
+                        'asset_code' => $asset->asset_code,
+                        'particulars' => $asset->name,
+                        'quantity' => 1,
+                        'start_status' => 'OK',
+                        'end_status' => null,
+                        'notes' => null,
+                        'location_id' => optional($loc)->id,
+                        'location_name' => $loc ? ($loc->building . ' - Floor ' . $loc->floor . ' - Room ' . $loc->room) : 'N/A'
+                    ]);
+                }
+            } else {
+                // Auto-populate with existing assets in the location
+                $assets = \App\Models\Asset::where('location_id', $maintenanceRequest->location_id)
+                    ->whereNotIn('status', ['Disposed', 'Lost'])
+                    ->with('category')
+                    ->get();
+                
+                foreach ($assets as $asset) {
+                    \App\Models\MaintenanceChecklistItem::create([
+                        'maintenance_checklist_id' => $checklist->id,
+                        'asset_code' => $asset->asset_code,
+                        'particulars' => $asset->name,
+                        'quantity' => 1,
+                        'start_status' => 'OK',
+                        'end_status' => null,
+                        'notes' => null,
+                        'location_id' => $maintenanceRequest->location_id,
+                        'location_name' => optional($maintenanceRequest->location)->building
+                            ? ($maintenanceRequest->location->building . ' - Floor ' . $maintenanceRequest->location->floor . ' - Room ' . $maintenanceRequest->location->room)
+                            : 'N/A'
+                    ]);
+                }
             }
 
             DB::commit();
@@ -169,7 +264,16 @@ class MaintenanceRequestController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Failed to approve maintenance request and create checklist: ' . $e->getMessage());
+            \Log::error('Failed to approve maintenance request and create checklist: ' . $e->getMessage(), [
+                'maintenance_request_id' => $maintenanceRequest->id,
+                'exception' => $e->getTraceAsString()
+            ]);
+            
+            // Provide more specific error message in development
+            if (config('app.debug')) {
+                return back()->with('error', 'Failed to approve request: ' . $e->getMessage());
+            }
+            
             return back()->with('error', 'Failed to approve request. Please try again.');
         }
     }
@@ -217,6 +321,16 @@ class MaintenanceRequestController extends Controller
         // Redirect to the created checklist
         return redirect()->route('maintenance-checklists.show', $maintenanceRequest->maintenance_checklist_id)
             ->with('success', 'Request acknowledged. You can now proceed with the maintenance checklist.');
+    }
+
+    // API: Get pending maintenance requests count for admin sidebar
+    public function pendingCount()
+    {
+        $this->authorizeAdmin();
+        
+        $count = MaintenanceRequest::where('status', 'pending')->count();
+        
+        return response()->json(['count' => $count]);
     }
 
     private function authorizeAdmin(): void

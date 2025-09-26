@@ -1,27 +1,35 @@
 @extends('layouts.admin')
 
+@section('title', 'Admin Dashboard - Asset Management Analytics')
+
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50" x-data="{ 
-    showToast: {{ session('success') || session('error') ? 'true' : 'false' }},
-    activeTab: 'overview',
-    showWelcome: true
-}">
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50" x-data="adminDashboardData()">
     <!-- Welcome Banner -->
-    <div x-show="showWelcome" x-transition class="bg-gradient-to-r from-red-600 to-red-800 text-white p-4 md:p-6 mb-6 rounded-xl shadow-lg relative overflow-hidden">
+    <div x-show="showWelcome" x-transition class="bg-gradient-to-r from-red-600 to-red-800 text-white p-4 md:p-6 mb-6 rounded-xl shadow-lg relative overflow-hidden mx-4 mt-4">
         <div class="absolute inset-0 bg-black opacity-10"></div>
         <div class="relative z-10 flex items-center justify-between">
             <div class="flex items-center space-x-4">
                 <div class="bg-white/20 p-3 rounded-full">
-                    <i class="fas fa-tachometer-alt text-2xl"></i>
+                    <i class="fas fa-chart-line text-2xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold">Welcome back, {{ Auth::user()->name ?? 'Admin' }}! 👋</h1>
-                    <p class="text-red-100 text-sm md:text-base">Here's what's happening with your assets today</p>
+                    <h1 class="text-xl md:text-2xl font-bold">Welcome back, {{ Auth::user()->name ?? 'Admin' }}! 📊</h1>
+                    <p class="text-red-100 text-sm md:text-base">Comprehensive asset management analytics and insights</p>
+                    <p class="text-xs text-red-200 mt-1">Last login: {{ Auth::user()->last_login ? Auth::user()->last_login->diffForHumans() : 'Never' }}</p>
                 </div>
             </div>
-            <button @click="showWelcome = false" class="text-white/80 hover:text-white transition-colors">
-                <i class="fas fa-times text-xl"></i>
-            </button>
+            <div class="flex items-center space-x-4">
+                <div class="text-right">
+                    <div class="text-sm text-red-200">System Status</div>
+                    <div class="text-lg font-bold text-green-300 flex items-center gap-2">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        Online
+                    </div>
+                </div>
+                <button @click="showWelcome = false" class="text-white/80 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -30,494 +38,508 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
                 <h1 class="text-3xl md:text-4xl font-bold text-gray-900 flex items-center gap-3">
-                                    <div class="bg-gradient-to-r from-red-600 to-red-800 text-white p-3 rounded-xl shadow-lg">
-                    <i class="fas fa-tachometer-alt text-xl"></i>
-                </div>
-                    Dashboard
+                    <div class="bg-gradient-to-r from-red-600 to-red-800 text-white p-3 rounded-xl shadow-lg">
+                        <i class="fas fa-chart-line text-xl"></i>
+                    </div>
+                    Analytics Dashboard
                 </h1>
-                <p class="text-gray-600 mt-2 text-sm md:text-base">Monitor and manage your asset inventory efficiently</p>
+                <p class="text-gray-600 mt-2 text-sm md:text-base">Comprehensive asset management insights and performance metrics</p>
             </div>
             <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+                @if($unreadNotifications > 0)
+                <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fas fa-bell animate-pulse"></i>
+                    <span class="font-medium">{{ $unreadNotifications }} unread notification{{ $unreadNotifications > 1 ? 's' : '' }}</span>
+                </div>
+                @endif
                 <div class="bg-white rounded-lg shadow-sm px-4 py-2 border border-gray-200">
                     <div class="text-xs text-gray-500">Last updated</div>
                     <div class="text-sm font-medium text-gray-900">{{ now()->format('M d, Y h:i A') }}</div>
                 </div>
-                <button class="bg-white rounded-lg shadow-sm p-2 border border-gray-200 hover:bg-gray-50 transition-colors" title="Refresh">
+                <button @click="refreshDashboard()" class="bg-white rounded-lg shadow-sm p-2 border border-gray-200 hover:bg-gray-50 transition-colors" title="Refresh">
                     <i class="fas fa-sync-alt text-gray-600"></i>
                 </button>
             </div>
         </div>
 
         <!-- Tab Navigation -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
-            <div class="flex border-b border-gray-200">
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 mb-8 overflow-hidden">
+            <nav class="flex">
                 <button @click="activeTab = 'overview'" 
-                        :class="activeTab === 'overview' ? 'bg-red-50 text-red-700 border-b-2 border-red-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
-                        class="flex-1 px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2">
-                                            <i class="fas fa-chart-pie"></i>
-                        Overview
+                        :class="activeTab === 'overview' ? 'bg-red-50 text-red-600 border-b-2 border-red-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+                        class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-chart-pie"></i>Overview
                 </button>
                 <button @click="activeTab = 'analytics'" 
-                        :class="activeTab === 'analytics' ? 'bg-red-50 text-red-700 border-b-2 border-red-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
-                        class="flex-1 px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2">
-                                            <i class="fas fa-chart-line"></i>
-                        Analytics
+                        :class="activeTab === 'analytics' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+                        class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-chart-line"></i>Analytics
+                </button>
+                <button @click="activeTab = 'approvals'" 
+                        :class="activeTab === 'approvals' ? 'bg-orange-50 text-orange-600 border-b-2 border-orange-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+                        class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-hourglass-half"></i>Approvals
+                    @if($pendingApprovals > 0)
+                    <span class="bg-orange-500 text-white text-xs rounded-full px-2 py-1 ml-1">{{ $pendingApprovals }}</span>
+                    @endif
+                </button>
+                <button @click="activeTab = 'maintenance'" 
+                        :class="activeTab === 'maintenance' ? 'bg-purple-50 text-purple-600 border-b-2 border-purple-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+                        class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-tools"></i>Maintenance
+                    @if($pendingMaintenanceRequests > 0)
+                    <span class="bg-purple-500 text-white text-xs rounded-full px-2 py-1 ml-1">{{ $pendingMaintenanceRequests }}</span>
+                    @endif
                 </button>
                 <button @click="activeTab = 'quick-actions'" 
-                        :class="activeTab === 'quick-actions' ? 'bg-red-50 text-red-700 border-b-2 border-red-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
-                        class="flex-1 px-6 py-4 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2">
-                                            <i class="fas fa-bolt"></i>
-                        Quick Actions
+                        :class="activeTab === 'quick-actions' ? 'bg-green-50 text-green-600 border-b-2 border-green-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+                        class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-bolt"></i>Quick Actions
                 </button>
-            </div>
+            </nav>
         </div>
 
-        <!-- Overview Tab -->
-        <div x-show="activeTab === 'overview'" x-transition>
-            <!-- Key Metrics Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Pending Approvals - Priority Card -->
-                <div class="bg-white rounded-xl shadow-lg border-2 border-orange-200 p-6 hover:shadow-xl transition-all duration-300 group relative overflow-hidden">
-                    <div class="absolute top-0 right-0 bg-orange-500 text-white text-xs px-2 py-1 rounded-bl-lg font-medium">
-                        PRIORITY
-                    </div>
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-3 rounded-xl animate-pulse">
-                            <i class="fas fa-clock text-white text-xl"></i>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-2xl font-bold text-gray-900">{{ number_format($pendingApprovals ?? 0) }}</div>
-                            <div class="text-sm text-gray-500">Pending Approvals</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-orange-600 font-medium">Requires your attention</span>
-                        <a href="{{ route('assets.pending') }}" class="text-orange-600 hover:text-orange-700 text-sm font-medium group-hover:underline">
-                            Review now <i class="fa fa-arrow-right ml-1"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Total Assets -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 group">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-3 rounded-xl">
-                            <i class="fas fa-boxes text-white text-xl"></i>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-2xl font-bold text-gray-900">{{ number_format($totalAssets) }}</div>
-                            <div class="text-sm text-gray-500">Total Assets</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500">Across all categories</span>
-                        <a href="{{ route('assets.index') }}" class="text-blue-600 hover:text-blue-700 text-sm font-medium group-hover:underline">
-                            View all <i class="fa fa-arrow-right ml-1"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Available Assets -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 group">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="bg-gradient-to-r from-green-500 to-green-600 p-3 rounded-xl">
-                            <i class="fas fa-check-circle text-white text-xl"></i>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-2xl font-bold text-gray-900">{{ number_format($availableAssets) }}</div>
-                            <div class="text-sm text-gray-500">Available</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500">Ready for use</span>
-                        <a href="{{ route('locations.index') }}" class="text-green-600 hover:text-green-700 text-sm font-medium group-hover:underline">
-                            View available <i class="fa fa-arrow-right ml-1"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Pending Maintenance -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 group">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 p-3 rounded-xl">
-                            <i class="fas fa-wrench text-white text-xl"></i>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-2xl font-bold text-gray-900">{{ number_format($pendingMaintenances) }}</div>
-                            <div class="text-sm text-gray-500">Maintenance</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500">Scheduled for service</span>
-                        <a href="{{ route('maintenance-checklists.index') }}" class="text-yellow-600 hover:text-yellow-700 text-sm font-medium group-hover:underline">
-                            View history <i class="fa fa-arrow-right ml-1"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Total Users -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 group">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-3 rounded-xl">
-                            <i class="fas fa-users text-white text-xl"></i>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-2xl font-bold text-gray-900">{{ number_format($totalUsers) }}</div>
-                            <div class="text-sm text-gray-500">Users</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500">System users</span>
-                        <a href="{{ route('users.index') }}" class="text-purple-600 hover:text-purple-700 text-sm font-medium group-hover:underline">
-                            Manage users <i class="fa fa-arrow-right ml-1"></i>
-                        </a>
-                    </div>  
-                </div>
-            </div>
-
-            <!-- Main Content Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Recent Assets -->
-                <div class="lg:col-span-2">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+        <!-- Tab Content -->
+        <div class="space-y-8">
+            <!-- Overview Tab -->
+            <div x-show="activeTab === 'overview'" x-transition>
+                <!-- Enhanced Key Metrics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Pending Approvals - Priority Card -->
+                    <div class="group bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                         @click="activeTab = 'approvals'">
+                        <div class="p-6">
                             <div class="flex items-center justify-between">
-                                <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                    <i class="fas fa-clock text-red-600"></i>
-                                    Recently Added Assets
-                                </h2>
-                                <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium">
-                                    {{ $recentAssets->count() }} items
-                                </span>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600 group-hover:text-orange-600 transition-colors">Pending Approvals</p>
+                                    <p class="text-3xl font-bold text-gray-900 group-hover:text-orange-700 transition-colors">{{ number_format($pendingApprovals ?? 0) }}</p>
+                                    <p class="text-sm text-orange-600 mt-1 flex items-center">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Requires attention
+                                    </p>
+                                </div>
+                                <div class="bg-orange-100 p-3 rounded-full group-hover:bg-orange-200 transition-colors">
+                                    <i class="fas fa-hourglass-half text-orange-600 text-xl group-hover:scale-110 transition-transform"></i>
+                                </div>
                             </div>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <i class="fas fa-box mr-1"></i>Asset
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                                            <i class="fas fa-folder mr-1"></i>Category
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                                            <i class="fas fa-map-marker-alt mr-1"></i>Location
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <i class="fas fa-info-circle mr-1"></i>Status
-                                        </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
-                                            <i class="fas fa-calendar mr-1"></i>Added
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    @forelse($recentAssets as $asset)
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="flex-shrink-0 h-10 w-10">
-                                                    <div class="h-10 w-10 rounded-lg bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center">
-                                                        <i class="fa fa-box text-white text-sm" style="font-family: 'Font Awesome 6 Free'; font-weight: 900;"></i>
-                                                    </div>
-                                                </div>
-                                                <div class="ml-4">
-                                                    <div class="text-sm font-medium text-gray-900">
-                                                        <a href="{{ route('assets.show', $asset) }}" class="hover:text-red-600 transition-colors">
-                                                            {{ $asset->name }}
-                                                        </a>
-                                                    </div>
-                                                    <div class="text-sm text-gray-500 font-mono">{{ $asset->asset_code }}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                {{ $asset->category->name }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-                                            @if($asset->location)
-                                                <div class="text-sm text-gray-900">{{ $asset->location->building }}</div>
-                                                <div class="text-sm text-gray-500">Room {{ $asset->location->room }}</div>
-                                            @else
-                                                <div class="text-sm text-gray-500 italic">No location assigned</div>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($asset->status == 'Available')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    <i class="fa fa-check-circle mr-1" style="font-family: 'Font Awesome 6 Free'; font-weight: 900;"></i> Available
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                    <i class="fa fa-times-circle mr-1" style="font-family: 'Font Awesome 6 Free'; font-weight: 900;"></i> {{ $asset->status }}
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
-                                            {{ $asset->created_at->diffForHumans() }}
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-12 text-center">
-                                            <div class="flex flex-col items-center">
-                                                <div class="bg-gray-100 p-4 rounded-full mb-4">
-                                                    <i class="fa fa-inbox text-gray-400 text-2xl" style="font-family: 'Font Awesome 6 Free'; font-weight: 900;"></i>
-                                                </div>
-                                                <h3 class="text-lg font-medium text-gray-900 mb-2">No assets found</h3>
-                                                <p class="text-gray-500 text-sm mb-4">Get started by adding your first asset</p>
-                                                @if(auth()->user()->role === 'purchasing')
-                                                    <a href="{{ route('purchasing.assets.create') }}" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
-                                                        Add First Asset
-                                                    </a>
-                                                @else
-                                                    <span class="text-gray-500 text-sm">Only Purchasing role can create assets</span>
-                                                @endif
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
-                            <a href="{{ route('locations.index') }}" class="text-red-600 hover:text-red-700 text-sm font-medium flex items-center justify-end">
-                                View all assets <i class="fa fa-arrow-right ml-1" style="font-family: 'Font Awesome 6 Free'; font-weight: 900;"></i>
-                            </a>
-                        </div>
+                        <div class="h-1 bg-gradient-to-r from-orange-500 to-orange-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
                     </div>
 
-                    <!-- Top Locations - Moved under Recently Added Assets -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
-                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-                            <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                <i class="fas fa-map-marker-alt text-red-600"></i>
-                                Top Locations
-                            </h2>
-                        </div>
+                    <!-- Total Assets -->
+                    <div class="group bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                         @click="activeTab = 'analytics'">
                         <div class="p-6">
-                            <div class="space-y-4">
-                                @forelse($locations as $location)
-                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="bg-blue-100 p-2 rounded-lg">
-                                            <i class="fas fa-building text-blue-600"></i>
-                                        </div>
-                                        <div>
-                                            <a href="{{ route('locations.show', $location) }}" class="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors">
-                                                {{ $location->building }}
-                                            </a>
-                                            <div class="text-xs text-gray-500">Room {{ $location->room }}</div>
-                                        </div>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-sm font-bold text-gray-900">{{ $location->assets_count }}</div>
-                                        <div class="text-xs text-gray-500">assets</div>
-                                    </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600 group-hover:text-blue-600 transition-colors">Total Assets</p>
+                                    <p class="text-3xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{{ number_format($totalAssets ?? 0) }}</p>
+                                    <p class="text-sm text-green-600 mt-1 flex items-center">
+                                        <i class="fas fa-boxes mr-1"></i>
+                                        {{ $availableAssets ?? 0 }} available
+                                    </p>
                                 </div>
-                                @empty
-                                <div class="text-center py-8">
-                                    <div class="bg-gray-100 p-4 rounded-full inline-block mb-4">
-                                        <i class="fas fa-map-marker-alt text-gray-400 text-2xl"></i>
-                                    </div>
-                                    <p class="text-gray-500 text-sm">No locations found</p>
+                                <div class="bg-blue-100 p-3 rounded-full group-hover:bg-blue-200 transition-colors">
+                                    <i class="fas fa-boxes text-blue-600 text-xl group-hover:scale-110 transition-transform"></i>
                                 </div>
-                                @endforelse
                             </div>
                         </div>
-                        <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
-                            <a href="{{ route('locations.index') }}" class="text-red-600 hover:text-red-700 text-sm font-medium flex items-center justify-end">
-                                Manage locations <i class="fas fa-arrow-right ml-1"></i>
-                            </a>
-                        </div>
+                        <div class="h-1 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
                     </div>
-                </div>
 
-                <!-- Sidebar -->
-                <div class="lg:col-span-1 space-y-6">
-                    <!-- Categories -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-                            <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                <i class="fas fa-folder text-red-600"></i>
-                                Top Categories
-                            </h2>
-                        </div>
+                    <!-- Maintenance Requests -->
+                    <div class="group bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                         @click="activeTab = 'maintenance'">
                         <div class="p-6">
-                            <div class="space-y-4">
-                                @forelse($categories as $category)
-                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="bg-red-100 p-2 rounded-lg">
-                                            <i class="fas fa-folder-open text-red-600"></i>
-                                        </div>
-                                        <div>
-                                            <a href="{{ route('categories.show', $category) }}" class="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors">
-                                                {{ $category->name }}
-                                            </a>
-                                            <div class="text-xs text-gray-500">{{ $category->assets_count }} assets</div>
-                                        </div>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-sm font-bold text-gray-900">{{ $category->assets_count }}</div>
-                                        <div class="text-xs text-gray-500">items</div>
-                                    </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600 group-hover:text-purple-600 transition-colors">Maintenance Requests</p>
+                                    <p class="text-3xl font-bold text-gray-900 group-hover:text-purple-700 transition-colors">{{ $totalMaintenanceRequests ?? 0 }}</p>
+                                    <p class="text-sm text-purple-600 mt-1 flex items-center">
+                                        <i class="fas fa-tools mr-1"></i>
+                                        {{ $pendingMaintenanceRequests ?? 0 }} pending
+                                    </p>
                                 </div>
-                                @empty
-                                <div class="text-center py-8">
-                                    <div class="bg-gray-100 p-4 rounded-full inline-block mb-4">
-                                        <i class="fas fa-folder-open text-gray-400 text-2xl"></i>
-                                    </div>
-                                    <p class="text-gray-500 text-sm">No categories found</p>
+                                <div class="bg-purple-100 p-3 rounded-full group-hover:bg-purple-200 transition-colors">
+                                    <i class="fas fa-wrench text-purple-600 text-xl group-hover:scale-110 transition-transform"></i>
                                 </div>
-                                @endforelse
                             </div>
                         </div>
-                        <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
-                            <a href="{{ route('categories.index') }}" class="text-red-600 hover:text-red-700 text-sm font-medium flex items-center justify-end">
-                                Manage categories <i class="fas fa-arrow-right ml-1"></i>
-                            </a>
-                        </div>
+                        <div class="h-1 bg-gradient-to-r from-purple-500 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Analytics Tab -->
-        <div x-show="activeTab === 'analytics'" x-transition>
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-                <div class="flex flex-col md:flex-row justify-between items-center mb-8">
-                    <div class="flex items-center gap-4 mb-4 md:mb-0">
-                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-full">
-                            <i class="fas fa-chart-line text-white text-2xl"></i>
+                    <!-- System Users -->
+                    <div class="group bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-600 group-hover:text-green-600 transition-colors">System Users</p>
+                                    <p class="text-3xl font-bold text-gray-900 group-hover:text-green-700 transition-colors">{{ number_format($totalUsers ?? 0) }}</p>
+                                    <p class="text-sm text-green-600 mt-1 flex items-center">
+                                        <i class="fas fa-users mr-1"></i>
+                                        {{ $regularUsers ?? 0 }} regular users
+                                    </p>
+                                </div>
+                                <div class="bg-green-100 p-3 rounded-full group-hover:bg-green-200 transition-colors">
+                                    <i class="fas fa-users text-green-600 text-xl group-hover:scale-110 transition-transform"></i>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-900">Analytics Dashboard</h3>
-                            <p class="text-gray-600">Asset performance and utilization insights</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-3">
-                        <select class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5">
-                            <option selected>Last 30 days</option>
-                            <option>Last 90 days</option>
-                            <option>Last year</option>
-                            <option>All time</option>
-                        </select>
-                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                            <i class="fas fa-sync-alt mr-1"></i> Refresh
-                        </button>
+                        <div class="h-1 bg-gradient-to-r from-green-500 to-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
                     </div>
                 </div>
 
-                <!-- Key Metrics -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="text-sm font-medium text-blue-800">Total Assets</h4>
-                            <span class="bg-blue-200 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">All time</span>
-                        </div>
-                        <div class="text-3xl font-bold text-gray-900 mb-1">{{ number_format($totalAssets) }}</div>
-                        <div class="text-sm text-blue-800">
-                            <i class="fas fa-arrow-up mr-1"></i> 12% increase from last month
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="text-sm font-medium text-green-800">Available Assets</h4>
-                            <span class="bg-green-200 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Current</span>
-                        </div>
-                        <div class="text-3xl font-bold text-gray-900 mb-1">{{ number_format($availableAssets) }}</div>
-                        <div class="text-sm text-green-800">
-                            <i class="fas fa-check-circle mr-1"></i> {{ round(($availableAssets / max($totalAssets, 1)) * 100) }}% availability rate
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border border-yellow-200">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="text-sm font-medium text-yellow-800">Maintenance</h4>
-                            <span class="bg-yellow-200 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Pending</span>
-                        </div>
-                        <div class="text-3xl font-bold text-gray-900 mb-1">{{ number_format($pendingMaintenances) }}</div>
-                        <div class="text-sm text-yellow-800">
-                            <i class="fas fa-tools mr-1"></i> Scheduled for service
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Asset Distribution Chart -->
+                <!-- Quick Analytics Overview -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Asset Distribution by Category</h4>
-                        <div class="h-64 relative">
-                            <canvas id="categoryChart"></canvas>
+                    <!-- Asset Status Chart -->
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="fas fa-chart-pie text-red-600"></i>
+                                Asset Status Overview
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="relative">
+                                <canvas id="overviewAssetStatusChart" width="400" height="300"></canvas>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Asset Status Distribution</h4>
-                        <div class="h-64 relative">
-                            <canvas id="statusChart"></canvas>
+                    <!-- Monthly Trend Chart -->
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="fas fa-chart-line text-blue-600"></i>
+                                Asset Creation Trend
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="relative">
+                                <canvas id="overviewTrendChart" width="400" height="300"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
 
-                <!-- Recent Activity -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-                        <h4 class="text-lg font-semibold text-gray-900">Recent Activity</h4>
+                <!-- System Health Indicators -->
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i class="fas fa-heartbeat text-green-600"></i>
+                            System Health & Performance
+                        </h3>
                     </div>
                     <div class="p-6">
-                        <div class="space-y-4">
-                            <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
-                                <div class="bg-blue-100 p-2 rounded-full">
-                                    <i class="fas fa-plus-circle text-blue-600"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">New asset added</p>
-                                    <p class="text-xs text-gray-500">Laptop Dell XPS 15 was added to Electronics category</p>
-                                    <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-gray-900 mb-2">{{ round(($availableAssets / max($totalAssets, 1)) * 100) }}%</div>
+                                <div class="text-sm text-gray-600 mb-2">Asset Availability Rate</div>
+                                <div class="bg-green-100 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: {{ round(($availableAssets / max($totalAssets, 1)) * 100) }}%"></div>
                                 </div>
                             </div>
-                            
-                            <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
-                                <div class="bg-yellow-100 p-2 rounded-full">
-                                    <i class="fas fa-tools text-yellow-600"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">Maintenance scheduled</p>
-                                    <p class="text-xs text-gray-500">Projector in Conference Room scheduled for maintenance</p>
-                                    <p class="text-xs text-gray-400 mt-1">Yesterday</p>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-gray-900 mb-2">{{ $totalCategories ?? 0 }}</div>
+                                <div class="text-sm text-gray-600 mb-2">Asset Categories</div>
+                                <div class="bg-blue-100 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 85%"></div>
                                 </div>
                             </div>
-                            
-                            <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
-                                <div class="bg-green-100 p-2 rounded-full">
-                                    <i class="fas fa-check-circle text-green-600"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">Asset status updated</p>
-                                    <p class="text-xs text-gray-500">Printer HP LaserJet marked as Available</p>
-                                    <p class="text-xs text-gray-400 mt-1">3 days ago</p>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-gray-900 mb-2">{{ $totalLocations ?? 0 }}</div>
+                                <div class="text-sm text-gray-600 mb-2">Active Locations</div>
+                                <div class="bg-purple-100 rounded-full h-2">
+                                    <div class="bg-purple-500 h-2 rounded-full" style="width: 92%"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
-                        <a href="#" class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center justify-end">
-                            View all activity <i class="fas fa-arrow-right ml-1"></i>
-                        </a>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div x-show="activeTab === 'analytics'" x-transition>
+                <!-- Comprehensive Analytics Dashboard -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- Asset Status Distribution -->
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="fas fa-chart-pie text-blue-600"></i>
+                                Asset Status Distribution
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="relative">
+                                <canvas id="assetStatusChart" width="400" height="300"></canvas>
+                            </div>
+                            <div class="mt-4 grid grid-cols-2 gap-4 text-center">
+                                <div class="bg-green-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-green-600">{{ $availableAssets ?? 0 }}</div>
+                                    <div class="text-sm text-green-700">Available</div>
+                                </div>
+                                <div class="bg-blue-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-blue-600">{{ $inUseAssets ?? 0 }}</div>
+                                    <div class="text-sm text-blue-700">In Use</div>
+                                </div>
+                                <div class="bg-orange-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-orange-600">{{ $maintenanceAssets ?? 0 }}</div>
+                                    <div class="text-sm text-orange-700">Maintenance</div>
+                                </div>
+                                <div class="bg-red-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-red-600">{{ $disposedAssets ?? 0 }}</div>
+                                    <div class="text-sm text-red-700">Disposed</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Role Distribution -->
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="fas fa-users text-green-600"></i>
+                                User Role Distribution
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="relative">
+                                <canvas id="userRoleChart" width="400" height="300"></canvas>
+                            </div>
+                            <div class="mt-4 grid grid-cols-2 gap-4 text-center">
+                                <div class="bg-blue-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-blue-600">{{ $adminUsers ?? 0 }}</div>
+                                    <div class="text-sm text-blue-700">Admin</div>
+                                </div>
+                                <div class="bg-green-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-green-600">{{ $regularUsers ?? 0 }}</div>
+                                    <div class="text-sm text-green-700">Users</div>
+                                </div>
+                                <div class="bg-red-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-red-600">{{ $gsuUsers ?? 0 }}</div>
+                                    <div class="text-sm text-red-700">GSU</div>
+                                </div>
+                                <div class="bg-purple-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-purple-600">{{ $purchasingUsers ?? 0 }}</div>
+                                    <div class="text-sm text-purple-700">Purchasing</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Trend and Category Distribution -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- Monthly Asset Creation Trend -->
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="fas fa-chart-line text-purple-600"></i>
+                                Asset Creation Trend (12 Months)
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="relative">
+                                <canvas id="monthlyTrendChart" width="400" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assets by Category -->
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="fas fa-folder text-orange-600"></i>
+                                Assets by Category
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="relative">
+                                <canvas id="categoryChart" width="400" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Performance Indicators -->
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i class="fas fa-tachometer-alt text-indigo-600"></i>
+                            Key Performance Indicators
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-gray-900 mb-2">{{ round(($availableAssets / max($totalAssets, 1)) * 100) }}%</div>
+                                <div class="text-sm text-gray-600 mb-2">Availability Rate</div>
+                                <div class="bg-green-100 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: {{ round(($availableAssets / max($totalAssets, 1)) * 100) }}%"></div>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-gray-900 mb-2">{{ round(($completedMaintenanceRequests / max($totalMaintenanceRequests, 1)) * 100) }}%</div>
+                                <div class="text-sm text-gray-600 mb-2">Maintenance Completion</div>
+                                <div class="bg-blue-100 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: {{ round(($completedMaintenanceRequests / max($totalMaintenanceRequests, 1)) * 100) }}%"></div>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-gray-900 mb-2">{{ round(($approvedAssets / max(($pendingApprovals + $approvedAssets + $rejectedAssets), 1)) * 100) }}%</div>
+                                <div class="text-sm text-gray-600 mb-2">Approval Rate</div>
+                                <div class="bg-purple-100 rounded-full h-2">
+                                    <div class="bg-purple-500 h-2 rounded-full" style="width: {{ round(($approvedAssets / max(($pendingApprovals + $approvedAssets + $rejectedAssets), 1)) * 100) }}%"></div>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-gray-900 mb-2">${{ number_format($totalAssetValue ?? 0) }}</div>
+                                <div class="text-sm text-gray-600 mb-2">Total Asset Value</div>
+                                <div class="bg-yellow-100 rounded-full h-2">
+                                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 78%"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Approvals Tab -->
+            <div x-show="activeTab === 'approvals'" x-transition>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Approval Status Chart -->
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="fas fa-chart-bar text-orange-600"></i>
+                                Asset Approval Status
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="relative">
+                                <canvas id="assetApprovalChart" width="400" height="300"></canvas>
+                            </div>
+                            <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+                                <div class="bg-yellow-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-yellow-600">{{ $pendingApprovals ?? 0 }}</div>
+                                    <div class="text-sm text-yellow-700">Pending</div>
+                                </div>
+                                <div class="bg-green-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-green-600">{{ $approvedAssets ?? 0 }}</div>
+                                    <div class="text-sm text-green-700">Approved</div>
+                                </div>
+                                <div class="bg-red-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-red-600">{{ $rejectedAssets ?? 0 }}</div>
+                                    <div class="text-sm text-red-700">Rejected</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Actions -->
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="fas fa-clock text-orange-600"></i>
+                                Pending Actions
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            @if($pendingApprovals > 0)
+                            <div class="space-y-4">
+                                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="font-semibold text-orange-800">Assets Awaiting Approval</h4>
+                                            <p class="text-sm text-orange-600">{{ $pendingApprovals }} assets need your review</p>
+                                        </div>
+                                        <a href="{{ route('assets.pending') }}" 
+                                           class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                            Review Now
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            @else
+                            <div class="text-center py-8">
+                                <i class="fas fa-check-circle text-4xl text-green-300 mb-4"></i>
+                                <h4 class="text-lg font-medium text-gray-900 mb-2">All Caught Up!</h4>
+                                <p class="text-gray-600">No pending approvals at this time.</p>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Maintenance Tab -->
+            <div x-show="activeTab === 'maintenance'" x-transition>
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i class="fas fa-tools text-purple-600"></i>
+                            Recent Maintenance Requests
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        @if($recentMaintenanceRequests->count() > 0)
+                        <div class="space-y-4">
+                            @foreach($recentMaintenanceRequests as $request)
+                            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="bg-purple-100 p-2 rounded-full">
+                                            <i class="fas fa-wrench text-purple-600"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900">Request #{{ $request->id }}</h4>
+                                            <p class="text-sm text-gray-600">
+                                                {{ $request->location->building ?? 'Unknown Location' }} - 
+                                                Floor {{ $request->location->floor ?? 'N/A' }} - 
+                                                Room {{ $request->location->room ?? 'N/A' }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        @if($request->status === 'pending') bg-yellow-100 text-yellow-800
+                                        @elseif($request->status === 'approved') bg-blue-100 text-blue-800
+                                        @elseif($request->status === 'completed') bg-green-100 text-green-800
+                                        @elseif($request->status === 'rejected') bg-red-100 text-red-800
+                                        @else bg-gray-100 text-gray-800 @endif">
+                                        {{ ucfirst($request->status) }}
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-700 mb-3">{{ Str::limit($request->description, 100) }}</p>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span>
+                                        <i class="fas fa-user mr-1"></i>
+                                        {{ $request->requester->name ?? 'Unknown User' }}
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        {{ $request->created_at->diffForHumans() }}
+                                    </span>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @else
+                        <div class="text-center py-8">
+                            <i class="fas fa-tools text-4xl text-gray-300 mb-4"></i>
+                            <h4 class="text-lg font-medium text-gray-900 mb-2">No Maintenance Requests</h4>
+                            <p class="text-gray-600">No maintenance requests have been submitted.</p>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-    <!-- Quick Actions Tab -->
-    <div x-show="activeTab === 'quick-actions'" x-transition>
+
+            <!-- Quick Actions Tab -->
+            <div x-show="activeTab === 'quick-actions'" x-transition>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
                     <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -590,9 +612,19 @@
                             </div>
                         </a>
 
-                        <a href="{{ route('locations.index') }}" class="group">
+                        <a href="{{ route('semester-assets.index') }}" class="group">
                             <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-6 text-center hover:from-indigo-100 hover:to-indigo-200 transition-all duration-300 border border-indigo-200 hover:border-indigo-300">
                                 <div class="bg-indigo-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-calendar-alt text-white text-xl"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Semester Tracking</h3>
+                                <p class="text-sm text-gray-600">Track assets by semester</p>
+                            </div>
+                        </a>
+
+                        <a href="{{ route('locations.index') }}" class="group">
+                            <div class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-6 text-center hover:from-teal-100 hover:to-teal-200 transition-all duration-300 border border-teal-200 hover:border-teal-300">
+                                <div class="bg-teal-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">
                                     <i class="fas fa-file-alt text-white text-xl"></i>
                                 </div>
                                 <h3 class="text-lg font-semibold text-gray-900 mb-2">Generate Report</h3>
@@ -680,156 +712,309 @@
     transition-duration: 150ms;
 }
 </style>
+<!-- Chart.js Script -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Add hover effects to cards
-    const cards = document.querySelectorAll('.bg-white.rounded-xl');
-    cards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-2px)';
-        });
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
-
-    // Add loading states to links
-    const links = document.querySelectorAll('a[href]');
-    links.forEach(link => {
-        link.addEventListener('click', function() {
-            if (this.href && !this.href.includes('#')) {
-                this.style.opacity = '0.7';
-            }
-        });
-    });
-
-    // Chart.js initialization
-    function renderCharts() {
-        // Destroy previous charts if they exist
-        if (window.categoryChartInstance) {
-            window.categoryChartInstance.destroy();
-        }
-        if (window.statusChartInstance) {
-            window.statusChartInstance.destroy();
-        }
-        // Category Chart
-        const categoryChartElem = document.getElementById('categoryChart');
-        if (categoryChartElem) {
-            const categoryCtx = categoryChartElem.getContext('2d');
-            window.categoryChartInstance = new Chart(categoryCtx, {
-                type: 'pie',
-                data: {
-                    labels: {!! json_encode($categories->pluck('name')) !!},
-                    datasets: [{
-                        data: {!! json_encode($categories->pluck('assets_count')) !!},
-                        backgroundColor: [
-                            '#4F46E5', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD',
-                            '#EF4444', '#F87171', '#FCA5A5', '#10B981', '#34D399',
-                            '#F59E0B', '#FBBF24', '#8B5CF6', '#A78BFA', '#EC4899'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                boxWidth: 15,
-                                padding: 15,
-                                font: {
-                                    size: 12
+// Alpine.js Admin Dashboard Data
+function adminDashboardData() {
+    return {
+        showWelcome: true,
+        activeTab: 'overview',
+        assetStatusChart: null,
+        userRoleChart: null,
+        assetApprovalChart: null,
+        monthlyTrendChart: null,
+        categoryChart: null,
+        overviewAssetStatusChart: null,
+        overviewTrendChart: null,
+        
+        init() {
+            this.$nextTick(() => {
+                this.initCharts();
+            });
+        },
+        
+        initCharts() {
+            // Overview Asset Status Chart
+            const overviewAssetStatusCtx = document.getElementById('overviewAssetStatusChart');
+            if (overviewAssetStatusCtx) {
+                this.overviewAssetStatusChart = new Chart(overviewAssetStatusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Available', 'In Use', 'Under Maintenance', 'Disposed', 'Lost'],
+                        datasets: [{
+                            data: [
+                                {{ $availableAssets ?? 0 }},
+                                {{ $inUseAssets ?? 0 }},
+                                {{ $maintenanceAssets ?? 0 }},
+                                {{ $disposedAssets ?? 0 }},
+                                {{ $lostAssets ?? 0 }}
+                            ],
+                            backgroundColor: [
+                                '#10B981', // Green
+                                '#3B82F6', // Blue
+                                '#F59E0B', // Orange
+                                '#EF4444', // Red
+                                '#6B7280'  // Gray
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    usePointStyle: true,
+                                    font: { size: 11 }
                                 }
                             }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Asset Distribution by Category',
-                            font: {
-                                size: 16
-                            }
                         }
                     }
-                }
-            });
-        }
-        // Status Chart
-        const statusChartElem = document.getElementById('statusChart');
-        if (statusChartElem) {
-            const statusCtx = statusChartElem.getContext('2d');
-            window.statusChartInstance = new Chart(statusCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Available', 'In Use', 'Maintenance', 'Retired'],
-                    datasets: [{
-                        label: 'Number of Assets',
-                        data: [
-                            {{ $availableAssets }},
-                            {{ $inUseAssets }},
-                            {{ $pendingMaintenances }},
-                            0
-                        ],
-                        backgroundColor: [
-                            'rgba(16, 185, 129, 0.7)',  // Green for Available
-                            'rgba(59, 130, 246, 0.7)',  // Blue for In Use
-                            'rgba(245, 158, 11, 0.7)',  // Yellow for Maintenance
-                            'rgba(239, 68, 68, 0.7)'    // Red for Retired
-                        ],
-                        borderColor: [
-                            'rgb(16, 185, 129)',
-                            'rgb(59, 130, 246)',
-                            'rgb(245, 158, 11)',
-                            'rgb(239, 68, 68)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        title: {
-                            display: true,
-                            text: 'Asset Status Distribution',
-                            font: {
-                                size: 16
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    // Render charts on initial load if Analytics tab is visible
-    if (document.querySelector('[x-show="activeTab === \'analytics\'"]')) {
-        renderCharts();
-    }
-
-    // Re-render charts when switching to Analytics tab
-    document.querySelectorAll('button').forEach(button => {
-        button.addEventListener('click', function() {
-            if (this.textContent.trim().includes('Analytics')) {
-                setTimeout(() => {
-                    renderCharts();
-                }, 200);
+                });
             }
-        });
-    });
+
+            // Overview Trend Chart
+            const overviewTrendCtx = document.getElementById('overviewTrendChart');
+            if (overviewTrendCtx) {
+                this.overviewTrendChart = new Chart(overviewTrendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {!! json_encode(array_keys($monthlyAssetTrend ?? [])) !!},
+                        datasets: [{
+                            label: 'Assets Created',
+                            data: {!! json_encode(array_values($monthlyAssetTrend ?? [])) !!},
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Asset Status Chart (Analytics Tab)
+            const assetStatusCtx = document.getElementById('assetStatusChart');
+            if (assetStatusCtx) {
+                this.assetStatusChart = new Chart(assetStatusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Available', 'In Use', 'Under Maintenance', 'Disposed', 'Lost'],
+                        datasets: [{
+                            data: [
+                                {{ $availableAssets ?? 0 }},
+                                {{ $inUseAssets ?? 0 }},
+                                {{ $maintenanceAssets ?? 0 }},
+                                {{ $disposedAssets ?? 0 }},
+                                {{ $lostAssets ?? 0 }}
+                            ],
+                            backgroundColor: [
+                                '#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#6B7280'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true,
+                                    font: { size: 12 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? Math.round((context.parsed * 100) / total) : 0;
+                                        return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // User Role Chart
+            const userRoleCtx = document.getElementById('userRoleChart');
+            if (userRoleCtx) {
+                this.userRoleChart = new Chart(userRoleCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Admin', 'GSU', 'Users', 'Purchasing'],
+                        datasets: [{
+                            label: 'Users',
+                            data: [
+                                {{ $adminUsers ?? 0 }},
+                                {{ $gsuUsers ?? 0 }},
+                                {{ $regularUsers ?? 0 }},
+                                {{ $purchasingUsers ?? 0 }}
+                            ],
+                            backgroundColor: ['#3B82F6', '#EF4444', '#10B981', '#8B5CF6'],
+                            borderColor: ['#2563EB', '#DC2626', '#059669', '#7C3AED'],
+                            borderWidth: 1,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 },
+                                grid: { color: '#F3F4F6' }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // Monthly Trend Chart
+            const monthlyTrendCtx = document.getElementById('monthlyTrendChart');
+            if (monthlyTrendCtx) {
+                this.monthlyTrendChart = new Chart(monthlyTrendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {!! json_encode(array_keys($monthlyAssetTrend ?? [])) !!},
+                        datasets: [{
+                            label: 'Assets Created',
+                            data: {!! json_encode(array_values($monthlyAssetTrend ?? [])) !!},
+                            borderColor: '#8B5CF6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#8B5CF6',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 },
+                                grid: { color: '#F3F4F6' }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // Category Chart
+            const categoryCtx = document.getElementById('categoryChart');
+            if (categoryCtx) {
+                this.categoryChart = new Chart(categoryCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: {!! json_encode(array_keys($assetsByCategory ?? [])) !!},
+                        datasets: [{
+                            label: 'Assets',
+                            data: {!! json_encode(array_values($assetsByCategory ?? [])) !!},
+                            backgroundColor: [
+                                '#F59E0B', '#EF4444', '#10B981', '#3B82F6', '#8B5CF6',
+                                '#EC4899', '#14B8A6', '#F97316', '#84CC16', '#6366F1'
+                            ],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 },
+                                grid: { color: '#F3F4F6' }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // Asset Approval Chart
+            const assetApprovalCtx = document.getElementById('assetApprovalChart');
+            if (assetApprovalCtx) {
+                this.assetApprovalChart = new Chart(assetApprovalCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Pending', 'Approved', 'Rejected'],
+                        datasets: [{
+                            label: 'Assets',
+                            data: [
+                                {{ $pendingApprovals ?? 0 }},
+                                {{ $approvedAssets ?? 0 }},
+                                {{ $rejectedAssets ?? 0 }}
+                            ],
+                            backgroundColor: ['#EAB308', '#10B981', '#EF4444'],
+                            borderColor: ['#CA8A04', '#059669', '#DC2626'],
+                            borderWidth: 1,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 },
+                                grid: { color: '#F3F4F6' }
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        },
+        
+        refreshDashboard() {
+            window.location.reload();
+        }
+    }
+}
+
+// Auto-refresh functionality
+document.addEventListener('DOMContentLoaded', function() {
+    setInterval(function() {
+        const lastUpdated = document.querySelector('[data-last-updated]');
+        if (lastUpdated) {
+            lastUpdated.textContent = new Date().toLocaleString();
+        }
+    }, 60000); // Update every minute
 });
 </script>
 @endsection

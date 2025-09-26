@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\Category;
+use App\Models\Semester;
 use App\Models\Warranty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,7 +39,10 @@ class PurchasingController extends Controller
     {
         $categories = Category::orderBy('name')->get();
         
-        return view('purchasing.assets.create', compact('categories'));
+        // Get current semester for display
+        $currentSemester = Semester::current() ?? Semester::forDate(now());
+        
+        return view('purchasing.assets.create', compact('categories', 'currentSemester'));
     }
 
     /**
@@ -56,25 +60,27 @@ class PurchasingController extends Controller
             // Warranty validation
             'manufacturer' => 'required|string|max:255',
             'model' => 'required|string|max:255',
-            'warranty_expiry' => 'required|date|after:today',
         ]);
 
         // Generate unique asset code
         $assetCode = $this->generateAssetCode();
 
+        // Auto-detect current semester
+        $currentSemester = Semester::current() ?? Semester::forDate(now());
+        
+        // Create the asset
         $asset = Asset::create([
             'asset_code' => $assetCode,
             'name' => $request->name,
             'category_id' => $request->category_id,
-            'location_id' => null, // No location for purchasing
-            'original_location_id' => null,
             'condition' => $request->condition,
             'description' => $request->description,
             'purchase_cost' => $request->purchase_cost,
             'purchase_date' => $request->purchase_date,
-            'status' => Asset::STATUS_UNVERIFIED, // Default status for new assets
-            'approval_status' => Asset::APPROVAL_PENDING, // Pending approval
+            'status' => 'Available', // Default status
+            'approval_status' => 'pending', // Pending approval from admin
             'created_by' => Auth::id(),
+            'registered_semester_id' => $currentSemester?->id, // Auto-assign current semester
         ]);
 
         // Create warranty record

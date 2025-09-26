@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Asset;
 
 class MaintenanceRequest extends Model
 {
@@ -13,6 +14,7 @@ class MaintenanceRequest extends Model
     protected $fillable = [
         'requester_id',
         'location_id',
+        'requested_asset_codes',
         'school_year',
         'department',
         'date_reported',
@@ -49,6 +51,40 @@ class MaintenanceRequest extends Model
     public function approvedBy(): BelongsTo { return $this->approver(); }
     public function rejectedBy(): BelongsTo { return $this->rejector(); }
     public function acknowledgedBy(): BelongsTo { return $this->acknowledger(); }
+    
+    // Helper method to get requested asset codes
+    public function getRequestedAssetCodes(): array
+    {
+        return $this->requested_asset_codes ? json_decode($this->requested_asset_codes, true) : [];
+    }
+    
+    // Helper method to check if this is a specific assets request
+    public function isSpecificAssetsRequest(): bool
+    {
+        return empty($this->location_id) && !empty($this->getRequestedAssetCodes());
+    }
+    
+    // Helper method to get the assets for this request
+    public function getRequestedAssets()
+    {
+        if (!$this->isSpecificAssetsRequest()) {
+            return collect();
+        }
+        
+        $assetCodes = $this->getRequestedAssetCodes();
+        return Asset::whereIn('asset_code', $assetCodes)->with('location')->get();
+    }
+    
+    // Helper method to get unique locations from requested assets
+    public function getAssetLocations()
+    {
+        return $this->getRequestedAssets()
+            ->filter(function($asset) {
+                return $asset->location !== null;
+            })
+            ->pluck('location')
+            ->unique('id');
+    }
 }
 
 

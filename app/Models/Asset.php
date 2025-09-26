@@ -40,7 +40,10 @@ class Asset extends Model
         'rejection_reason',
         'approved_at',
         'approved_by',
-        'created_by'
+        'created_by',
+        'registered_semester_id',
+        'disposed_semester_id',
+        'lost_semester_id'
     ];
 
     protected $casts = [
@@ -74,6 +77,28 @@ class Asset extends Model
         return $this->hasMany(AssetMaintenanceHistory::class, 'asset_code', 'asset_code');
     }
 
+    public function legitimateMaintenanceHistory(): HasMany
+    {
+        return $this->hasMany(AssetMaintenanceHistory::class, 'asset_code', 'asset_code')
+            ->whereNotNull('maintenance_checklist_id')
+            ->whereNotNull('scanned_at')
+            ->whereNotNull('scanned_by')
+            ->whereHas('maintenanceChecklist', function($query) {
+                $query->whereNotNull('id');
+            })
+            ->whereIn('end_status', ['OK', 'FOR REPAIR', 'FOR MAINTENANCE', 'FOR REPLACEMENT', 'UNVERIFIED'])
+            ->where(function($query) {
+                $query->whereNull('notes')
+                      ->orWhere(function($subQuery) {
+                          $subQuery->where('notes', 'NOT LIKE', '%transfer%')
+                                   ->where('notes', 'NOT LIKE', '%Transfer%')
+                                   ->where('notes', 'NOT LIKE', '%TRANSFER%')
+                                   ->where('notes', 'NOT LIKE', '%moved%')
+                                   ->where('notes', 'NOT LIKE', '%location%');
+                      });
+            });
+    }
+
     public function maintenances(): HasMany
     {
         return $this->hasMany(Maintenance::class);
@@ -87,6 +112,22 @@ class Asset extends Model
     public function changes(): HasMany
     {
         return $this->hasMany(AssetChange::class);
+    }
+
+    // Semester relationships
+    public function registeredSemester(): BelongsTo
+    {
+        return $this->belongsTo(Semester::class, 'registered_semester_id');
+    }
+
+    public function disposedSemester(): BelongsTo
+    {
+        return $this->belongsTo(Semester::class, 'disposed_semester_id');
+    }
+
+    public function lostSemester(): BelongsTo
+    {
+        return $this->belongsTo(Semester::class, 'lost_semester_id');
     }
 
     public function lostAssets(): HasMany

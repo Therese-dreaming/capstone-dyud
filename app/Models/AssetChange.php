@@ -18,12 +18,14 @@ class AssetChange extends Model
         'new_value',
         'changed_by',
         'user_id',
-        'notes'
+        'notes',
+        'semester_id'
     ];
 
     // Change type constants
     const TYPE_UPDATE = 'update';
     const TYPE_LOCATION_CHANGE = 'location_change';
+    const TYPE_TRANSFER = 'transfer';
     const TYPE_STATUS_CHANGE = 'status_change';
     const TYPE_CONDITION_CHANGE = 'condition_change';
     const TYPE_PRICE_CHANGE = 'price_change';
@@ -41,11 +43,17 @@ class AssetChange extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function semester(): BelongsTo
+    {
+        return $this->belongsTo(Semester::class);
+    }
+
     public function getChangeTypeLabel()
     {
         return match($this->change_type) {
             self::TYPE_UPDATE => 'General Update',
             self::TYPE_LOCATION_CHANGE => 'Location Change',
+            self::TYPE_TRANSFER => 'Asset Transfer',
             self::TYPE_STATUS_CHANGE => 'Status Change',
             self::TYPE_CONDITION_CHANGE => 'Condition Change',
             self::TYPE_PRICE_CHANGE => 'Price Change',
@@ -70,5 +78,50 @@ class AssetChange extends Model
             'description' => 'Description',
             default => ucfirst(str_replace('_', ' ', $this->field))
         };
+    }
+
+    /**
+     * Get enhanced previous value with context for better understanding
+     */
+    public function getEnhancedPreviousValue()
+    {
+        // For status changes involving "Unverified", provide more context
+        if ($this->field === 'status' && $this->previous_value === 'Unverified') {
+            // Try to find the status before it became "Unverified"
+            $previousStatusChange = self::where('asset_id', $this->asset_id)
+                ->where('field', 'status')
+                ->where('new_value', 'Unverified')
+                ->where('created_at', '<', $this->created_at)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            if ($previousStatusChange) {
+                return $previousStatusChange->previous_value . ' (via Unverified)';
+            }
+        }
+        
+        return $this->previous_value ?: 'None';
+    }
+
+    /**
+     * Get enhanced new value with context for better understanding
+     */
+    public function getEnhancedNewValue()
+    {
+        // For status changes to "Unverified", add context
+        if ($this->field === 'status' && $this->new_value === 'Unverified') {
+            return $this->new_value . ' (Pending Admin Verification)';
+        }
+        
+        return $this->new_value ?: 'None';
+    }
+
+    /**
+     * Check if this change involves unverified status
+     */
+    public function involvesUnverifiedStatus()
+    {
+        return $this->field === 'status' && 
+               ($this->previous_value === 'Unverified' || $this->new_value === 'Unverified');
     }
 }

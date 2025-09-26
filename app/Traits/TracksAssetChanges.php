@@ -9,14 +9,13 @@ trait TracksAssetChanges
 {
     protected static function bootTracksAssetChanges()
     {
-        static::updating(function ($asset) {
-            $changes = [];
+        static::updated(function ($asset) {
             $original = $asset->getOriginal();
             
             // Track changes for specific fields
             $fieldsToTrack = [
                 'name' => AssetChange::TYPE_UPDATE,
-                'location_id' => AssetChange::TYPE_LOCATION_CHANGE,
+                'location_id' => AssetChange::TYPE_TRANSFER,
                 'original_location_id' => AssetChange::TYPE_LOCATION_CHANGE,
                 'purchase_cost' => AssetChange::TYPE_PRICE_CHANGE,
                 'purchase_date' => AssetChange::TYPE_UPDATE,
@@ -27,15 +26,25 @@ trait TracksAssetChanges
             ];
             
             foreach ($fieldsToTrack as $field => $changeType) {
-                if (isset($original[$field]) && $asset->isDirty($field)) {
+                if (isset($original[$field]) && $asset->wasChanged($field)) {
                     $oldValue = $original[$field];
                     $newValue = $asset->getAttribute($field);
+                    
+                    // Skip recording if both old and new values are the same
+                    if ($oldValue === $newValue) {
+                        continue;
+                    }
                     
                     // Format values for better display
                     $oldValue = self::formatValueForDisplay($field, $oldValue);
                     $newValue = self::formatValueForDisplay($field, $newValue);
                     
-                    $changes[] = [
+                    // Skip recording if formatted values are the same (prevents duplicate entries)
+                    if ($oldValue === $newValue) {
+                        continue;
+                    }
+                    
+                    AssetChange::create([
                         'asset_id' => $asset->id,
                         'change_type' => $changeType,
                         'field' => $field,
@@ -43,24 +52,9 @@ trait TracksAssetChanges
                         'new_value' => $newValue,
                         'changed_by' => Auth::user() ? Auth::user()->name : 'System',
                         'user_id' => Auth::id(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+                    ]);
                 }
             }
-            
-            // Store changes after the asset is updated
-            static::created(function ($asset) use ($changes) {
-                foreach ($changes as $change) {
-                    AssetChange::create($change);
-                }
-            });
-            
-            static::updated(function ($asset) use ($changes) {
-                foreach ($changes as $change) {
-                    AssetChange::create($change);
-                }
-            });
         });
     }
     

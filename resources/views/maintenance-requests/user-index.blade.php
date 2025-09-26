@@ -112,6 +112,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request Details</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Code</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
@@ -132,10 +133,56 @@
                                 </div>
                             </td>
 
+                            <!-- Asset Code -->
+                            <td class="px-6 py-4">
+                                @if($req->isSpecificAssetsRequest())
+                                    @php
+                                        $assetCodes = $req->getRequestedAssetCodes();
+                                    @endphp
+                                    @if(count($assetCodes) > 0)
+                                        <div class="space-y-1">
+                                            @foreach($assetCodes as $index => $code)
+                                                @if($index < 2)
+                                                    <div class="text-sm font-mono text-gray-900 bg-gray-100 px-2 py-1 rounded">{{ $code }}</div>
+                                                @elseif($index === 2)
+                                                    <div class="text-xs text-gray-500">+{{ count($assetCodes) - 2 }} more</div>
+                                                    @break
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <span class="text-sm text-gray-500">No assets specified</span>
+                                    @endif
+                                @else
+                                    <span class="text-sm text-gray-500">Location-based</span>
+                                @endif
+                            </td>
+
                             <!-- Location -->
                             <td class="px-6 py-4">
-                                <div class="text-sm text-gray-900">{{ $req->location->building }}</div>
-                                <div class="text-sm text-gray-600">Floor {{ $req->location->floor }} - Room {{ $req->location->room }}</div>
+                                @if($req->isSpecificAssetsRequest())
+                                    @php
+                                        $assetLocations = $req->getAssetLocations();
+                                    @endphp
+                                    @if($assetLocations->count() > 0)
+                                        <div class="space-y-1">
+                                            @foreach($assetLocations->take(2) as $index => $location)
+                                                <div>
+                                                    <div class="text-sm text-gray-900">{{ $location->building ?? 'N/A' }}</div>
+                                                    <div class="text-sm text-gray-600">Floor {{ $location->floor ?? 'N/A' }} - Room {{ $location->room ?? 'N/A' }}</div>
+                                                </div>
+                                            @endforeach
+                                            @if($assetLocations->count() > 2)
+                                                <div class="text-xs text-gray-500">+{{ $assetLocations->count() - 2 }} more locations</div>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="text-sm text-gray-500">No location data</span>
+                                    @endif
+                                @else
+                                    <div class="text-sm text-gray-900">{{ optional($req->location)->building ?? 'N/A' }}</div>
+                                    <div class="text-sm text-gray-600">Floor {{ optional($req->location)->floor ?? 'N/A' }} - Room {{ optional($req->location)->room ?? 'N/A' }}</div>
+                                @endif
                             </td>
 
                             <!-- Status -->
@@ -210,7 +257,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center">
+                            <td colspan="6" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center">
                                     <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
                                     <h3 class="text-lg font-medium text-gray-900 mb-2">No maintenance requests found</h3>

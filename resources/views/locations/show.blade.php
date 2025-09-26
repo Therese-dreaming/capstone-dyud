@@ -170,11 +170,25 @@
                                             <i class="fas fa-lock text-xs"></i>
                                         </span>
                                     @endif
+                                    @if($asset->status === 'Available' && (Auth::user()->role === 'admin' || Auth::user()->role === 'gsu'))
+                                        <a href="{{ $isGsu ? route('gsu.assets.transfer-form', $asset) : route('assets.transfer-form', $asset) }}" 
+                                           class="inline-flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full hover:bg-indigo-200 transition-colors duration-150"
+                                           title="Transfer Asset">
+                                            <i class="fas fa-exchange-alt text-xs"></i>
+                                        </a>
+                                    @endif
                                     @if($asset->needsRepairResolution())
                                     <button onclick="openRepairResolutionModal({{ $asset->id }}, '{{ $asset->asset_code }}', '{{ $asset->status }}')"
                                             class="inline-flex items-center justify-center w-8 h-8 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-colors duration-150"
                                             title="Resolve Repair Status">
                                         <i class="fas fa-wrench text-xs"></i>
+                                    </button>
+                                    @endif
+                                    @if($asset->isAvailable())
+                                    <button onclick="showDisposeModal({{ $asset->id }}, '{{ $asset->asset_code }}')"
+                                            class="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors duration-150"
+                                            title="Dispose Asset">
+                                        <i class="fas fa-trash text-xs"></i>
                                     </button>
                                     @endif
                                     @if($asset->status !== 'Disposed' && $asset->status !== 'Lost')
@@ -208,6 +222,36 @@
         {{ $assets->links() }}
     </div>
     @endif
+
+    <!-- Dispose Modal -->
+    <div id="disposeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+        <div id="disposeModalCard" class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative animate-fade-in">
+            <button onclick="closeDisposeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-800 text-xl"><i class="fas fa-times"></i></button>
+            <div class="flex flex-col items-center">
+                <div class="bg-red-100 text-red-800 rounded-full p-4 mb-4">
+                    <i class="fas fa-exclamation-triangle text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2 text-gray-800">Dispose Asset</h3>
+                <p class="text-gray-600 mb-6 text-center">Are you sure you want to dispose asset <span class="font-semibold text-red-800" id="dispose-asset-name">CODE</span>? This action cannot be undone.</p>
+                <form id="disposeForm" method="POST" class="w-full flex flex-col gap-3">
+                    @csrf
+                    @method('PUT')
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Disposal Reason <span class="text-red-600">*</span></label>
+                        <textarea name="disposal_reason" id="disposal_reason" rows="4" required
+                                  placeholder="Please provide a reason for disposing this asset..."
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-trash-alt"></i> Dispose
+                    </button>
+                    <button type="button" onclick="closeDisposeModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Repair Resolution Modal -->
     <div id="repairResolutionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
@@ -366,5 +410,27 @@ document.getElementById('repairResolutionModal').addEventListener('click', funct
         closeRepairResolutionModal();
     }
 });
+
+// Dispose Modal Functions (reuse same behavior as assets pages)
+function showDisposeModal(assetId, assetCode) {
+    document.getElementById('dispose-asset-name').textContent = assetCode;
+    // Set form action
+    document.getElementById('disposeForm').action = `{{ url('assets') }}/${assetId}/dispose`;
+    // Show modal
+    document.getElementById('disposeModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    // Focus on textarea
+    setTimeout(() => {
+        document.getElementById('disposal_reason').focus();
+    }, 100);
+}
+
+function closeDisposeModal() {
+    document.getElementById('disposeModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    // Reset form
+    document.getElementById('disposeForm').reset();
+    document.getElementById('disposeForm').action = '';
+}
 </script>
 @endsection

@@ -90,6 +90,15 @@
                         </a>
                     </li>
 
+                    <!-- User Location Management -->
+                    <li>
+                        <a href="{{ route('admin.user-locations.index') }}"
+                            class="flex items-center px-4 py-2.5 text-gray-600 rounded-lg hover:bg-purple-50 hover:text-purple-800 focus:outline-none transition {{ request()->routeIs('admin.user-locations.*') ? 'bg-purple-100 text-purple-800' : '' }}">
+                            <i class="fas fa-users w-5 text-purple-600"></i>
+                            <span class="ml-3 text-sm">User Locations</span>
+                        </a>
+                    </li>
+
                     <!-- Reports -->
                     <li x-data="{ open: false }">
                         <button @click="open = !open" type="button"
@@ -133,8 +142,12 @@
                     <!-- Maintenance Requests (Admin) -->
                     <li>
                         <a href="{{ route('maintenance-requests.index') }}"
-                            class="flex items-center px-3 py-2 text-sm rounded hover:bg-blue-100 hover:text-blue-800 {{ request()->routeIs('maintenance-requests.*') ? 'bg-blue-100 text-blue-800' : 'text-gray-600' }}">
-                            <i class="fas fa-tools mr-2 w-4"></i> Maintenance Requests
+                            class="flex items-center px-4 py-2.5 text-gray-600 rounded-lg hover:bg-blue-50 hover:text-blue-800 focus:outline-none transition {{ request()->routeIs('maintenance-requests.*') ? 'bg-blue-100 text-blue-800' : '' }}">
+                            <i class="fas fa-tools w-5 text-blue-600"></i>
+                            <span class="ml-3 text-sm">Maintenance Requests</span>
+                            <span class="ml-auto bg-blue-600 text-white text-xs px-2 py-1 rounded-full" id="maintenance-count">
+                                <!-- Will be populated by JavaScript -->
+                            </span>
                         </a>
                     </li>
 
@@ -195,6 +208,39 @@
                                 <a href="{{ route('locations.index') }}"
                                     class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('locations.index') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
                                     <i class="fas fa-list mr-2 w-4"></i> Location List
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Semesters -->
+                    <li x-data="{ open: false }">
+                        <button @click="open = !open" type="button"
+                            class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-indigo-50 hover:text-indigo-800 focus:outline-none transition justify-between"
+                            :class="{ 'bg-indigo-50 text-indigo-800': open }">
+                            <span class="flex items-center">
+                                <i class="fas fa-calendar-alt w-5 text-indigo-600"></i>
+                                <span class="ml-3 text-sm">Semesters</span>
+                            </span>
+                            <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
+                        </button>
+                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
+                            <li>
+                                <a href="{{ route('semesters.create') }}"
+                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-indigo-100 hover:text-indigo-800 {{ request()->routeIs('semesters.create') ? 'bg-indigo-100 text-indigo-800' : 'text-gray-600' }}">
+                                    <i class="fas fa-plus-circle mr-2 w-4"></i> Add Semester
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('semesters.index') }}"
+                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-indigo-100 hover:text-indigo-800 {{ request()->routeIs('semesters.index') || request()->routeIs('semesters.show') || request()->routeIs('semesters.edit') ? 'bg-indigo-100 text-indigo-800' : 'text-gray-600' }}">
+                                    <i class="fas fa-list mr-2 w-4"></i> Semester List
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('semester-assets.index') }}"
+                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-indigo-100 hover:text-indigo-800 {{ request()->routeIs('semester-assets.*') ? 'bg-indigo-100 text-indigo-800' : 'text-gray-600' }}">
+                                    <i class="fas fa-chart-line mr-2 w-4"></i> Semester Tracking
                                 </a>
                             </li>
                         </ul>
@@ -494,10 +540,37 @@
                 });
         }
 
-        // Load pending count on page load and refresh every 30 seconds
+        // Load maintenance requests count
+        function loadMaintenanceCount() {
+            console.log('Loading maintenance count from:', '{{ route("maintenance-requests.pending-count") }}');
+            fetch('{{ route("maintenance-requests.pending-count") }}')
+                .then(response => {
+                    console.log('Maintenance count response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Maintenance count data:', data);
+                    const countElement = document.getElementById('maintenance-count');
+                    if (countElement) {
+                        countElement.textContent = data.count;
+                        countElement.style.display = data.count > 0 ? 'inline' : 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading maintenance count:', error);
+                    console.error('Error details:', error.message);
+                });
+        }
+
+        // Load counts on page load and refresh every 30 seconds
         document.addEventListener('DOMContentLoaded', function() {
             loadPendingCount();
+            loadMaintenanceCount();
             setInterval(loadPendingCount, 30000);
+            setInterval(loadMaintenanceCount, 30000);
         });
     </script>
 </body>

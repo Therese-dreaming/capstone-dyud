@@ -119,8 +119,33 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                                <div class="text-lg font-semibold text-gray-900">{{ $maintenanceRequest->location->building }}</div>
-                                <div class="text-sm text-gray-600">Floor {{ $maintenanceRequest->location->floor }} - Room {{ $maintenanceRequest->location->room }}</div>
+                                @if($maintenanceRequest->isSpecificAssetsRequest())
+                                    @php
+                                        $assetLocations = $maintenanceRequest->getAssetLocations();
+                                    @endphp
+                                    @if($assetLocations->count() > 0)
+                                        @foreach($assetLocations->take(3) as $index => $location)
+                                            <div class="mb-2">
+                                                <div class="text-lg font-semibold text-gray-900">{{ $location->building ?? 'N/A' }}</div>
+                                                <div class="text-sm text-gray-600">Floor {{ $location->floor ?? 'N/A' }} - Room {{ $location->room ?? 'N/A' }}</div>
+                                            </div>
+                                        @endforeach
+                                        @if($assetLocations->count() > 3)
+                                            <div class="text-sm text-gray-500">+{{ $assetLocations->count() - 3 }} more locations</div>
+                                        @endif
+                                    @else
+                                        <div class="text-lg font-semibold text-gray-900">Asset-based Request</div>
+                                        <div class="text-sm text-gray-600">Location determined by specific assets</div>
+                                    @endif
+                                @else
+                                    @if($maintenanceRequest->location)
+                                        <div class="text-lg font-semibold text-gray-900">{{ $maintenanceRequest->location->building }}</div>
+                                        <div class="text-sm text-gray-600">Floor {{ $maintenanceRequest->location->floor }} - Room {{ $maintenanceRequest->location->room }}</div>
+                                    @else
+                                        <div class="text-lg font-semibold text-gray-900">N/A</div>
+                                        <div class="text-sm text-gray-600">No location specified</div>
+                                    @endif
+                                @endif
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Instructor</label>
@@ -129,6 +154,62 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Requested Assets Card (for asset-based requests) -->
+                @if($maintenanceRequest->isSpecificAssetsRequest())
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden card-hover">
+                    <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-qrcode text-indigo-700 text-xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-white">Requested Assets</h2>
+                                <p class="text-indigo-100">Specific assets included in this maintenance request</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        @php
+                            $requestedAssets = $maintenanceRequest->getRequestedAssets();
+                            $assetCodes = $maintenanceRequest->getRequestedAssetCodes();
+                        @endphp
+                        
+                        @if($requestedAssets->count() > 0)
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                @foreach($requestedAssets as $asset)
+                                    <div class="border rounded-lg p-4 bg-gray-50">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="font-mono text-sm font-semibold text-gray-900">{{ $asset->asset_code }}</div>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $asset->getStatusBadgeClass() }}">
+                                                {{ $asset->getStatusLabel() }}
+                                            </span>
+                                        </div>
+                                        <div class="text-sm text-gray-900 font-medium">{{ $asset->name }}</div>
+                                        @if($asset->location)
+                                            <div class="text-xs text-gray-600 mt-1">
+                                                {{ $asset->location->building }} - Floor {{ $asset->location->floor }} - Room {{ $asset->location->room }}
+                                            </div>
+                                        @else
+                                            <div class="text-xs text-gray-500 mt-1">No location assigned</div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center text-gray-500">
+                                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                                <p class="text-sm mb-2">Some requested assets could not be found</p>
+                                @if(count($assetCodes) > 0)
+                                    <div class="text-xs text-gray-400">
+                                        Requested codes: {{ implode(', ', $assetCodes) }}
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
 
                 <!-- Notes Card -->
                 @if($maintenanceRequest->notes)

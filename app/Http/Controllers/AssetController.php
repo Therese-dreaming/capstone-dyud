@@ -1,23 +1,84 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\Category;
 use App\Models\Location;
-use App\Models\Warranty;
 use App\Models\Dispose;
-use App\Services\NotificationService;
+use App\Models\Semester;
+use App\Models\AssetMaintenanceHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AssetController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $assets = Asset::with(['category', 'location', 'originalLocation', 'warranty'])->paginate(10);
-        return view('assets.index', compact('assets'));
+        $query = Asset::with(['category', 'location', 'originalLocation', 'warranty']);
+
+        // Search (asset code, name, category name, location building/room)
+        if ($search = trim((string) $request->get('q', ''))) {
+            $query->where(function ($q) use ($search) {
+                $q->where('asset_code', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%")
+                  ->orWhereHas('category', function ($cq) use ($search) {
+                      $cq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('location', function ($lq) use ($search) {
+                      $lq->where('building', 'like', "%{$search}%")
+                         ->orWhere('room', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Category filter
+        if ($categoryId = $request->get('category_id')) {
+            $query->where('category_id', $categoryId);
+        }
+
+        // Status filter (accepts raw status string)
+        if ($status = $request->get('status')) {
+            $query->where('status', $status);
+        }
+
+        // Condition filter
+        if ($condition = $request->get('condition')) {
+            $query->where('condition', $condition);
+        }
+
+        // Deployment filter: deployed / not_deployed
+        if ($deployment = $request->get('deployment')) {
+            if ($deployment === 'deployed') {
+                $query->whereNotNull('location_id');
+            } elseif ($deployment === 'not_deployed') {
+                $query->whereNull('location_id');
+            }
+        }
+
+        // Specific location filter
+        if ($locationId = $request->get('location_id')) {
+            $query->where('location_id', $locationId);
+        }
+
+        $assets = $query->orderBy('created_at', 'desc')->paginate(10)->appends($request->query());
+
+        $categories = Category::orderBy('name')->get(['id', 'name']);
+        $locations = Location::orderBy('building')->orderBy('floor')->orderBy('room')->get(['id', 'building', 'floor', 'room']);
+
+        return view('assets.index', [
+            'assets' => $assets,
+            'categories' => $categories,
+            'locations' => $locations,
+            'filters' => [
+                'q' => $search ?? '',
+                'category_id' => $request->get('category_id'),
+                'status' => $request->get('status'),
+                'condition' => $request->get('condition'),
+                'deployment' => $request->get('deployment'),
+                'location_id' => $request->get('location_id'),
+            ],
+        ]);
     }
 
     public function gsuIndex()
@@ -163,9 +224,14 @@ class AssetController extends Controller
         // Get the active tab from request (default to maintenance)
         $activeTab = $request->get('tab', 'maintenance');
         
-        // Use maintenance checklist scanning history instead of legacy maintenances
-        $maintenances = $asset->maintenanceHistory()->orderBy('scanned_at', 'desc')->paginate(10);
+        // Use only legitimate maintenance checklist scanning history (excludes transfers)
+        $maintenances = $asset->legitimateMaintenanceHistory()
+            ->orderBy('scanned_at', 'desc')
+            ->paginate(10);
+            
         $disposes = $asset->disposes()->orderBy('disposal_date', 'desc')->paginate(10);
+        
+        // Asset changes (transfers, status changes, etc.)
         $changes = $asset->changes()->with('user')->orderBy('created_at', 'desc')->paginate(10);
         
         // Check if user is GSU and return appropriate view
@@ -278,6 +344,9 @@ class AssetController extends Controller
 
         try {
             return DB::transaction(function () use ($asset, $validated) {
+                // Auto-detect current semester for disposal
+                $currentSemester = Semester::current() ?? Semester::forDate(now());
+                
                 // Create disposal record
                 Dispose::create([
                     'asset_id' => $asset->id,
@@ -286,9 +355,10 @@ class AssetController extends Controller
                     'disposed_by' => 'System Admin', // You might want to use auth()->user()->name if you have authentication
                 ]);
 
-                // Update asset status to disposed
+                // Update asset status to disposed and assign disposal semester
                 $asset->update([
-                    'status' => 'Disposed'
+                    'status' => 'Disposed',
+                    'disposed_semester_id' => $currentSemester?->id, // Auto-assign current semester
                 ]);
 
                 return redirect()->route(auth()->user()->role === 'gsu' ? 'gsu.assets.index' : 'assets.index')
@@ -624,5 +694,78 @@ class AssetController extends Controller
             ->whereNull('location_id')
             ->count();
         return response()->json(['count' => $count]);
+    }
+
+    /**
+     * Show transfer form for an asset
+     */
+    public function transferForm(Asset $asset)
+    {
+        // Only allow transfer for available assets with location
+        if (!$asset->isAvailable() || !$asset->location_id) {
+            return redirect()->back()->with('error', 'Asset is not available for transfer.');
+        }
+
+        $locations = Location::orderBy('building')->orderBy('floor')->orderBy('room')->get();
+        
+        return view('assets.transfer', compact('asset', 'locations'));
+    }
+
+    /**
+     * Transfer asset to a new location
+     */
+    public function transfer(Request $request, Asset $asset)
+    {
+        $request->validate([
+            'new_location_id' => 'required|exists:locations,id',
+            'transfer_reason' => 'nullable|string|max:500',
+        ]);
+
+        // Only allow transfer for available assets with location
+        if (!$asset->isAvailable() || !$asset->location_id) {
+            return redirect()->back()->with('error', 'Asset is not available for transfer.');
+        }
+
+        // Check if the new location is different from current location
+        if ($asset->location_id == $request->new_location_id) {
+            return redirect()->back()->with('error', 'Asset is already at this location.');
+        }
+
+        $oldLocation = $asset->location;
+        $newLocation = Location::find($request->new_location_id);
+
+        try {
+            return DB::transaction(function () use ($asset, $request, $oldLocation, $newLocation) {
+                // Update asset location
+                $asset->update([
+                    'location_id' => $request->new_location_id,
+                ]);
+
+                // Add transfer notes to the automatically created change record if provided
+                if ($request->transfer_reason) {
+                    $latestChange = \App\Models\AssetChange::where('asset_id', $asset->id)
+                        ->where('field', 'location_id')
+                        ->where('change_type', \App\Models\AssetChange::TYPE_TRANSFER)
+                        ->latest()
+                        ->first();
+                    
+                    if ($latestChange) {
+                        $latestChange->update(['notes' => $request->transfer_reason]);
+                    }
+                }
+
+                // Send notification about the transfer
+                $notificationService = new NotificationService();
+                $notificationService->notifyAssetTransferred($asset, $oldLocation, $newLocation);
+
+                return redirect()->route('assets.show', $asset)
+                    ->with('success', "Asset {$asset->asset_code} has been transferred successfully from {$oldLocation->building} to {$newLocation->building}.");
+            });
+        } catch (\Exception $e) {
+            Log::error('Asset transfer failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Failed to transfer asset: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 }

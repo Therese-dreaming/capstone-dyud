@@ -18,6 +18,7 @@ use App\Http\Controllers\SemesterSettingController;
 use App\Http\Controllers\MaintenanceChecklistController;
 use App\Http\Controllers\AssetScannerController;
 use App\Http\Controllers\MaintenanceRequestController;
+use App\Http\Controllers\SemesterAssetController;
 
 // Default route - redirect to login
 Route::get('/', function () {
@@ -38,14 +39,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/assets/{asset}', function (App\Models\Asset $asset) {
         return response()->json($asset->load(['category', 'location']));
     })->name('api.assets.show');
-    // API route for getting asset by code (for QR scanner)
-    Route::get('/api/assets/code/{assetCode}', function ($assetCode) {
-        $asset = \App\Models\Asset::where('asset_code', $assetCode)
-            ->where('approval_status', \App\Models\Asset::APPROVAL_APPROVED)
-            ->with(['category', 'location'])
-            ->firstOrFail();
-        return response()->json($asset);
-    })->name('api.assets.show-by-code');
+    // Removed conflicting route - using UserAssetController instead for proper ownership validation
     
     // API route for getting locations (for deploy modal)
     Route::get('/api/locations', function () {
@@ -58,6 +52,8 @@ Route::middleware(['auth'])->group(function () {
         // Asset management for admin (view and approve only)
         Route::get('/assets', [AssetController::class, 'index'])->name('assets.index');
         Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
+        Route::get('/assets/{asset}/transfer', [AssetController::class, 'transferForm'])->name('assets.transfer-form');
+        Route::post('/assets/{asset}/transfer', [AssetController::class, 'transfer'])->name('assets.transfer');
         Route::put('/assets/{asset}/dispose', [AssetController::class, 'dispose'])->name('assets.dispose');
         // Route::get('/assets-report', [AssetController::class, 'report'])->name('assets.report');
         
@@ -111,6 +107,15 @@ Route::middleware(['auth'])->group(function () {
         // Date Range View
         Route::get('/locations/{location}/date-range', [LocationController::class, 'dateRangeView'])->name('locations.date-range');
 
+        // Semester Management - Admin only
+        Route::resource('semesters', \App\Http\Controllers\SemesterController::class);
+        Route::post('/semesters/{semester}/set-current', [\App\Http\Controllers\SemesterController::class, 'setCurrent'])->name('semesters.set-current-action');
+        Route::get('/semesters/set-current', [\App\Http\Controllers\SemesterController::class, 'setCurrentForm'])->name('semesters.set-current');
+        
+        // Semester Asset Tracking - Admin only
+        Route::get('/semester-assets', [SemesterAssetController::class, 'index'])->name('semester-assets.index');
+        Route::get('/semester-assets/details', [SemesterAssetController::class, 'getAssetDetails'])->name('semester-assets.details');
+        Route::get('/semester-assets/export', [SemesterAssetController::class, 'exportReport'])->name('semester-assets.export');
 
     });
 
@@ -172,11 +177,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/maintenance-requests', [MaintenanceRequestController::class, 'userIndex'])->name('maintenance-requests.user-index');
     Route::get('/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'userShow'])->name('maintenance-requests.user-show');
     Route::get('/maintenance-checklists/{maintenanceChecklist}/user-view', [MaintenanceChecklistController::class, 'userShow'])->name('maintenance-checklists.user-show');
+    
+    // User Asset Management
+    Route::get('/my-assets', [App\Http\Controllers\UserAssetController::class, 'index'])->name('user-assets.index');
+    Route::get('/my-assets/{asset}', [App\Http\Controllers\UserAssetController::class, 'show'])->name('user-assets.show');
+    Route::get('/api/assets/code/{code}', [App\Http\Controllers\UserAssetController::class, 'getAssetByCode'])->name('api.assets.by-code');
     Route::get('/admin/maintenance-requests', [MaintenanceRequestController::class, 'index'])->name('maintenance-requests.index');
     Route::get('/admin/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'show'])->name('maintenance-requests.show');
     Route::post('/admin/maintenance-requests/{maintenanceRequest}/approve', [MaintenanceRequestController::class, 'approve'])->name('maintenance-requests.approve');
     Route::post('/admin/maintenance-requests/{maintenanceRequest}/reject', [MaintenanceRequestController::class, 'reject'])->name('maintenance-requests.reject');
     Route::get('/gsu/maintenance-requests/{maintenanceRequest}/acknowledge', [MaintenanceRequestController::class, 'acknowledge'])->name('maintenance-requests.acknowledge');
+    Route::get('/api/maintenance-requests/pending-count', [MaintenanceRequestController::class, 'pendingCount'])->name('maintenance-requests.pending-count');
+    
+    // Admin: User Location Management
+    Route::get('/admin/user-locations', [App\Http\Controllers\UserLocationController::class, 'index'])->name('admin.user-locations.index');
+    Route::post('/admin/user-locations', [App\Http\Controllers\UserLocationController::class, 'store'])->name('admin.user-locations.store');
+    Route::delete('/admin/user-locations/{userLocation}', [App\Http\Controllers\UserLocationController::class, 'destroy'])->name('admin.user-locations.destroy');
+    Route::get('/api/users/{user}/locations', [App\Http\Controllers\UserLocationController::class, 'getUserLocations'])->name('api.users.locations');
     
     // Notifications
     Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
@@ -216,6 +233,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('gsu.assets.show');
         Route::get('/assets/{asset}/assign-location', [AssetController::class, 'assignLocationForm'])->name('gsu.assets.assign-location');
         Route::put('/assets/{asset}/location', [AssetController::class, 'assignLocation'])->name('gsu.assets.update-location');
+        Route::get('/assets/{asset}/transfer', [AssetController::class, 'transferForm'])->name('gsu.assets.transfer-form');
+        Route::post('/assets/{asset}/transfer', [AssetController::class, 'transfer'])->name('gsu.assets.transfer');
         Route::put('/gsu/assets/{asset}/dispose', [AssetController::class, 'dispose'])->name('gsu.assets.dispose');
         
         // GSU Location Management (view only - no create/edit/delete)

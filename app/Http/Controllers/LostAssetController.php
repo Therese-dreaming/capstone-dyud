@@ -112,7 +112,7 @@ class LostAssetController extends Controller
                 $asset->update(['status' => 'Lost']);
 
                 // Record the change
-                Asset::recordChange(
+                \App\Traits\TracksAssetChanges::recordChange(
                     $asset->id,
                     AssetChange::TYPE_STATUS_CHANGE,
                     'status',
@@ -173,7 +173,7 @@ class LostAssetController extends Controller
                 if ($validated['status'] === 'found') {
                     $lostAsset->asset->update(['status' => 'Available']);
                     
-                    Asset::recordChange(
+                    \App\Traits\TracksAssetChanges::recordChange(
                         $lostAsset->asset->id,
                         AssetChange::TYPE_STATUS_CHANGE,
                         'status',
@@ -184,7 +184,7 @@ class LostAssetController extends Controller
                 } elseif ($validated['status'] === 'permanently_lost') {
                     $lostAsset->asset->update(['status' => 'Lost']);
                     
-                    Asset::recordChange(
+                    \App\Traits\TracksAssetChanges::recordChange(
                         $lostAsset->asset->id,
                         AssetChange::TYPE_STATUS_CHANGE,
                         'status',
@@ -216,7 +216,7 @@ class LostAssetController extends Controller
                 if ($lostAsset->asset->status === 'Lost') {
                     $lostAsset->asset->update(['status' => 'Available']);
                     
-                    Asset::recordChange(
+                    \App\Traits\TracksAssetChanges::recordChange(
                         $lostAsset->asset->id,
                         AssetChange::TYPE_STATUS_CHANGE,
                         'status',

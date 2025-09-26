@@ -49,14 +49,85 @@
     <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
         <div class="bg-gray-50 p-4 border-b border-gray-200">
             <div class="flex items-center gap-4">
-                <div class="relative flex-1">
-                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                    <input type="text" id="searchInput" placeholder="Search by asset code, name, category..." 
-                           class="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
-                </div>
-                <div class="text-sm text-gray-600 font-medium">
+                <button type="button" id="toggleFilters" class="inline-flex items-center px-3 py-2 bg-red-800 text-white text-sm rounded-lg hover:bg-red-900 transition">
+                    <i class="fas fa-sliders-h mr-2"></i> Filters
+                </button>
+                <div class="text-sm text-gray-600 font-medium ml-auto">
                     Total: <span class="text-red-800 font-bold">{{ $assets->total() }}</span> assets
                 </div>
+            </div>
+            <!-- Collapsible Filters -->
+            <div id="filtersPanel" class="mt-4 hidden">
+                <form method="GET" action="{{ route('assets.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    <div class="relative">
+                        <label class="block text-xs text-gray-600 mb-1">Search</label>
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" name="q" value="{{ $filters['q'] ?? request('q') }}" placeholder="Code, name, category, location..." 
+                                   class="w-full pl-10 pr-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">Category</label>
+                        <select name="category_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">All</option>
+                            @isset($categories)
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}" {{ ($filters['category_id'] ?? request('category_id')) == $category->id ? 'selected' : '' }}>
+                                        {{ $category->name }}
+                                    </option>
+                                @endforeach
+                            @endisset
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">Status</label>
+                        <select name="status" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">All</option>
+                            @foreach(['Available','pending','active','maintenance','Disposed','Lost'] as $st)
+                                <option value="{{ $st }}" {{ ($filters['status'] ?? request('status')) == $st ? 'selected' : '' }}>{{ $st }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">Condition</label>
+                        <select name="condition" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">All</option>
+                            @foreach(['Good','Fair','Poor'] as $cond)
+                                <option value="{{ $cond }}" {{ ($filters['condition'] ?? request('condition')) == $cond ? 'selected' : '' }}>{{ $cond }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">Deployment</label>
+                        <select name="deployment" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">All</option>
+                            <option value="deployed" {{ ($filters['deployment'] ?? request('deployment')) == 'deployed' ? 'selected' : '' }}>Deployed</option>
+                            <option value="not_deployed" {{ ($filters['deployment'] ?? request('deployment')) == 'not_deployed' ? 'selected' : '' }}>Not Deployed</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs text-gray-600 mb-1">Specific Location</label>
+                        <select name="location_id" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">All</option>
+                            @isset($locations)
+                                @foreach($locations as $loc)
+                                    <option value="{{ $loc->id }}" {{ ($filters['location_id'] ?? request('location_id')) == $loc->id ? 'selected' : '' }}>
+                                        {{ $loc->building }} - Floor {{ $loc->floor }} - Room {{ $loc->room }}
+                                    </option>
+                                @endforeach
+                            @endisset
+                        </select>
+                    </div>
+                    <div class="flex items-end gap-2 md:col-span-2">
+                        <button type="submit" class="px-4 py-2 bg-red-800 text-white text-sm rounded-lg hover:bg-red-900 transition">
+                            <i class="fas fa-filter mr-2"></i> Apply Filters
+                        </button>
+                        <a href="{{ route('assets.index') }}" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition">
+                            Reset
+                        </a>
+                    </div>
+                </form>
             </div>
         </div>
         <div class="overflow-x-auto">
@@ -142,7 +213,21 @@
                                        title="View Details">
                                         <i class="fas fa-eye text-xs"></i>
                                     </a>
-                                    @if($asset->status === 'active')
+                                    @if($asset->isAvailable() && $asset->location_id && (Auth::user()->role === 'admin' || Auth::user()->role === 'gsu'))
+                                        <a href="{{ route('assets.transfer-form', $asset) }}" 
+                                           class="inline-flex items-center justify-center w-8 h-8 bg-purple-100 text-purple-600 rounded-full hover:bg-purple-200 transition-colors duration-150"
+                                           title="Transfer Asset">
+                                            <i class="fas fa-exchange-alt text-xs"></i>
+                                        </a>
+                                    @endif
+                                    @if($asset->status !== 'Disposed' && $asset->status !== 'Lost')
+                                        <a href="{{ route('lost-assets.create', $asset) }}"
+                                           class="inline-flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full hover:bg-indigo-200 transition-colors duration-150"
+                                           title="Report as Lost">
+                                            <i class="fas fa-search text-xs"></i>
+                                        </a>
+                                    @endif
+                                    @if($asset->isAvailable())
                                         <button onclick="showDisposeModal({{ $asset->id }}, '{{ $asset->asset_code }}')"
                                                 class="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors duration-150"
                                                 title="Dispose Asset">
@@ -176,56 +261,30 @@
 </div>
 
 <!-- Dispose Modal -->
-<div id="disposeModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between pb-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                    <i class="fas fa-trash text-red-600 mr-2"></i>
-                    Dispose Asset
-                </h3>
-                <button onclick="closeDisposeModal()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+<div id="disposeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div id="disposeModalCard" class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative animate-fade-in">
+        <button onclick="closeDisposeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-800 text-xl"><i class="fas fa-times"></i></button>
+        <div class="flex flex-col items-center">
+            <div class="bg-red-100 text-red-800 rounded-full p-4 mb-4">
+                <i class="fas fa-exclamation-triangle text-3xl"></i>
             </div>
-
-            <!-- Modal Body -->
-            <form id="disposeForm" method="POST" class="mt-4">
+            <h3 class="text-xl font-bold mb-2 text-gray-800">Dispose Asset</h3>
+            <p class="text-gray-600 mb-6 text-center">Are you sure you want to dispose asset <span class="font-semibold text-red-800" id="dispose-asset-name">CODE</span>? This action cannot be undone.</p>
+            <form id="disposeForm" method="POST" class="w-full flex flex-col gap-3">
                 @csrf
                 @method('PUT')
-                <div class="space-y-4">
-                    <!-- Asset Info -->
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h4 class="font-medium text-gray-900" id="dispose-asset-name">Asset Code</h4>
-                                <p class="text-sm text-gray-600">You are about to dispose this asset</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Disposal Reason -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Disposal Reason *</label>
-                        <textarea name="disposal_reason" id="disposal_reason" rows="4" required
-                                  placeholder="Please provide a reason for disposing this asset..."
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"></textarea>
-                    </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Disposal Reason <span class="text-red-600">*</span></label>
+                    <textarea name="disposal_reason" id="disposal_reason" rows="4" required
+                              placeholder="Please provide a reason for disposing this asset..."
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"></textarea>
                 </div>
-
-                <!-- Modal Footer -->
-                <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200 mt-6">
-                    <button type="button" onclick="closeDisposeModal()" 
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                        Cancel
-                    </button>
-                    <button type="submit" 
-                            class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                        <i class="fas fa-trash mr-2"></i>
-                        Dispose Asset
-                    </button>
-                </div>
+                <button type="submit" class="w-full bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-trash-alt"></i> Dispose
+                </button>
+                <button type="button" onclick="closeDisposeModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
             </form>
         </div>
     </div>
@@ -233,13 +292,11 @@
 
 </div>
 <script>
-document.getElementById('searchInput')?.addEventListener('keyup', function() {
-    const searchValue = this.value.toLowerCase();
-    const rows = document.querySelectorAll('#assetsTableBody tr');
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchValue) ? '' : 'none';
-    });
+// Toggle filters panel
+document.getElementById('toggleFilters')?.addEventListener('click', function() {
+    const panel = document.getElementById('filtersPanel');
+    if (!panel) return;
+    panel.classList.toggle('hidden');
 });
 
 // Dispose Modal Functions

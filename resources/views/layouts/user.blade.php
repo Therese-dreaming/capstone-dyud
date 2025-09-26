@@ -50,6 +50,9 @@
                     <a href="{{ route('maintenance-requests.create') }}" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('maintenance-requests.create') ? 'text-red-600 bg-red-50' : '' }}">
                         <i class="fas fa-tools mr-2"></i>Maintenance Request
                     </a>
+                    <a href="{{ route('user-assets.index') }}" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('user-assets.*') ? 'text-red-600 bg-red-50' : '' }}">
+                        <i class="fas fa-boxes mr-2"></i>My Assets
+                    </a>
                     <a href="{{ route('maintenance-requests.user-index') }}" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('maintenance-requests.user-index') || request()->routeIs('maintenance-requests.user-show') ? 'text-red-600 bg-red-50' : '' }}">
                         <i class="fas fa-history mr-2"></i>My Requests
                     </a>
@@ -243,6 +246,9 @@
                 </a>
                 <a href="{{ route('maintenance-requests.create') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('maintenance-requests.create') ? 'text-red-600 bg-red-50' : '' }}">
                     <i class="fas fa-tools mr-2"></i>Maintenance Request
+                </a>
+                <a href="{{ route('user-assets.index') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('user-assets.*') ? 'text-red-600 bg-red-50' : '' }}">
+                    <i class="fas fa-boxes mr-2"></i>My Assets
                 </a>
                 <a href="{{ route('maintenance-requests.user-index') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('maintenance-requests.user-index') || request()->routeIs('maintenance-requests.user-show') ? 'text-red-600 bg-red-50' : '' }}">
                     <i class="fas fa-history mr-2"></i>My Requests

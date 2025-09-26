@@ -106,14 +106,15 @@ class NotificationService
      */
     public function notifyMaintenanceRequest($maintenanceRequest): void
     {
+        $locationStr = $this->formatLocation(optional($maintenanceRequest)->location);
         $this->notifyAdmins(
             Notification::TYPE_MAINTENANCE_REQUEST,
             'New Maintenance Request',
-            "A new maintenance request has been submitted by {$maintenanceRequest->requester->name} for {$maintenanceRequest->location->building} - Floor {$maintenanceRequest->location->floor} - Room {$maintenanceRequest->location->room}",
+            "A new maintenance request has been submitted by {$maintenanceRequest->requester->name} for {$locationStr}",
             [
                 'maintenance_request_id' => $maintenanceRequest->id,
                 'requester_name' => $maintenanceRequest->requester->name,
-                'location' => $maintenanceRequest->location->building . ' - Floor ' . $maintenanceRequest->location->floor . ' - Room ' . $maintenanceRequest->location->room,
+                'location' => $locationStr,
                 'school_year' => $maintenanceRequest->school_year,
                 'department' => $maintenanceRequest->department,
             ],
@@ -164,13 +165,14 @@ class NotificationService
      */
     public function notifyChecklistAcknowledged($checklist): void
     {
+        $locationStr = $this->formatLocation(optional($checklist)->location);
         $this->notifyAdmins(
             Notification::TYPE_CHECKLIST_ACKNOWLEDGED,
             'Maintenance Checklist Acknowledged',
-            "Maintenance checklist #{$checklist->id} for {$checklist->location->building} - Floor {$checklist->location->floor} - Room {$checklist->location->room} has been acknowledged by GSU",
+            "Maintenance checklist #{$checklist->id} for {$locationStr} has been acknowledged by GSU",
             [
                 'checklist_id' => $checklist->id,
-                'location' => $checklist->location->building . ' - Floor ' . $checklist->location->floor . ' - Room ' . $checklist->location->room,
+                'location' => $locationStr,
                 'school_year' => $checklist->school_year,
                 'department' => $checklist->department,
             ],
@@ -183,13 +185,14 @@ class NotificationService
      */
     public function notifyChecklistStarted($checklist): void
     {
+        $locationStr = $this->formatLocation(optional($checklist)->location);
         $this->notifyAdmins(
             Notification::TYPE_CHECKLIST_STARTED,
             'Maintenance Checklist Started',
-            "Maintenance checklist #{$checklist->id} for {$checklist->location->building} - Floor {$checklist->location->floor} - Room {$checklist->location->room} has been started by GSU",
+            "Maintenance checklist #{$checklist->id} for {$locationStr} has been started by GSU",
             [
                 'checklist_id' => $checklist->id,
-                'location' => $checklist->location->building . ' - Floor ' . $checklist->location->floor . ' - Room ' . $checklist->location->room,
+                'location' => $locationStr,
                 'school_year' => $checklist->school_year,
                 'department' => $checklist->department,
             ],
@@ -202,13 +205,14 @@ class NotificationService
      */
     public function notifyChecklistCompleted($checklist): void
     {
+        $locationStr = $this->formatLocation(optional($checklist)->location);
         $this->notifyAdmins(
             Notification::TYPE_CHECKLIST_COMPLETED,
             'Maintenance Checklist Completed',
-            "Maintenance checklist #{$checklist->id} for {$checklist->location->building} - Floor {$checklist->location->floor} - Room {$checklist->location->room} has been completed by GSU",
+            "Maintenance checklist #{$checklist->id} for {$locationStr} has been completed by GSU",
             [
                 'checklist_id' => $checklist->id,
-                'location' => $checklist->location->building . ' - Floor ' . $checklist->location->floor . ' - Room ' . $checklist->location->room,
+                'location' => $locationStr,
                 'school_year' => $checklist->school_year,
                 'department' => $checklist->department,
                 'completed_at' => $checklist->completed_at,
@@ -222,15 +226,16 @@ class NotificationService
      */
     public function notifyMaintenanceRequestApproved($maintenanceRequest): void
     {
+        $locationStr = $this->formatLocation(optional($maintenanceRequest)->location);
         $this->notifyGSU(
             Notification::TYPE_MAINTENANCE_REQUEST,
             'New Maintenance Checklist Assigned',
-            "A maintenance checklist has been approved and assigned to you for {$maintenanceRequest->location->building} - Floor {$maintenanceRequest->location->floor} - Room {$maintenanceRequest->location->room}",
+            "A maintenance checklist has been approved and assigned to you for {$locationStr}",
             [
                 'maintenance_request_id' => $maintenanceRequest->id,
                 'maintenance_checklist_id' => $maintenanceRequest->maintenance_checklist_id,
                 'requester_name' => $maintenanceRequest->requester->name,
-                'location' => $maintenanceRequest->location->building . ' - Floor ' . $maintenanceRequest->location->floor . ' - Room ' . $maintenanceRequest->location->room,
+                'location' => $locationStr,
                 'school_year' => $maintenanceRequest->school_year,
                 'department' => $maintenanceRequest->department,
             ],
@@ -243,14 +248,15 @@ class NotificationService
      */
     public function notifyGSUChecklistAcknowledged($checklist): void
     {
+        $locationStr = $this->formatLocation(optional($checklist)->location);
         $this->notifyUser(
             auth()->id(),
             Notification::TYPE_CHECKLIST_ACKNOWLEDGED,
             'Checklist Acknowledged',
-            "You have acknowledged maintenance checklist #{$checklist->id} for {$checklist->location->building} - Floor {$checklist->location->floor} - Room {$checklist->location->room}",
+            "You have acknowledged maintenance checklist #{$checklist->id} for {$locationStr}",
             [
                 'checklist_id' => $checklist->id,
-                'location' => $checklist->location->building . ' - Floor ' . $checklist->location->floor . ' - Room ' . $checklist->location->room,
+                'location' => $locationStr,
                 'school_year' => $checklist->school_year,
                 'department' => $checklist->department,
             ],
@@ -263,14 +269,15 @@ class NotificationService
      */
     public function notifyGSUChecklistStarted($checklist): void
     {
+        $locationStr = $this->formatLocation(optional($checklist)->location);
         $this->notifyUser(
             auth()->id(),
             Notification::TYPE_CHECKLIST_STARTED,
             'Maintenance Started',
-            "You have started maintenance checklist #{$checklist->id} for {$checklist->location->building} - Floor {$checklist->location->floor} - Room {$checklist->location->room}",
+            "You have started maintenance checklist #{$checklist->id} for {$locationStr}",
             [
                 'checklist_id' => $checklist->id,
-                'location' => $checklist->location->building . ' - Floor ' . $checklist->location->floor . ' - Room ' . $checklist->location->room,
+                'location' => $locationStr,
                 'school_year' => $checklist->school_year,
                 'department' => $checklist->department,
             ],
@@ -283,14 +290,15 @@ class NotificationService
      */
     public function notifyGSUChecklistCompleted($checklist): void
     {
+        $locationStr = $this->formatLocation(optional($checklist)->location);
         $this->notifyUser(
             auth()->id(),
             Notification::TYPE_CHECKLIST_COMPLETED,
             'Maintenance Completed',
-            "You have completed maintenance checklist #{$checklist->id} for {$checklist->location->building} - Floor {$checklist->location->floor} - Room {$checklist->location->room}",
+            "You have completed maintenance checklist #{$checklist->id} for {$locationStr}",
             [
                 'checklist_id' => $checklist->id,
-                'location' => $checklist->location->building . ' - Floor ' . $checklist->location->floor . ' - Room ' . $checklist->location->room,
+                'location' => $locationStr,
                 'school_year' => $checklist->school_year,
                 'department' => $checklist->department,
                 'completed_at' => $checklist->completed_at,
@@ -304,14 +312,15 @@ class NotificationService
      */
     public function notifyUserMaintenanceRequestCreated($maintenanceRequest): void
     {
+        $locationStr = $this->formatLocation(optional($maintenanceRequest)->location);
         $this->notifyUser(
             $maintenanceRequest->requester_id,
             Notification::TYPE_MAINTENANCE_REQUEST,
             'Maintenance Request Submitted',
-            "Your maintenance request for {$maintenanceRequest->location->building} - Floor {$maintenanceRequest->location->floor} - Room {$maintenanceRequest->location->room} has been submitted successfully and is awaiting admin approval.",
+            "Your maintenance request for {$locationStr} has been submitted successfully and is awaiting admin approval.",
             [
                 'maintenance_request_id' => $maintenanceRequest->id,
-                'location' => $maintenanceRequest->location->building . ' - Floor ' . $maintenanceRequest->location->floor . ' - Room ' . $maintenanceRequest->location->room,
+                'location' => $locationStr,
                 'school_year' => $maintenanceRequest->school_year,
                 'department' => $maintenanceRequest->department,
                 'status' => 'pending',
@@ -325,15 +334,16 @@ class NotificationService
      */
     public function notifyUserMaintenanceRequestApproved($maintenanceRequest): void
     {
+        $locationStr = $this->formatLocation(optional($maintenanceRequest)->location);
         $this->notifyUser(
             $maintenanceRequest->requester_id,
             Notification::TYPE_MAINTENANCE_REQUEST,
             'Maintenance Request Approved',
-            "Your maintenance request for {$maintenanceRequest->location->building} - Floor {$maintenanceRequest->location->floor} - Room {$maintenanceRequest->location->room} has been approved by admin. GSU will now handle your request.",
+            "Your maintenance request for {$locationStr} has been approved by admin. GSU will now handle your request.",
             [
                 'maintenance_request_id' => $maintenanceRequest->id,
                 'maintenance_checklist_id' => $maintenanceRequest->maintenance_checklist_id,
-                'location' => $maintenanceRequest->location->building . ' - Floor ' . $maintenanceRequest->location->floor . ' - Room ' . $maintenanceRequest->location->room,
+                'location' => $locationStr,
                 'school_year' => $maintenanceRequest->school_year,
                 'department' => $maintenanceRequest->department,
                 'status' => 'approved',
@@ -371,15 +381,16 @@ class NotificationService
      */
     public function notifyUserMaintenanceStarted($maintenanceRequest): void
     {
+        $locationStr = $this->formatLocation(optional($maintenanceRequest)->location);
         $this->notifyUser(
             $maintenanceRequest->requester_id,
             Notification::TYPE_CHECKLIST_STARTED,
             'Maintenance In Progress',
-            "GSU has started working on your maintenance request for {$maintenanceRequest->location->building} - Floor {$maintenanceRequest->location->floor} - Room {$maintenanceRequest->location->room}. The maintenance is now in progress.",
+            "GSU has started working on your maintenance request for {$locationStr}. The maintenance is now in progress.",
             [
                 'maintenance_request_id' => $maintenanceRequest->id,
                 'maintenance_checklist_id' => $maintenanceRequest->maintenance_checklist_id,
-                'location' => $maintenanceRequest->location->building . ' - Floor ' . $maintenanceRequest->location->floor . ' - Room ' . $maintenanceRequest->location->room,
+                'location' => $locationStr,
                 'school_year' => $maintenanceRequest->school_year,
                 'department' => $maintenanceRequest->department,
                 'status' => 'in_progress',
@@ -393,15 +404,16 @@ class NotificationService
      */
     public function notifyUserMaintenanceCompleted($maintenanceRequest): void
     {
+        $locationStr = $this->formatLocation(optional($maintenanceRequest)->location);
         $this->notifyUser(
             $maintenanceRequest->requester_id,
             Notification::TYPE_CHECKLIST_COMPLETED,
             'Maintenance Completed',
-            "Your maintenance request for {$maintenanceRequest->location->building} - Floor {$maintenanceRequest->location->floor} - Room {$maintenanceRequest->location->room} has been completed by GSU. You can now view the maintenance checklist details.",
+            "Your maintenance request for {$locationStr} has been completed by GSU. You can now view the maintenance checklist details.",
             [
                 'maintenance_request_id' => $maintenanceRequest->id,
                 'maintenance_checklist_id' => $maintenanceRequest->maintenance_checklist_id,
-                'location' => $maintenanceRequest->location->building . ' - Floor ' . $maintenanceRequest->location->floor . ' - Room ' . $maintenanceRequest->location->room,
+                'location' => $locationStr,
                 'school_year' => $maintenanceRequest->school_year,
                 'department' => $maintenanceRequest->department,
                 'status' => 'completed',
@@ -409,6 +421,20 @@ class NotificationService
             ],
             auth()->id()
         );
+    }
+
+    /**
+     * Helper to format a location string safely
+     */
+    private function formatLocation($location): string
+    {
+        if (!$location) {
+            return 'N/A';
+        }
+        $building = $location->building ?? 'Unknown';
+        $floor = $location->floor ?? 'N/A';
+        $room = $location->room ?? 'N/A';
+        return $building . ' - Floor ' . $floor . ' - Room ' . $room;
     }
 
     /**
@@ -563,6 +589,93 @@ class NotificationService
                 'approved_at' => $asset->approved_at,
             ],
             $asset->approved_by
+        );
+    }
+
+    /**
+     * Send asset transfer notification
+     */
+    public function notifyAssetTransferred($asset, $oldLocation, $newLocation): void
+    {
+        $transferredBy = auth()->user() ? auth()->user()->name : 'System';
+        
+        // Notify admins about the transfer
+        $this->notifyAdmins(
+            Notification::TYPE_ASSET_TRANSFERRED,
+            'Asset Transferred',
+            "Asset '{$asset->name}' (Code: {$asset->asset_code}) has been transferred from {$oldLocation->building} - Floor {$oldLocation->floor} - Room {$oldLocation->room} to {$newLocation->building} - Floor {$newLocation->floor} - Room {$newLocation->room} by {$transferredBy}.",
+            [
+                'asset_id' => $asset->id,
+                'asset_code' => $asset->asset_code,
+                'asset_name' => $asset->name,
+                'old_location' => $oldLocation->building . ' - Floor ' . $oldLocation->floor . ' - Room ' . $oldLocation->room,
+                'new_location' => $newLocation->building . ' - Floor ' . $newLocation->floor . ' - Room ' . $newLocation->room,
+                'transferred_by' => $transferredBy,
+                'transferred_at' => now(),
+            ],
+            auth()->id()
+        );
+
+        // Notify GSU users about the transfer
+        $this->notifyGSU(
+            Notification::TYPE_ASSET_TRANSFERRED,
+            'Asset Location Updated',
+            "Asset '{$asset->name}' (Code: {$asset->asset_code}) has been moved to {$newLocation->building} - Floor {$newLocation->floor} - Room {$newLocation->room}.",
+            [
+                'asset_id' => $asset->id,
+                'asset_code' => $asset->asset_code,
+                'asset_name' => $asset->name,
+                'old_location' => $oldLocation->building . ' - Floor ' . $oldLocation->floor . ' - Room ' . $oldLocation->room,
+                'new_location' => $newLocation->building . ' - Floor ' . $newLocation->floor . ' - Room ' . $newLocation->room,
+                'transferred_by' => $transferredBy,
+                'transferred_at' => now(),
+            ],
+            auth()->id()
+        );
+
+        // If the asset was created by purchasing, notify them about the transfer
+        if ($asset->created_by) {
+            $this->notifyUser(
+                $asset->created_by,
+                Notification::TYPE_ASSET_TRANSFERRED,
+                'Your Asset Has Been Transferred',
+                "Your asset '{$asset->name}' (Code: {$asset->asset_code}) has been transferred to a new location: {$newLocation->building} - Floor {$newLocation->floor} - Room {$newLocation->room}.",
+                [
+                    'asset_id' => $asset->id,
+                    'asset_code' => $asset->asset_code,
+                    'asset_name' => $asset->name,
+                    'old_location' => $oldLocation->building . ' - Floor ' . $oldLocation->floor . ' - Room ' . $oldLocation->room,
+                    'new_location' => $newLocation->building . ' - Floor ' . $newLocation->floor . ' - Room ' . $newLocation->room,
+                    'transferred_by' => $transferredBy,
+                    'transferred_at' => now(),
+                ],
+                auth()->id()
+            );
+        }
+    }
+
+    /**
+     * Send notification to user when they are assigned to manage a location
+     */
+    public function notifyUserLocationAssigned($userLocation): void
+    {
+        $locationStr = $this->formatLocation($userLocation->location);
+        $assignedByName = $userLocation->assignedBy->name ?? 'Admin';
+        
+        $this->notifyUser(
+            $userLocation->user_id,
+            Notification::TYPE_LOCATION_ASSIGNED,
+            'Location Assignment',
+            "You have been assigned to manage {$locationStr} by {$assignedByName}. You can now access and manage assets in this location.",
+            [
+                'user_location_id' => $userLocation->id,
+                'location_id' => $userLocation->location_id,
+                'location' => $locationStr,
+                'assigned_by_name' => $assignedByName,
+                'assigned_at' => $userLocation->assigned_at ?? now(),
+                'notes' => $userLocation->notes,
+            ],
+            $userLocation->assigned_by
         );
     }
 }
