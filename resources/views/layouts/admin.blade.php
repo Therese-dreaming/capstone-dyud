@@ -108,32 +108,57 @@
                                 <i class="fas fa-chart-bar w-5"></i>
                                 <span class="ml-3 text-sm">Reports</span>
                             </span>
-                            <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-red-600 text-white text-xs px-2 py-1 rounded-full" id="reports-total-count">
+                                    <!-- Will be populated by JavaScript -->
+                                </span>
+                                <i class="fas fa-chevron-down transition-transform" :class="{ 'rotate-180': open }"></i>
+                            </div>
                         </button>
                         <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
                             
                             <li>
                                 <a href="{{ route('disposals.history') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('disposals.history') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-trash-restore mr-2 w-4"></i> Disposal History
+                                    class="flex items-center justify-between px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('disposals.history') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-trash-restore mr-2 w-4"></i> Disposal History
+                                    </span>
+                                    <span class="bg-red-600 text-white text-xs px-2 py-1 rounded-full" id="disposal-count">
+                                        <!-- Will be populated by JavaScript -->
+                                    </span>
                                 </a>
                             </li>
                             <li>
                                 <a href="{{ route('maintenance-checklists.index') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('maintenance-checklists.index') || request()->routeIs('maintenance-checklists.create') || request()->routeIs('maintenance-checklists.show') || request()->routeIs('maintenance-checklists.edit') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-history mr-2 w-4"></i> Maintenance Checklists
+                                    class="flex items-center justify-between px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('maintenance-checklists.index') || request()->routeIs('maintenance-checklists.create') || request()->routeIs('maintenance-checklists.show') || request()->routeIs('maintenance-checklists.edit') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-history mr-2 w-4"></i> Maintenance Checklists
+                                    </span>
+                                    <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-full" id="checklists-count">
+                                        <!-- Will be populated by JavaScript -->
+                                    </span>
                                 </a>
                             </li>
                             <li>
                                 <a href="{{ route('maintenance-checklists.unverified-assets') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-orange-100 hover:text-orange-800 {{ request()->routeIs('maintenance-checklists.unverified-assets') || request()->routeIs('assets.confirm-lost') || request()->routeIs('assets.mark-found') ? 'bg-orange-100 text-orange-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-question-circle mr-2 w-4"></i> Unverified Assets
+                                    class="flex items-center justify-between px-3 py-2 text-sm rounded hover:bg-orange-100 hover:text-orange-800 {{ request()->routeIs('maintenance-checklists.unverified-assets') || request()->routeIs('assets.confirm-lost') || request()->routeIs('assets.mark-found') ? 'bg-orange-100 text-orange-800' : 'text-gray-600' }}">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-question-circle mr-2 w-4"></i> Unverified Assets
+                                    </span>
+                                    <span class="bg-orange-600 text-white text-xs px-2 py-1 rounded-full" id="unverified-count">
+                                        <!-- Will be populated by JavaScript -->
+                                    </span>
                                 </a>
                             </li>
                             <li>
                                 <a href="{{ route('lost-assets.index') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('lost-assets.*') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-search mr-2 w-4"></i> Lost Assets
+                                    class="flex items-center justify-between px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('lost-assets.*') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-search mr-2 w-4"></i> Lost Assets
+                                    </span>
+                                    <span class="bg-red-600 text-white text-xs px-2 py-1 rounded-full" id="lost-assets-count">
+                                        <!-- Will be populated by JavaScript -->
+                                    </span>
                                 </a>
                             </li>
                         </ul>
@@ -565,12 +590,103 @@
                 });
         }
 
+        // Load disposal history count
+        function loadDisposalCount() {
+            // Count disposed assets
+            fetch('/api/assets/count/disposed')
+                .then(response => response.json())
+                .then(data => {
+                    const countElement = document.getElementById('disposal-count');
+                    if (countElement) {
+                        countElement.textContent = data.count || 0;
+                        countElement.style.display = data.count > 0 ? 'inline' : 'none';
+                    }
+                })
+                .catch(error => console.error('Error loading disposal count:', error));
+        }
+
+        // Load maintenance checklists count
+        function loadChecklistsCount() {
+            // Count total maintenance checklists
+            fetch('/api/maintenance-checklists/count')
+                .then(response => response.json())
+                .then(data => {
+                    const countElement = document.getElementById('checklists-count');
+                    if (countElement) {
+                        countElement.textContent = data.count || 0;
+                        countElement.style.display = data.count > 0 ? 'inline' : 'none';
+                    }
+                })
+                .catch(error => console.error('Error loading checklists count:', error));
+        }
+
+        // Load unverified assets count
+        function loadUnverifiedCount() {
+            // Count assets with unverified status
+            fetch('/api/assets/count/unverified')
+                .then(response => response.json())
+                .then(data => {
+                    const countElement = document.getElementById('unverified-count');
+                    if (countElement) {
+                        countElement.textContent = data.count || 0;
+                        countElement.style.display = data.count > 0 ? 'inline' : 'none';
+                    }
+                })
+                .catch(error => console.error('Error loading unverified count:', error));
+        }
+
+        // Load lost assets count
+        function loadLostAssetsCount() {
+            // Count lost assets
+            fetch('/api/assets/count/lost')
+                .then(response => response.json())
+                .then(data => {
+                    const countElement = document.getElementById('lost-assets-count');
+                    if (countElement) {
+                        countElement.textContent = data.count || 0;
+                        countElement.style.display = data.count > 0 ? 'inline' : 'none';
+                    }
+                })
+                .catch(error => console.error('Error loading lost assets count:', error));
+        }
+
+        // Load total reports count
+        function loadReportsTotalCount() {
+            // Get all individual counts and sum them up
+            Promise.all([
+                fetch('/api/assets/count/disposed').then(r => r.json()),
+                fetch('/api/maintenance-checklists/count').then(r => r.json()),
+                fetch('/api/assets/count/unverified').then(r => r.json()),
+                fetch('/api/assets/count/lost').then(r => r.json())
+            ])
+            .then(results => {
+                const totalCount = results.reduce((sum, result) => sum + (result.count || 0), 0);
+                const countElement = document.getElementById('reports-total-count');
+                if (countElement) {
+                    countElement.textContent = totalCount;
+                    countElement.style.display = totalCount > 0 ? 'inline' : 'none';
+                }
+            })
+            .catch(error => console.error('Error loading reports total count:', error));
+        }
+
         // Load counts on page load and refresh every 30 seconds
         document.addEventListener('DOMContentLoaded', function() {
             loadPendingCount();
             loadMaintenanceCount();
+            loadDisposalCount();
+            loadChecklistsCount();
+            loadUnverifiedCount();
+            loadLostAssetsCount();
+            loadReportsTotalCount();
+            
             setInterval(loadPendingCount, 30000);
             setInterval(loadMaintenanceCount, 30000);
+            setInterval(loadDisposalCount, 30000);
+            setInterval(loadChecklistsCount, 30000);
+            setInterval(loadUnverifiedCount, 30000);
+            setInterval(loadLostAssetsCount, 30000);
+            setInterval(loadReportsTotalCount, 30000);
         });
     </script>
 </body>

@@ -10,7 +10,8 @@
             </h1>
             <p class="text-gray-600 mt-1">Room-based maintenance records following the CSV format</p>
         </div>
-        <a href="{{ route('maintenance-checklists.create') }}" class="bg-gradient-to-r from-red-800 to-red-900 hover:from-red-900 hover:to-red-950 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2 shadow-lg">
+        <a href="{{ route('maintenance-checklists.create') }}" 
+           class="bg-gradient-to-r from-red-800 to-red-900 hover:from-red-900 hover:to-red-950 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2 shadow-lg">
             <i class="fas fa-plus"></i> Create Checklist
         </a>
     </div>

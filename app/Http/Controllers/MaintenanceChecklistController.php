@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\MaintenanceChecklist;
 use App\Models\MaintenanceChecklistItem;
 use App\Services\NotificationService;
+use App\Exports\MaintenanceChecklistItemsExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MaintenanceChecklistController extends Controller
 {
@@ -377,6 +379,17 @@ class MaintenanceChecklistController extends Controller
             'Content-Type' => 'application/vnd.ms-excel',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ]);
+    }
+
+
+    /**
+     * Export individual maintenance checklist items to Excel
+     */
+    public function exportItems(MaintenanceChecklist $maintenanceChecklist)
+    {
+        $filename = 'maintenance_checklist_items_' . $maintenanceChecklist->maintenance_id . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+        return Excel::download(new MaintenanceChecklistItemsExport($maintenanceChecklist), $filename);
     }
 
     public function batchUpdate(Request $request, MaintenanceChecklist $maintenanceChecklist)

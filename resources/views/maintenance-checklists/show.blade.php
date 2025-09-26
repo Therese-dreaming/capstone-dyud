@@ -26,10 +26,46 @@
             @endif
             
             @if($checklist->status === 'completed')
-                <a href="{{ route('maintenance-checklists.export', $checklist) }}" 
-                   class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
-                    <i class="fas fa-download"></i> Export CSV
-                </a>
+                <!-- Export Dropdown -->
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" 
+                            class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
+                        <i class="fas fa-download"></i> Export
+                        <i class="fas fa-chevron-down ml-1"></i>
+                    </button>
+                    
+                    <div x-show="open" 
+                         @click.away="open = false"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 scale-100"
+                         x-transition:leave-end="opacity-0 scale-95"
+                         class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+                         style="display: none;">
+                        
+                        <div class="py-2">
+                            <a href="{{ route('maintenance-checklists.export', $checklist) }}" 
+                               class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-file-csv text-green-600 mr-3"></i>
+                                <div>
+                                    <div class="font-medium">Export Checklist (CSV)</div>
+                                    <div class="text-xs text-gray-500">Legacy checklist format</div>
+                                </div>
+                            </a>
+                            
+                            <a href="{{ route('maintenance-checklists.export-items', $checklist) }}" 
+                               class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-file-excel text-green-600 mr-3"></i>
+                                <div>
+                                    <div class="font-medium">Export Assets Report (Excel)</div>
+                                    <div class="text-xs text-gray-500">Detailed asset maintenance report</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             @endif
             
             <a href="{{ route('maintenance-checklists.index') }}" 

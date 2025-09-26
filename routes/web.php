@@ -47,6 +47,27 @@ Route::middleware(['auth'])->group(function () {
         return response()->json($locations);
     })->name('api.locations');
     
+    // API routes for report counts
+    Route::get('/api/assets/count/disposed', function () {
+        $count = \App\Models\Asset::where('status', 'Disposed')->count();
+        return response()->json(['count' => $count]);
+    })->name('api.assets.count.disposed');
+    
+    Route::get('/api/assets/count/unverified', function () {
+        $count = \App\Models\Asset::where('status', 'Unverified')->count();
+        return response()->json(['count' => $count]);
+    })->name('api.assets.count.unverified');
+    
+    Route::get('/api/assets/count/lost', function () {
+        $count = \App\Models\Asset::where('status', 'Lost')->count();
+        return response()->json(['count' => $count]);
+    })->name('api.assets.count.lost');
+    
+    Route::get('/api/maintenance-checklists/count', function () {
+        $count = \App\Models\MaintenanceChecklist::count();
+        return response()->json(['count' => $count]);
+    })->name('api.maintenance-checklists.count');
+    
     // Routes for admin only (approval workflow only - no asset creation)
     Route::middleware(['role:admin'])->group(function () {
         // Asset management for admin (view and approve only)
@@ -156,11 +177,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/maintenance-checklists/{maintenanceChecklist}/batch-update', [MaintenanceChecklistController::class, 'batchUpdateView'])->name('maintenance-checklists.batch-update-view');
         Route::put('/maintenance-checklists/{maintenanceChecklist}/batch-update', [MaintenanceChecklistController::class, 'batchUpdate'])->name('maintenance-checklists.batch-update');
         
+        
         Route::get('/maintenance-checklists/{maintenanceChecklist}', [MaintenanceChecklistController::class, 'show'])->name('maintenance-checklists.show');
         Route::get('/maintenance-checklists/{maintenanceChecklist}/edit', [MaintenanceChecklistController::class, 'edit'])->name('maintenance-checklists.edit');
         Route::put('/maintenance-checklists/{maintenanceChecklist}', [MaintenanceChecklistController::class, 'update'])->name('maintenance-checklists.update');
         Route::delete('/maintenance-checklists/{maintenanceChecklist}', [MaintenanceChecklistController::class, 'destroy'])->name('maintenance-checklists.destroy');
         Route::get('/maintenance-checklists/{maintenanceChecklist}/export', [MaintenanceChecklistController::class, 'exportCsv'])->name('maintenance-checklists.export');
+        Route::get('/maintenance-checklists/{maintenanceChecklist}/export-items', [MaintenanceChecklistController::class, 'exportItems'])->name('maintenance-checklists.export-items');
         
         // New workflow routes
         Route::post('/maintenance-checklists/{maintenanceChecklist}/acknowledge', [MaintenanceChecklistController::class, 'acknowledge'])->name('maintenance-checklists.acknowledge');
