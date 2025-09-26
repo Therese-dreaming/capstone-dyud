@@ -14,6 +14,7 @@ class MaintenanceRequest extends Model
     protected $fillable = [
         'requester_id',
         'location_id',
+        'semester_id',
         'requested_asset_codes',
         'school_year',
         'department',
@@ -45,6 +46,7 @@ class MaintenanceRequest extends Model
     public function rejector(): BelongsTo { return $this->belongsTo(User::class, 'rejected_by'); }
     public function acknowledger(): BelongsTo { return $this->belongsTo(User::class, 'acknowledged_by'); }
     public function location(): BelongsTo { return $this->belongsTo(Location::class); }
+    public function semester(): BelongsTo { return $this->belongsTo(Semester::class); }
     public function checklist(): BelongsTo { return $this->belongsTo(MaintenanceChecklist::class, 'maintenance_checklist_id'); }
     
     // Alias methods for view compatibility

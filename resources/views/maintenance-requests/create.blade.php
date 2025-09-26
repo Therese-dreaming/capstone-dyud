@@ -97,13 +97,40 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700" for="semester_id">
+                            Semester <span class="text-red-500">*</span>
+                        </label>
+                        <select name="semester_id" id="semester_id" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200" required>
+                            <option value="">Select Semester</option>
+                            @foreach($semesters as $semester)
+                                <option value="{{ $semester->id }}" 
+                                        data-academic-year="{{ $semester->academic_year }}"
+                                        data-start-date="{{ $semester->start_date->format('Y-m-d') }}"
+                                        data-end-date="{{ $semester->end_date->format('Y-m-d') }}"
+                                        {{ old('semester_id') == $semester->id ? 'selected' : '' }}>
+                                    {{ $semester->full_name }} ({{ $semester->start_date->format('M j, Y') }} - {{ $semester->end_date->format('M j, Y') }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-blue-600 mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            School year and semester dates will be automatically filled based on your selection.
+                        </p>
+                    </div>
+
+                    <div class="space-y-2">
                         <label class="block text-sm font-semibold text-gray-700" for="school_year">
                             School Year <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="school_year" id="school_year" 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200" 
-                               value="{{ old('school_year', '2024-2025') }}" 
-                               placeholder="e.g., 2024-2025" required>
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200" 
+                               value="{{ old('school_year') }}" 
+                               placeholder="Will be filled automatically" readonly required>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-lock mr-1"></i>
+                            Automatically filled when you select a semester.
+                        </p>
                     </div>
 
                     <div class="space-y-2">
@@ -625,6 +652,29 @@
 
     startBtn?.addEventListener('click', startScanner);
     stopBtn?.addEventListener('click', stopScanner);
+
+    // Handle semester selection
+    const semesterSelect = document.getElementById('semester_id');
+    const schoolYearInput = document.getElementById('school_year');
+
+    semesterSelect?.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const academicYear = selectedOption.getAttribute('data-academic-year');
+            schoolYearInput.value = academicYear;
+        } else {
+            schoolYearInput.value = '';
+        }
+    });
+
+    // Initialize school year if semester is already selected (for form validation errors)
+    if (semesterSelect?.value) {
+        const selectedOption = semesterSelect.options[semesterSelect.selectedIndex];
+        if (selectedOption.value) {
+            const academicYear = selectedOption.getAttribute('data-academic-year');
+            schoolYearInput.value = academicYear;
+        }
+    }
 
     // Initialize default scope
     setScope('location');

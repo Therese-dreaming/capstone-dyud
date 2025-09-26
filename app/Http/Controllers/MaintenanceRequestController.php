@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MaintenanceRequest;
 use App\Models\MaintenanceChecklist;
 use App\Models\Location;
+use App\Models\Semester;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,15 +26,19 @@ class MaintenanceRequestController extends Controller
         // Get only locations owned by this user
         $locations = $user->ownedLocations()->orderBy('building')->orderBy('room')->get();
         
+        // Get available semesters
+        $semesters = Semester::active()->orderBy('academic_year', 'desc')->orderBy('start_date', 'desc')->get();
+        
         // If user has no owned locations, show message
         if ($locations->isEmpty()) {
             return view('maintenance-requests.create', [
                 'locations' => $locations,
+                'semesters' => $semesters,
                 'noLocations' => true
             ]);
         }
         
-        return view('maintenance-requests.create', compact('locations'));
+        return view('maintenance-requests.create', compact('locations', 'semesters'));
     }
 
     // User: submit request
@@ -41,6 +46,7 @@ class MaintenanceRequestController extends Controller
     {
         $validated = $request->validate([
             'request_scope' => 'required|in:location,assets',
+            'semester_id' => 'required|exists:semesters,id',
             'school_year' => 'required|string|max:20',
             'department' => 'required|string|max:100',
             'date_reported' => 'required|date',
@@ -91,6 +97,7 @@ class MaintenanceRequestController extends Controller
         $maintenanceRequest = MaintenanceRequest::create([
             'requester_id' => Auth::id(),
             'location_id' => $locationId, // may be null for specific-assets requests
+            'semester_id' => $validated['semester_id'],
             'school_year' => $validated['school_year'],
             'department' => $validated['department'],
             'date_reported' => $validated['date_reported'],
@@ -179,9 +186,14 @@ class MaintenanceRequestController extends Controller
             $requestedAssetCodes = $maintenanceRequest->requested_asset_codes ? json_decode($maintenanceRequest->requested_asset_codes, true) : [];
             $isSpecificAssets = empty($maintenanceRequest->location_id) && !empty($requestedAssetCodes);
 
+            // Get semester information for automatic date population
+            $semester = Semester::find($maintenanceRequest->semester_id);
+            
             // Create maintenance checklist automatically
             $checklist = \App\Models\MaintenanceChecklist::create([
                 'school_year' => $maintenanceRequest->school_year,
+                'start_of_sy_date' => $semester ? $semester->start_date : null,
+                'end_of_sy_date' => $semester ? $semester->end_date : null,
                 'department' => $maintenanceRequest->department,
                 'date_reported' => $maintenanceRequest->date_reported,
                 'program' => $maintenanceRequest->program,
