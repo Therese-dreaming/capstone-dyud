@@ -211,6 +211,19 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/maintenance-requests/{maintenanceRequest}/reject', [MaintenanceRequestController::class, 'reject'])->name('maintenance-requests.reject');
     Route::get('/gsu/maintenance-requests/{maintenanceRequest}/acknowledge', [MaintenanceRequestController::class, 'acknowledge'])->name('maintenance-requests.acknowledge');
     Route::get('/api/maintenance-requests/pending-count', [MaintenanceRequestController::class, 'pendingCount'])->name('maintenance-requests.pending-count');
+
+    // GSU: API to get asset by asset_code (full details)
+    Route::get('/gsu/api/assets/code/{code}', function ($code) {
+        $user = auth()->user();
+        if (!$user || !in_array($user->role, ['gsu', 'admin'])) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        $asset = \App\Models\Asset::with(['category', 'location'])->where('asset_code', $code)->first();
+        if (!$asset) {
+            return response()->json(['error' => 'Asset not found'], 404);
+        }
+        return response()->json($asset);
+    })->name('gsu.api.assets.by-code');
     
     // Admin: User Location Management
     Route::get('/admin/user-locations', [App\Http\Controllers\UserLocationController::class, 'index'])->name('admin.user-locations.index');

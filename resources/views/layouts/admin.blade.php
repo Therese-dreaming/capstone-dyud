@@ -13,7 +13,7 @@
     
 </head>
 
-<body class="bg-gray-50 min-h-screen font-['Inter']">
+<body class="bg-gray-50 min-h-screen font-['Inter'] overflow-x-hidden">
     <div class="flex min-h-screen" x-data="{ sidebarOpen: false }">
         <!-- Mobile sidebar overlay -->
         <div x-show="sidebarOpen" 
@@ -29,7 +29,7 @@
         </div>
 
         <!-- Sidebar -->
-        <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl flex flex-col transition-all duration-300 transform lg:translate-x-0 lg:static lg:inset-0"
+        <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl flex flex-col transition-all duration-300 transform lg:translate-x-0 lg:static lg:inset-0 lg:flex-shrink-0"
                :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
                x-data="{ expanded: true }">
             <!-- Profile Section -->
@@ -287,9 +287,9 @@
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col lg:ml-0">
+        <div class="flex-1 flex flex-col lg:ml-0 min-w-0 w-full lg:w-auto">
             <!-- Header -->
-            <header class="bg-white shadow-sm h-16 flex items-center px-4 lg:px-6">
+            <header class="bg-white shadow-sm h-16 flex items-center px-4 lg:px-6 flex-shrink-0">
                 <!-- Mobile menu button -->
                 <button @click="sidebarOpen = true" class="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500">
                     <i class="fas fa-bars text-xl"></i>
@@ -442,7 +442,7 @@
             </header>
 
             <!-- Main Content -->
-            <main class="flex-1 p-4 lg:p-6">
+            <main class="flex-1 p-0 lg:p-6 overflow-x-hidden">
                 @yield('content')
             </main>
         </div>

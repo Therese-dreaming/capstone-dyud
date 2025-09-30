@@ -1,37 +1,37 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-0">
     <!-- Page Header -->
-    <div class="mb-8">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="mb-4 md:mb-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                <div class="mb-6 lg:mb-0">
-                    <div class="flex items-center mb-3">
-                        <div class="flex-shrink-0 w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fas fa-clipboard-check text-white text-xl"></i>
+                <div class="mb-4 lg:mb-0">
+                    <div class="flex items-center mb-2 md:mb-3">
+                        <div class="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-3 md:mr-4">
+                            <i class="fas fa-clipboard-check text-white text-base md:text-xl"></i>
                         </div>
-                        <div>
-                            <h1 class="text-3xl font-bold text-gray-900">
+                        <div class="flex-1 min-w-0">
+                            <h1 class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
                                 Pending Asset Approvals
                             </h1>
-                            <p class="text-gray-600 mt-1">Review and approve assets submitted by the purchasing team</p>
+                            <p class="text-gray-600 mt-1 text-xs md:text-sm lg:text-base">Review and approve assets submitted by the purchasing team</p>
                         </div>
                     </div>
                 </div>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="bg-orange-600 text-white px-4 py-2 rounded-lg shadow-sm">
-                            <div class="flex items-center">
-                                <i class="fas fa-clock mr-2"></i>
-                                <span class="font-semibold">{{ $assets->total() }}</span>
-                                <span class="ml-1">Pending</span>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full lg:w-auto">
+                    <div class="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
+                        <div class="bg-orange-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg shadow-sm flex-1 sm:flex-initial">
+                            <div class="flex items-center justify-center sm:justify-start">
+                                <i class="fas fa-clock mr-1.5 md:mr-2 text-sm md:text-base"></i>
+                                <span class="font-semibold text-sm md:text-base">{{ $assets->total() }}</span>
+                                <span class="ml-1 text-sm md:text-base">Pending</span>
                             </div>
                         </div>
-                        <div class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-sm">
-                            <div class="flex items-center">
-                                <i class="fas fa-chart-line mr-2"></i>
-                                <span class="font-semibold">{{ $assets->total() > 0 ? 'Action Required' : 'All Clear' }}</span>
+                        <div class="bg-green-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg shadow-sm flex-1 sm:flex-initial">
+                            <div class="flex items-center justify-center sm:justify-start">
+                                <i class="fas fa-chart-line mr-1.5 md:mr-2 text-sm md:text-base"></i>
+                                <span class="font-semibold text-xs md:text-sm lg:text-base whitespace-nowrap">{{ $assets->total() > 0 ? 'Action Required' : 'All Clear' }}</span>
                             </div>
                         </div>
                     </div>
@@ -42,20 +42,20 @@
 
     <!-- Alert Messages -->
     @if(session('success'))
-        <div class="mb-8 relative" id="success-alert">
-            <div class="bg-green-50 border border-green-200 rounded-lg p-6 shadow-sm">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-4">
-                            <i class="fas fa-check text-white"></i>
+        <div class="mb-4 md:mb-8 relative" id="success-alert">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4 md:p-6 shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-start flex-1 min-w-0">
+                        <div class="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 bg-green-500 rounded-full flex items-center justify-center mr-3 md:mr-4">
+                            <i class="fas fa-check text-white text-sm md:text-base"></i>
                         </div>
-                        <div>
-                            <h4 class="text-green-800 font-semibold">Success!</h4>
-                            <p class="text-green-700 mt-1">{{ session('success') }}</p>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-green-800 font-semibold text-sm md:text-base">Success!</h4>
+                            <p class="text-green-700 mt-1 text-xs md:text-sm break-words">{{ session('success') }}</p>
                         </div>
                     </div>
-                    <button onclick="closeAlert('success-alert')" class="text-green-500 hover:text-green-700 transition-colors duration-200">
-                        <i class="fas fa-times text-lg"></i>
+                    <button onclick="closeAlert('success-alert')" class="text-green-500 hover:text-green-700 transition-colors duration-200 flex-shrink-0">
+                        <i class="fas fa-times text-base md:text-lg"></i>
                     </button>
                 </div>
             </div>
@@ -63,20 +63,20 @@
     @endif
 
     @if(session('error'))
-        <div class="mb-8 relative" id="error-alert">
-            <div class="bg-red-50 border border-red-200 rounded-lg p-6 shadow-sm">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center mr-4">
-                            <i class="fas fa-exclamation-triangle text-white"></i>
+        <div class="mb-4 md:mb-8 relative" id="error-alert">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 md:p-6 shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-start flex-1 min-w-0">
+                        <div class="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 bg-red-500 rounded-full flex items-center justify-center mr-3 md:mr-4">
+                            <i class="fas fa-exclamation-triangle text-white text-sm md:text-base"></i>
                         </div>
-                        <div>
-                            <h4 class="text-red-800 font-semibold">Error</h4>
-                            <p class="text-red-700 mt-1">{{ session('error') }}</p>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-red-800 font-semibold text-sm md:text-base">Error</h4>
+                            <p class="text-red-700 mt-1 text-xs md:text-sm break-words">{{ session('error') }}</p>
                         </div>
                     </div>
-                    <button onclick="closeAlert('error-alert')" class="text-red-500 hover:text-red-700 transition-colors duration-200">
-                        <i class="fas fa-times text-lg"></i>
+                    <button onclick="closeAlert('error-alert')" class="text-red-500 hover:text-red-700 transition-colors duration-200 flex-shrink-0">
+                        <i class="fas fa-times text-base md:text-lg"></i>
                     </button>
                 </div>
             </div>
@@ -86,16 +86,96 @@
     <!-- Assets Table -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <!-- Table Header -->
-        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900">Assets Awaiting Approval</h3>
+        <div class="bg-gray-50 px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h3 class="text-base md:text-lg font-semibold text-gray-900">Assets Awaiting Approval</h3>
                 <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-500">{{ $assets->count() }} of {{ $assets->total() }} items</span>
+                    <span class="text-xs md:text-sm text-gray-500">{{ $assets->count() }} of {{ $assets->total() }} items</span>
                 </div>
             </div>
         </div>
         
-        <div class="overflow-x-auto">
+        <!-- Mobile Card View (visible on small screens) -->
+        <div class="block md:hidden">
+            @forelse($assets as $asset)
+                <div class="border-b border-gray-100 p-4 hover:bg-gray-50 transition-colors">
+                    <!-- Asset Header -->
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center flex-1 min-w-0">
+                            <div class="flex-shrink-0 w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-cube text-white text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-bold text-gray-900 truncate">{{ $asset->asset_code }}</div>
+                                <div class="text-xs text-gray-600 truncate">{{ $asset->name }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Asset Details -->
+                    <div class="space-y-2 mb-3">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-500">Category:</span>
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-purple-100 text-purple-800">
+                                <i class="fas fa-tag mr-1 text-xs"></i>
+                                {{ $asset->category->name ?? 'N/A' }}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-500">Cost:</span>
+                            <span class="font-bold text-green-800">₱{{ number_format($asset->purchase_cost, 2) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-500">Purchase Date:</span>
+                            <span class="text-gray-700">{{ $asset->purchase_date->format('M d, Y') }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-500">Submitted By:</span>
+                            <span class="text-gray-700">{{ $asset->createdBy->name ?? 'Unknown' }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-500">Submitted:</span>
+                            <span class="text-gray-700">{{ $asset->created_at->diffForHumans() }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
+                        <a href="{{ route('admin.assets.show', $asset->id) }}"
+                           class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-eye mr-1.5"></i>View
+                        </a>
+                        <button onclick="approveAsset({{ $asset->id }}, '{{ $asset->asset_code }}')"
+                                class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors">
+                            <i class="fas fa-check mr-1.5"></i>Approve
+                        </button>
+                        <button onclick="showRejectModal({{ $asset->id }}, '{{ $asset->asset_code }}')"
+                                class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors">
+                            <i class="fas fa-times mr-1.5"></i>Reject
+                        </button>
+                    </div>
+                </div>
+            @empty
+                <div class="p-8 text-center">
+                    <div class="flex flex-col items-center">
+                        <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-check-circle text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">All Caught Up!</h3>
+                        <p class="text-gray-600 text-sm mb-3">No pending assets for approval.</p>
+                        <div class="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                            <p class="text-green-700 text-xs">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                New submissions will appear here.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endforelse
+        </div>
+        
+        <!-- Desktop Table View (hidden on small screens) -->
+        <div class="hidden md:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-100">
                 <thead class="bg-gray-50">
                         <tr>
@@ -254,9 +334,9 @@
         
         <!-- Pagination -->
         @if($assets->hasPages())
-            <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
-                <div class="flex items-center justify-between">
-                    <div class="text-sm text-gray-600">
+            <div class="bg-gray-50 px-4 md:px-6 py-3 md:py-4 border-t border-gray-100">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="text-xs md:text-sm text-gray-600 text-center sm:text-left">
                         Showing {{ $assets->firstItem() }} to {{ $assets->lastItem() }} of {{ $assets->total() }} results
                     </div>
                     <div class="pagination-wrapper">
@@ -270,8 +350,8 @@
 
 
 <!-- Reject Modal -->
-<div id="rejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative mx-4">
+<div id="rejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl p-6 md:p-8 w-full max-w-md relative">
         <button onclick="closeRejectModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-xl">
             <i class="fas fa-times"></i>
         </button>
@@ -322,8 +402,8 @@
 </div>
 
 <!-- Approve Modal -->
-<div id="approveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative mx-4">
+<div id="approveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl p-6 md:p-8 w-full max-w-md relative">
         <button onclick="closeApproveModal()" class="absolute top-3 right-3 text-gray-400 hover:text-green-600 text-xl">
             <i class="fas fa-times"></i>
         </button>

@@ -1,14 +1,14 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+<div class="max-w-7xl mx-auto py-4 md:py-6 px-2 sm:px-4 lg:px-8">
     <!-- 🎯 Enhanced Header Section -->
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-xl p-8 mb-8 border-4 border-blue-800">
-        <div class="flex items-start justify-between">
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl md:rounded-2xl shadow-xl p-4 md:p-8 mb-4 md:mb-8 border-2 md:border-4 border-blue-800">
+        <div class="flex flex-col lg:flex-row items-start justify-between gap-4 lg:gap-0">
             <!-- Asset Icon & Info -->
-            <div class="flex items-start space-x-6">
+            <div class="flex items-start space-x-3 md:space-x-6 flex-1 min-w-0">
                 <!-- Asset Category Icon -->
-                <div class="w-20 h-20 bg-blue-700 rounded-2xl flex items-center justify-center border-2 border-blue-800">
+                <div class="w-14 h-14 md:w-20 md:h-20 bg-blue-700 rounded-xl md:rounded-2xl flex items-center justify-center border-2 border-blue-800 flex-shrink-0">
                     @php
                         $categoryIcons = [
                             'Computer' => 'fas fa-desktop',
@@ -27,31 +27,31 @@
                         $categoryName = $asset->category->name ?? 'Unknown';
                         $iconClass = $categoryIcons[$categoryName] ?? 'fas fa-box';
                     @endphp
-                    <i class="{{ $iconClass }} text-3xl text-white"></i>
+                    <i class="{{ $iconClass }} text-xl md:text-3xl text-white"></i>
                 </div>
                 
                 <!-- Asset Info -->
-                <div class="flex-1">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <h1 class="text-4xl font-bold text-white">{{ $asset->name }}</h1>
-                        <div class="w-2 h-2 bg-white/60 rounded-full"></div>
-                        <span class="text-xl text-blue-100 font-medium font-mono">{{ $asset->asset_code }}</span>
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
+                        <h1 class="text-xl md:text-2xl lg:text-4xl font-bold text-white truncate">{{ $asset->name }}</h1>
+                        <div class="w-2 h-2 bg-white/60 rounded-full hidden sm:block flex-shrink-0"></div>
+                        <span class="text-sm md:text-base lg:text-xl text-blue-100 font-medium font-mono truncate">{{ $asset->asset_code }}</span>
                     </div>
-                    <p class="text-blue-100 text-lg mb-4">{{ $asset->category->name ?? 'Uncategorized' }} Asset • Pending Admin Review</p>
+                    <p class="text-blue-100 text-xs md:text-sm lg:text-lg mb-3 md:mb-4">{{ $asset->category->name ?? 'Uncategorized' }} Asset • Pending Admin Review</p>
                     
                     <!-- Status & Submission Info -->
-                    <div class="flex flex-wrap items-center gap-4">
-                        <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 shadow-lg">
-                            <i class="fas fa-hourglass-half mr-2"></i>
+                    <div class="flex flex-wrap items-center gap-2 md:gap-4">
+                        <span class="inline-flex items-center px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-semibold bg-yellow-100 text-yellow-800 shadow-lg">
+                            <i class="fas fa-hourglass-half mr-1.5 md:mr-2 text-xs md:text-sm"></i>
                             Pending Approval
                         </span>
                         
-                        <div class="text-blue-100 text-sm">
+                        <div class="text-blue-100 text-xs md:text-sm">
                             <i class="fas fa-user mr-1"></i>
-                            Submitted by <span class="font-semibold">{{ $asset->createdBy->name ?? 'Unknown' }}</span>
+                            <span class="hidden sm:inline">Submitted by </span><span class="font-semibold">{{ $asset->createdBy->name ?? 'Unknown' }}</span>
                         </div>
                         
-                        <div class="text-blue-100 text-sm">
+                        <div class="text-blue-100 text-xs md:text-sm">
                             <i class="fas fa-clock mr-1"></i>
                             {{ $asset->created_at->diffForHumans() }}
                         </div>
@@ -60,72 +60,72 @@
             </div>
             
             <!-- Action Buttons -->
-            <div class="flex flex-col space-y-3">
+            <div class="flex flex-col sm:flex-row lg:flex-col space-y-2 sm:space-y-0 sm:space-x-2 lg:space-x-0 lg:space-y-3 w-full lg:w-auto">
                 <button onclick="approveAsset({{ $asset->id }})"
-                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg border-2 border-green-800">
-                    <i class="fas fa-check"></i> Approve Asset
+                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg border-2 border-green-800 text-sm md:text-base">
+                    <i class="fas fa-check text-sm md:text-base"></i> Approve Asset
                 </button>
                 <button onclick="showRejectModal({{ $asset->id }}, '{{ $asset->asset_code }}')"
-                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg border-2 border-red-800">
-                    <i class="fas fa-times"></i> Reject Asset
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg border-2 border-red-800 text-sm md:text-base">
+                    <i class="fas fa-times text-sm md:text-base"></i> Reject Asset
                 </button>
                 <a href="{{ route('admin.assets.pending') }}" 
-                   class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg border-2 border-blue-800">
-                    <i class="fas fa-arrow-left"></i> Back to Pending
+                   class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 md:py-3 px-4 md:px-6 rounded-lg md:rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg border-2 border-blue-800 text-sm md:text-base">
+                    <i class="fas fa-arrow-left text-sm md:text-base"></i> Back to Pending
                 </a>
             </div>
         </div>
     </div>
 
     <!-- 📊 Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-8 mb-4 md:mb-8">
         <!-- Left Column - Asset Details (3/4 width) -->
-        <div class="lg:col-span-3 space-y-8">
+        <div class="lg:col-span-3 space-y-4 md:space-y-8">
             <!-- 📋 Basic Asset Information -->
-            <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-                <div class="bg-gradient-to-r from-slate-50 to-slate-100 px-8 py-6 border-b border-gray-200">
-                    <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                        <i class="fas fa-info-circle text-blue-600"></i>
+            <div class="bg-white rounded-xl md:rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-slate-50 to-slate-100 px-4 md:px-8 py-4 md:py-6 border-b border-gray-200">
+                    <h2 class="text-lg md:text-2xl font-bold text-gray-900 flex items-center gap-2 md:gap-3">
+                        <i class="fas fa-info-circle text-blue-600 text-base md:text-xl"></i>
                         Asset Information
                     </h2>
                 </div>
                 
-                <div class="p-8">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="p-4 md:p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                         <!-- Asset Code -->
-                        <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
-                            <div class="flex items-center justify-between mb-3">
-                                <label class="text-sm font-bold text-blue-800">Asset Code</label>
-                                <i class="fas fa-barcode text-blue-600"></i>
+                        <div class="bg-blue-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-blue-200">
+                            <div class="flex items-center justify-between mb-2 md:mb-3">
+                                <label class="text-xs md:text-sm font-bold text-blue-800">Asset Code</label>
+                                <i class="fas fa-barcode text-blue-600 text-sm md:text-base"></i>
                             </div>
-                            <p class="text-xl font-mono font-bold text-blue-900">{{ $asset->asset_code }}</p>
+                            <p class="text-base md:text-xl font-mono font-bold text-blue-900 truncate">{{ $asset->asset_code }}</p>
                         </div>
                         
                         <!-- Asset Name -->
-                        <div class="bg-purple-50 rounded-xl p-6 border border-purple-200">
-                            <div class="flex items-center justify-between mb-3">
-                                <label class="text-sm font-bold text-purple-800">Asset Name</label>
-                                <i class="fas fa-tag text-purple-600"></i>
+                        <div class="bg-purple-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-purple-200">
+                            <div class="flex items-center justify-between mb-2 md:mb-3">
+                                <label class="text-xs md:text-sm font-bold text-purple-800">Asset Name</label>
+                                <i class="fas fa-tag text-purple-600 text-sm md:text-base"></i>
                             </div>
-                            <p class="text-xl font-bold text-purple-900">{{ $asset->name }}</p>
+                            <p class="text-base md:text-xl font-bold text-purple-900 truncate">{{ $asset->name }}</p>
                         </div>
                         
                         <!-- Category -->
-                        <div class="bg-green-50 rounded-xl p-6 border border-green-200">
-                            <div class="flex items-center justify-between mb-3">
-                                <label class="text-sm font-bold text-green-800">Category</label>
-                                <i class="fas fa-tags text-green-600"></i>
+                        <div class="bg-green-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-green-200">
+                            <div class="flex items-center justify-between mb-2 md:mb-3">
+                                <label class="text-xs md:text-sm font-bold text-green-800">Category</label>
+                                <i class="fas fa-tags text-green-600 text-sm md:text-base"></i>
                             </div>
-                            <p class="text-xl font-bold text-green-900">{{ $asset->category->name ?? 'No Category' }}</p>
+                            <p class="text-base md:text-xl font-bold text-green-900">{{ $asset->category->name ?? 'No Category' }}</p>
                         </div>
                         
                         <!-- Condition -->
-                        <div class="bg-orange-50 rounded-xl p-6 border border-orange-200">
-                            <div class="flex items-center justify-between mb-3">
-                                <label class="text-sm font-bold text-orange-800">Condition</label>
-                                <i class="fas fa-star text-orange-600"></i>
+                        <div class="bg-orange-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-orange-200">
+                            <div class="flex items-center justify-between mb-2 md:mb-3">
+                                <label class="text-xs md:text-sm font-bold text-orange-800">Condition</label>
+                                <i class="fas fa-star text-orange-600 text-sm md:text-base"></i>
                             </div>
-                            <span class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold border-2
+                            <span class="inline-flex items-center px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-xs md:text-sm font-bold border-2
                                 @switch($asset->condition)
                                     @case('Excellent')
                                         bg-green-100 text-green-800 border-green-300
@@ -148,22 +148,22 @@
                         </div>
                         
                         <!-- Purchase Cost -->
-                        <div class="bg-emerald-50 rounded-xl p-6 border border-emerald-200">
-                            <div class="flex items-center justify-between mb-3">
-                                <label class="text-sm font-bold text-emerald-800">Purchase Cost</label>
-                                <i class="fas fa-peso-sign text-emerald-600"></i>
+                        <div class="bg-emerald-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-emerald-200">
+                            <div class="flex items-center justify-between mb-2 md:mb-3">
+                                <label class="text-xs md:text-sm font-bold text-emerald-800">Purchase Cost</label>
+                                <i class="fas fa-peso-sign text-emerald-600 text-sm md:text-base"></i>
                             </div>
-                            <p class="text-2xl font-bold text-emerald-900">₱{{ number_format($asset->purchase_cost, 2) }}</p>
+                            <p class="text-lg md:text-2xl font-bold text-emerald-900">₱{{ number_format($asset->purchase_cost, 2) }}</p>
                         </div>
                         
                         <!-- Purchase Date -->
-                        <div class="bg-indigo-50 rounded-xl p-6 border border-indigo-200">
-                            <div class="flex items-center justify-between mb-3">
-                                <label class="text-sm font-bold text-indigo-800">Purchase Date</label>
-                                <i class="fas fa-calendar-alt text-indigo-600"></i>
+                        <div class="bg-indigo-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-indigo-200">
+                            <div class="flex items-center justify-between mb-2 md:mb-3">
+                                <label class="text-xs md:text-sm font-bold text-indigo-800">Purchase Date</label>
+                                <i class="fas fa-calendar-alt text-indigo-600 text-sm md:text-base"></i>
                             </div>
-                            <p class="text-xl font-bold text-indigo-900">{{ \Carbon\Carbon::parse($asset->purchase_date)->format('M d, Y') }}</p>
-                            <p class="text-sm text-indigo-700 mt-1">{{ \Carbon\Carbon::parse($asset->purchase_date)->diffForHumans() }}</p>
+                            <p class="text-base md:text-xl font-bold text-indigo-900">{{ \Carbon\Carbon::parse($asset->purchase_date)->format('M d, Y') }}</p>
+                            <p class="text-xs md:text-sm text-indigo-700 mt-1">{{ \Carbon\Carbon::parse($asset->purchase_date)->diffForHumans() }}</p>
                         </div>
                     </div>
                 </div>
@@ -289,7 +289,7 @@
         </div>
 
         <!-- Right Sidebar (1/4 width) -->
-        <div class="lg:col-span-1 space-y-8">
+        <div class="lg:col-span-1 space-y-4 md:space-y-8">
             <!-- 👤 Submission Information -->
             <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-violet-50 to-violet-100 px-6 py-4 border-b border-gray-200">
@@ -394,8 +394,8 @@
 </div>
 
 <!-- Reject Modal -->
-<div id="rejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative mx-4">
+<div id="rejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl p-6 md:p-8 w-full max-w-md relative">
         <button onclick="closeRejectModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-xl">
             <i class="fas fa-times"></i>
         </button>
@@ -446,8 +446,8 @@
 </div>
 
 <!-- Approve Modal -->
-<div id="approveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-    <div class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative mx-4">
+<div id="approveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl p-6 md:p-8 w-full max-w-md relative">
         <button onclick="closeApproveModal()" class="absolute top-3 right-3 text-gray-400 hover:text-green-600 text-xl">
             <i class="fas fa-times"></i>
         </button>

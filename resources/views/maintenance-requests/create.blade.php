@@ -211,6 +211,28 @@
                             </div>
                             <video id="scannerVideo" class="hidden w-full" autoplay></video>
                             <canvas id="scannerCanvas" class="hidden"></canvas>
+                            <!-- Scan Complete Panel -->
+                            <div id="scannerCompletePanel" class="hidden bg-green-50 p-6 text-center">
+                                <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-check text-2xl text-green-600"></i>
+                                </div>
+                                <div class="text-lg font-semibold text-green-800 mb-1">Scan Completed</div>
+                                <div class="text-sm text-green-700 mb-4">The asset has been added to your list.</div>
+                                <button type="button" onclick="scanAgainCreatePage()" class="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900">
+                                    <i class="fas fa-redo mr-1"></i> Scan Again
+                                </button>
+                            </div>
+                            <!-- Scan Error Panel -->
+                            <div id="scannerErrorPanel" class="hidden bg-red-50 p-6 text-center">
+                                <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+                                    <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
+                                </div>
+                                <div id="scannerErrorPanelTitle" class="text-lg font-semibold text-red-800 mb-1">Scan Error</div>
+                                <div id="scannerErrorPanelMessage" class="text-sm text-red-700 mb-4">There was a problem validating the asset.</div>
+                                <button type="button" onclick="scanAgainCreatePage()" class="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900">
+                                    <i class="fas fa-redo mr-1"></i> Scan Again
+                                </button>
+                            </div>
                         </div>
                         <div id="scannerError" class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 hidden">
                             <div class="flex items-start">
@@ -446,6 +468,14 @@
             
             // Check if asset is already added
             if (selectedAssetCodes.has(asset.asset_code)) {
+                if (isFromScanner) {
+                    // Stop camera and show a clear Already Added error panel
+                    stopCameraOnlyCreatePage();
+                    const copy = getScannerErrorCopy('already-added');
+                    showScanErrorPanelCreatePage(copy.title, copy.message);
+                    isProcessingScan = false;
+                    return;
+                }
                 throw new Error('already-added');
             }
             
@@ -454,7 +484,9 @@
             
             // Show success feedback
             if (isFromScanner) {
+                // Ensure we do not also show an 'already added' message from a parallel path
                 showScannerSuccess(asset);
+                isProcessingScan = false; // reset guard for next scan attempt
             } else {
                 showManualSuccess(asset);
             }
@@ -464,7 +496,12 @@
             
             // Reset loading state and show error
             if (isFromScanner) {
-                document.getElementById('scannerError').className = 'mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700';
+                // For scanner flow, stop camera and show the error panel instead of inline banner
+                const errorTypeForPanel = normalizeScannerErrorType(e);
+                const { title, message } = getScannerErrorCopy(errorTypeForPanel);
+                stopCameraOnlyCreatePage();
+                showScanErrorPanelCreatePage(title, message);
+                return; // Do not rethrow for scanner flow
             } else {
                 manualError.className = 'mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700';
             }
@@ -478,7 +515,7 @@
             }
             
             showAssetError(errorType, isFromScanner);
-            throw e; // Re-throw for promise handling
+            throw e; // Re-throw for manual flow
         }
     }
 
@@ -534,21 +571,9 @@
     }
 
     function showScannerSuccess(asset) {
-        // Briefly show success message in scanner area
-        const scannerPlaceholder = document.getElementById('scannerPlaceholder');
-        if (scannerPlaceholder && !document.getElementById('scannerVideo').classList.contains('hidden')) {
-            const originalContent = scannerPlaceholder.innerHTML;
-            scannerPlaceholder.innerHTML = `
-                <div class="text-green-600">
-                    <i class="fas fa-check-circle text-3xl mb-2"></i>
-                    <div class="text-sm font-medium">Asset Added!</div>
-                    <div class="text-xs">${asset.asset_code}</div>
-                </div>
-            `;
-            setTimeout(() => {
-                scannerPlaceholder.innerHTML = originalContent;
-            }, 2000);
-        }
+        // On success, stop camera and show completion panel
+        stopCameraOnlyCreatePage();
+        showScanCompletePanelCreatePage();
     }
 
     addManualBtn?.addEventListener('click', async () => {
@@ -585,6 +610,10 @@
     const canvas = document.getElementById('scannerCanvas');
     const placeholder = document.getElementById('scannerPlaceholder');
     let scanning = false;
+    let isProcessingScan = false;
+    let lastScannedCode = null;
+    let lastScanAt = 0;
+    const SCAN_COOLDOWN_MS = 1500;
 
     function loadJsQR(cb) {
         if (window.jsQR) return cb();
@@ -608,8 +637,10 @@
             video.muted = true;
             await video.play().catch(() => {});
             placeholder.classList.add('hidden');
+            document.getElementById('scannerCompletePanel').classList.add('hidden');
             video.classList.remove('hidden');
             scanning = true;
+            isProcessingScan = false;
             requestAnimationFrame(scanLoop);
         } catch (e) {
             const isInsecureContext = location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
@@ -629,6 +660,79 @@
         placeholder.classList.remove('hidden');
     }
 
+    // Stop only the camera and hide video without showing the default placeholder
+    function stopCameraOnlyCreatePage() {
+        try {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(t => t.stop());
+            }
+        } catch {}
+        mediaStream = null;
+        scanning = false;
+        video.classList.add('hidden');
+        // Ensure placeholder is hidden while showing completion panel
+        placeholder.classList.add('hidden');
+    }
+
+    function showScanCompletePanelCreatePage() {
+        const panel = document.getElementById('scannerCompletePanel');
+        if (panel) panel.classList.remove('hidden');
+    }
+
+    function showScanErrorPanelCreatePage(title, message) {
+        const ep = document.getElementById('scannerErrorPanel');
+        const et = document.getElementById('scannerErrorPanelTitle');
+        const em = document.getElementById('scannerErrorPanelMessage');
+        if (et) et.textContent = title || 'Scan Error';
+        if (em) em.textContent = message || 'There was a problem validating the asset.';
+        if (ep) ep.classList.remove('hidden');
+        // Also hide inline error banner if visible
+        const se = document.getElementById('scannerError');
+        if (se) se.classList.add('hidden');
+    }
+
+    function normalizeScannerErrorType(err) {
+        if (!err) return 'validation-error';
+        if (typeof err === 'string') return err;
+        if (err.name === 'AbortError') return 'timeout';
+        if (err instanceof TypeError || (err.message && err.message.includes('fetch'))) return 'network-error';
+        return err.message || 'validation-error';
+    }
+
+    function getScannerErrorCopy(errorType) {
+        switch (errorType) {
+            case 'not-authorized':
+                return { title: 'Access Denied', message: 'You can only scan assets from locations you manage.' };
+            case 'not-found':
+                return { title: 'Asset Not Found', message: 'Please check the asset code and try again.' };
+            case 'already-added':
+                return { title: 'Already Added', message: 'This asset is already in your list.' };
+            case 'server-error':
+                return { title: 'Server Error', message: 'Unable to validate asset right now. Please try again later.' };
+            case 'invalid-response':
+                return { title: 'Invalid Response', message: 'Received unexpected data from the server.' };
+            case 'timeout':
+                return { title: 'Request Timeout', message: 'The server took too long to respond. Please try again.' };
+            case 'network-error':
+                return { title: 'Network Error', message: 'Unable to connect to the server. Check your connection and try again.' };
+            default:
+                return { title: 'Scan Error', message: 'Unable to add asset. Please check the code and try again.' };
+        }
+    }
+
+    // Expose to global for inline onclick handler
+    window.scanAgainCreatePage = function() {
+        // Hide complete panel and start the scanner again
+        const panel = document.getElementById('scannerCompletePanel');
+        if (panel) panel.classList.add('hidden');
+        const errorPanel = document.getElementById('scannerErrorPanel');
+        if (errorPanel) errorPanel.classList.add('hidden');
+        // Clear inline banner as well
+        const se = document.getElementById('scannerError');
+        if (se) se.classList.add('hidden');
+        startScanner();
+    }
+
     function scanLoop() {
         if (!scanning) return;
         const ctx = canvas.getContext('2d');
@@ -642,12 +746,22 @@
                 if (res && res.data) {
                     const code = (res.data || '').trim();
                     if (code) {
+                        const now = Date.now();
+                        if (isProcessingScan || (lastScannedCode === code && (now - lastScanAt) < SCAN_COOLDOWN_MS)) {
+                            // Ignore duplicate detections in cooldown window
+                            return requestAnimationFrame(scanLoop);
+                        }
+                        isProcessingScan = true;
+                        lastScannedCode = code;
+                        lastScanAt = now;
+                        // Stop loop immediately to prevent duplicate validations
+                        scanning = false;
                         validateAndAdd(code, true); // true indicates this is from scanner
                     }
                 }
             }
         } catch {}
-        requestAnimationFrame(scanLoop);
+        if (scanning) requestAnimationFrame(scanLoop);
     }
 
     startBtn?.addEventListener('click', startScanner);

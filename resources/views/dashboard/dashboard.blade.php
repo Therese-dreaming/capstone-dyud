@@ -5,21 +5,21 @@
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50" x-data="adminDashboardData()">
     <!-- Welcome Banner -->
-    <div x-show="showWelcome" x-transition class="bg-gradient-to-r from-red-600 to-red-800 text-white p-4 md:p-6 mb-6 rounded-xl shadow-lg relative overflow-hidden mx-4 mt-4">
+    <div x-show="showWelcome" x-transition class="bg-gradient-to-r from-red-600 to-red-800 text-white p-3 md:p-6 mb-4 md:mb-6 rounded-xl shadow-lg relative overflow-hidden mx-2 md:mx-4 mt-2 md:mt-4">
         <div class="absolute inset-0 bg-black opacity-10"></div>
-        <div class="relative z-10 flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <div class="bg-white/20 p-3 rounded-full">
-                    <i class="fas fa-chart-line text-2xl"></i>
+        <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
+            <div class="flex items-center space-x-2 md:space-x-4 flex-1 min-w-0">
+                <div class="bg-white/20 p-2 md:p-3 rounded-full flex-shrink-0">
+                    <i class="fas fa-chart-line text-lg md:text-2xl"></i>
                 </div>
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold">Welcome back, {{ Auth::user()->name ?? 'Admin' }}! 📊</h1>
-                    <p class="text-red-100 text-sm md:text-base">Comprehensive asset management analytics and insights</p>
-                    <p class="text-xs text-red-200 mt-1">Last login: {{ Auth::user()->last_login ? Auth::user()->last_login->diffForHumans() : 'Never' }}</p>
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-base md:text-xl lg:text-2xl font-bold truncate">Welcome back, {{ Auth::user()->name ?? 'Admin' }}! 📊</h1>
+                    <p class="text-red-100 text-xs md:text-sm lg:text-base">Comprehensive asset management analytics and insights</p>
+                    <p class="text-xs text-red-200 mt-1 hidden md:block">Last login: {{ Auth::user()->last_login ? Auth::user()->last_login->diffForHumans() : 'Never' }}</p>
                 </div>
             </div>
-            <div class="flex items-center space-x-4">
-                <div class="text-right">
+            <div class="flex items-center space-x-3 md:space-x-4 self-end md:self-auto">
+                <div class="text-right hidden md:block">
                     <div class="text-sm text-red-200">System Status</div>
                     <div class="text-lg font-bold text-green-300 flex items-center gap-2">
                         <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -27,7 +27,7 @@
                     </div>
                 </div>
                 <button @click="showWelcome = false" class="text-white/80 hover:text-white transition-colors">
-                    <i class="fas fa-times text-xl"></i>
+                    <i class="fas fa-times text-lg md:text-xl"></i>
                 </button>
             </div>
         </div>
@@ -35,66 +35,66 @@
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <!-- Dashboard Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
-            <div>
-                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 flex items-center gap-3">
-                    <div class="bg-gradient-to-r from-red-600 to-red-800 text-white p-3 rounded-xl shadow-lg">
-                        <i class="fas fa-chart-line text-xl"></i>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8">
+            <div class="mb-3 sm:mb-0">
+                <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 flex items-center gap-2 md:gap-3">
+                    <div class="bg-gradient-to-r from-red-600 to-red-800 text-white p-2 md:p-3 rounded-xl shadow-lg">
+                        <i class="fas fa-chart-line text-base md:text-xl"></i>
                     </div>
-                    Analytics Dashboard
+                    <span class="truncate">Analytics Dashboard</span>
                 </h1>
-                <p class="text-gray-600 mt-2 text-sm md:text-base">Comprehensive asset management insights and performance metrics</p>
+                <p class="text-gray-600 mt-1 md:mt-2 text-xs md:text-sm lg:text-base">Comprehensive asset management insights and performance metrics</p>
             </div>
-            <div class="mt-4 sm:mt-0 flex items-center space-x-3">
+            <div class="flex items-center space-x-2 md:space-x-3 w-full sm:w-auto">
                 @if($unreadNotifications > 0)
-                <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg flex items-center gap-2">
-                    <i class="fas fa-bell animate-pulse"></i>
-                    <span class="font-medium">{{ $unreadNotifications }} unread notification{{ $unreadNotifications > 1 ? 's' : '' }}</span>
+                <div class="bg-red-50 border border-red-200 text-red-800 px-3 md:px-4 py-1.5 md:py-2 rounded-lg flex items-center gap-2">
+                    <i class="fas fa-bell animate-pulse text-sm md:text-base"></i>
+                    <span class="font-medium text-xs md:text-sm whitespace-nowrap">{{ $unreadNotifications }} <span class="hidden sm:inline">unread notification{{ $unreadNotifications > 1 ? 's' : '' }}</span><span class="sm:hidden">unread</span></span>
                 </div>
                 @endif
-                <div class="bg-white rounded-lg shadow-sm px-4 py-2 border border-gray-200">
+                <div class="bg-white rounded-lg shadow-sm px-3 md:px-4 py-1.5 md:py-2 border border-gray-200 hidden sm:block">
                     <div class="text-xs text-gray-500">Last updated</div>
-                    <div class="text-sm font-medium text-gray-900">{{ now()->format('M d, Y h:i A') }}</div>
+                    <div class="text-xs md:text-sm font-medium text-gray-900 whitespace-nowrap">{{ now()->format('M d, h:i A') }}</div>
                 </div>
                 <button @click="refreshDashboard()" class="bg-white rounded-lg shadow-sm p-2 border border-gray-200 hover:bg-gray-50 transition-colors" title="Refresh">
-                    <i class="fas fa-sync-alt text-gray-600"></i>
+                    <i class="fas fa-sync-alt text-gray-600 text-sm md:text-base"></i>
                 </button>
             </div>
         </div>
 
         <!-- Tab Navigation -->
-        <div class="bg-white rounded-xl shadow-lg border border-gray-200 mb-8 overflow-hidden">
-            <nav class="flex">
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 mb-6 md:mb-8 overflow-hidden">
+            <nav class="flex overflow-x-auto">
                 <button @click="activeTab = 'overview'" 
                         :class="activeTab === 'overview' ? 'bg-red-50 text-red-600 border-b-2 border-red-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
-                        class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-chart-pie"></i>Overview
+                        class="flex-1 min-w-[120px] py-3 md:py-4 px-4 md:px-6 font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap">
+                    <i class="fas fa-chart-pie text-xs md:text-sm"></i><span class="hidden sm:inline">Overview</span><span class="sm:hidden">Overview</span>
                 </button>
                 <button @click="activeTab = 'analytics'" 
                         :class="activeTab === 'analytics' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
-                        class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-chart-line"></i>Analytics
+                        class="flex-1 min-w-[120px] py-3 md:py-4 px-4 md:px-6 font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap">
+                    <i class="fas fa-chart-line text-xs md:text-sm"></i><span class="hidden sm:inline">Analytics</span><span class="sm:hidden">Analytics</span>
                 </button>
                 <button @click="activeTab = 'approvals'" 
                         :class="activeTab === 'approvals' ? 'bg-orange-50 text-orange-600 border-b-2 border-orange-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
-                        class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-hourglass-half"></i>Approvals
+                        class="flex-1 min-w-[120px] py-3 md:py-4 px-4 md:px-6 font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap">
+                    <i class="fas fa-hourglass-half text-xs md:text-sm"></i><span class="hidden sm:inline">Approvals</span><span class="sm:hidden">Approve</span>
                     @if($pendingApprovals > 0)
-                    <span class="bg-orange-500 text-white text-xs rounded-full px-2 py-1 ml-1">{{ $pendingApprovals }}</span>
+                    <span class="bg-orange-500 text-white text-xs rounded-full px-1.5 md:px-2 py-0.5 md:py-1 ml-1">{{ $pendingApprovals }}</span>
                     @endif
                 </button>
                 <button @click="activeTab = 'maintenance'" 
                         :class="activeTab === 'maintenance' ? 'bg-purple-50 text-purple-600 border-b-2 border-purple-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
-                        class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-tools"></i>Maintenance
+                        class="flex-1 min-w-[120px] py-3 md:py-4 px-4 md:px-6 font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap">
+                    <i class="fas fa-tools text-xs md:text-sm"></i><span class="hidden sm:inline">Maintenance</span><span class="sm:hidden">Maint.</span>
                     @if($pendingMaintenanceRequests > 0)
-                    <span class="bg-purple-500 text-white text-xs rounded-full px-2 py-1 ml-1">{{ $pendingMaintenanceRequests }}</span>
+                    <span class="bg-purple-500 text-white text-xs rounded-full px-1.5 md:px-2 py-0.5 md:py-1 ml-1">{{ $pendingMaintenanceRequests }}</span>
                     @endif
                 </button>
                 <button @click="activeTab = 'quick-actions'" 
                         :class="activeTab === 'quick-actions' ? 'bg-green-50 text-green-600 border-b-2 border-green-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
-                        class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
-                    <i class="fas fa-bolt"></i>Quick Actions
+                        class="flex-1 min-w-[120px] py-3 md:py-4 px-4 md:px-6 font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap">
+                    <i class="fas fa-bolt text-xs md:text-sm"></i><span class="hidden sm:inline">Quick Actions</span><span class="sm:hidden">Actions</span>
                 </button>
             </nav>
         </div>

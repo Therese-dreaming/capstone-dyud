@@ -1,40 +1,40 @@
 @extends('layouts.gsu')
 
 @section('content')
-<div class="container mx-auto py-8">
+<div class="container mx-auto py-4 md:py-8 px-2 sm:px-4 overflow-x-hidden">
     <!-- GSU QR Scanner Header -->
-    <div class="bg-gradient-to-r from-red-800 to-red-900 text-white p-6 rounded-xl shadow-lg mb-6">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <div class="bg-white/20 p-3 rounded-full">
-                    <i class="fas fa-qrcode text-2xl"></i>
+    <div class="bg-gradient-to-r from-red-800 to-red-900 text-white p-4 md:p-6 rounded-xl shadow-lg mb-4 md:mb-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-center space-x-3 md:space-x-4">
+                <div class="bg-white/20 p-2 md:p-3 rounded-full flex-shrink-0">
+                    <i class="fas fa-qrcode text-xl md:text-2xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-2xl md:text-3xl font-bold">QR Scanner</h1>
-                    <p class="text-red-100 text-sm md:text-base">GSU Asset QR Code Scanner</p>
+                    <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">QR Scanner</h1>
+                    <p class="text-red-100 text-xs md:text-sm">GSU Asset QR Code Scanner</p>
                 </div>
             </div>
-            <div class="flex items-center space-x-3">
-                <button onclick="startScanner()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-camera mr-2"></i>Start Scanner
+            <div class="flex items-center space-x-2 md:space-x-3 w-full sm:w-auto">
+                <button onclick="startScanner()" class="flex-1 sm:flex-initial bg-white/20 hover:bg-white/30 text-white px-3 md:px-4 py-2 rounded-lg transition-colors text-xs md:text-sm">
+                    <i class="fas fa-camera mr-1 md:mr-2"></i><span class="hidden sm:inline">Start </span>Scan
                 </button>
-                <button onclick="stopScanner()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-stop mr-2"></i>Stop Scanner
+                <button onclick="stopScanner()" class="flex-1 sm:flex-initial bg-white/20 hover:bg-white/30 text-white px-3 md:px-4 py-2 rounded-lg transition-colors text-xs md:text-sm">
+                    <i class="fas fa-stop mr-1 md:mr-2"></i>Stop
                 </button>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
         <!-- Scanner Section -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
+                <h2 class="text-base md:text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <i class="fas fa-camera text-red-600"></i>
                     QR Code Scanner
                 </h2>
             </div>
-            <div class="p-6">
+            <div class="p-4 md:p-6">
                 <div id="scanner-container" class="relative">
                     <!-- Scanner placeholder -->
                     <div class="bg-gray-100 rounded-lg p-8 text-center border-2 border-dashed border-gray-300">
@@ -47,23 +47,35 @@
                     </div>
                     
                     <!-- Scanner video element (hidden initially) -->
-                    <video id="scanner-video" class="hidden w-full rounded-lg" autoplay></video>
+                    <video id="scanner-video" class="hidden w-full rounded-lg" autoplay playsinline muted></video>
                     
                     <!-- Scanner canvas for processing -->
                     <canvas id="scanner-canvas" class="hidden"></canvas>
+
+                    <!-- Scan complete panel -->
+                    <div id="scan-complete" class="hidden bg-green-50 rounded-lg p-8 text-center border-2 border-green-200">
+                        <div class="mx-auto mb-4 w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                            <i class="fas fa-check text-2xl text-green-600"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-green-800 mb-2">Scan is complete</h3>
+                        <p class="text-green-700 text-sm mb-4">You can review the results or scan another asset.</p>
+                        <button onclick="resetScannerUIForRescan()" class="bg-red-800 text-white px-6 py-2 rounded-lg hover:bg-red-900 transition-colors">
+                            <i class="fas fa-redo mr-2"></i>Scan Again
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Scanner controls -->
-                <div class="mt-4 flex items-center justify-between">
-                    <div class="text-sm text-gray-600">
+                <div class="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div class="text-xs md:text-sm text-gray-600">
                         <span id="scanner-status">Ready to scan</span>
                     </div>
-                    <div class="flex space-x-2">
-                        <button onclick="toggleFlash()" class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-sm hover:bg-blue-200 transition-colors">
+                    <div class="flex space-x-2 w-full sm:w-auto">
+                        <button onclick="toggleFlash()" class="flex-1 sm:flex-initial px-2 md:px-3 py-1 bg-blue-100 text-blue-600 rounded text-xs md:text-sm hover:bg-blue-200 transition-colors">
                             <i class="fas fa-lightbulb mr-1"></i>Flash
                         </button>
-                        <button onclick="switchCamera()" class="px-3 py-1 bg-green-100 text-green-600 rounded text-sm hover:bg-green-200 transition-colors">
-                            <i class="fas fa-sync mr-1"></i>Switch Camera
+                        <button onclick="switchCamera()" class="flex-1 sm:flex-initial px-2 md:px-3 py-1 bg-green-100 text-green-600 rounded text-xs md:text-sm hover:bg-green-200 transition-colors">
+                            <i class="fas fa-sync mr-1"></i>Switch
                         </button>
                     </div>
                 </div>
@@ -72,8 +84,8 @@
 
         <!-- Results Section -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
+                <h2 class="text-base md:text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <i class="fas fa-search text-red-600"></i>
                     Scan Results
                 </h2>
@@ -97,22 +109,22 @@
     </div>
 
     <!-- Manual Entry Section -->
-    <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+    <div class="mt-4 md:mt-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
+            <h2 class="text-base md:text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <i class="fas fa-keyboard text-red-600"></i>
                 Manual Asset Lookup
             </h2>
         </div>
-        <div class="p-6">
-            <div class="flex items-center space-x-4">
+        <div class="p-4 md:p-6">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4">
                 <div class="flex-1">
                     <input type="text" id="manual-asset-code" 
-                           placeholder="Enter asset code manually..." 
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                           placeholder="Enter asset code..." 
+                           class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm md:text-base">
                 </div>
-                <button onclick="lookupAsset()" class="bg-red-800 text-white px-6 py-2 rounded-lg hover:bg-red-900 transition-colors">
-                    <i class="fas fa-search mr-2"></i>Lookup Asset
+                <button onclick="lookupAsset()" class="bg-red-800 text-white px-4 md:px-6 py-2 rounded-lg hover:bg-red-900 transition-colors text-sm md:text-base whitespace-nowrap">
+                    <i class="fas fa-search mr-1 md:mr-2"></i>Lookup
                 </button>
             </div>
         </div>
@@ -225,17 +237,17 @@
 </div>
 
 <!-- Success Toast Notification -->
-<div id="success-toast" class="fixed top-6 right-6 z-[9999] transform translate-x-full transition-transform duration-500 ease-in-out">
-    <div class="bg-white rounded-xl shadow-2xl border border-green-200 overflow-hidden max-w-md">
-        <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+<div id="success-toast" class="fixed top-4 right-4 md:top-6 md:right-6 z-[9999] hidden transform translate-x-[calc(100%+2rem)] transition-transform duration-500 ease-in-out max-w-[calc(100vw-2rem)] md:max-w-md">
+    <div class="bg-white rounded-xl shadow-2xl border border-green-200 overflow-hidden">
+        <div class="bg-gradient-to-r from-green-500 to-green-600 px-4 md:px-6 py-3 md:py-4">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-white/20 p-2 rounded-full">
-                        <i class="fas fa-check-circle text-white text-lg"></i>
+                <div class="flex items-center space-x-2 md:space-x-3">
+                    <div class="bg-white/20 p-1.5 md:p-2 rounded-full flex-shrink-0">
+                        <i class="fas fa-check-circle text-white text-base md:text-lg"></i>
                     </div>
-                    <div>
-                        <h4 class="text-white font-bold text-lg">Deployment Successful!</h4>
-                        <p class="text-green-100 text-sm">Asset has been deployed</p>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-white font-bold text-sm md:text-lg">Deployment Successful!</h4>
+                        <p class="text-green-100 text-xs md:text-sm">Asset has been deployed</p>
                     </div>
                 </div>
                 <button onclick="hideSuccessToast()" class="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
@@ -243,8 +255,8 @@
                 </button>
             </div>
         </div>
-        <div class="px-6 py-4">
-            <p id="toast-message" class="text-gray-700 text-sm leading-relaxed">
+        <div class="px-4 md:px-6 py-3 md:py-4">
+            <p id="toast-message" class="text-gray-700 text-xs md:text-sm leading-relaxed">
                 <!-- Message will be inserted here -->
             </p>
             <div class="mt-4 flex items-center space-x-2 text-xs text-gray-500">
@@ -263,31 +275,73 @@
 let scanner = null;
 let currentStream = null;
 let isScanning = false;
+let videoDevices = [];
+let currentDeviceIndex = 0;
+let torchOn = false;
+let currentVideoTrack = null;
+let lastScannedCode = null;
+let lastScanAt = 0;
+const SCAN_COOLDOWN_MS = 3000;
 
 // Scanner functions
-function startScanner() {
+async function startScanner(deviceId = null) {
     if (isScanning) return;
-    
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(function(stream) {
-            currentStream = stream;
-            const video = document.getElementById('scanner-video');
-            video.srcObject = stream;
-            video.classList.remove('hidden');
-            
-            // Hide placeholder
-            document.querySelector('#scanner-container .bg-gray-100').classList.add('hidden');
-            
-            isScanning = true;
-            document.getElementById('scanner-status').textContent = 'Scanning...';
-            
-            // Start scanning loop
-            scanLoop();
-        })
-        .catch(function(err) {
-            console.error('Error accessing camera:', err);
-            alert('Unable to access camera. Please check permissions.');
-        });
+    try {
+        // Ensure we have a list of video devices
+        if (videoDevices.length === 0) {
+            // A dummy getUserMedia call is often needed before enumerateDevices returns labels
+            try {
+                const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                tempStream.getTracks().forEach(t => t.stop());
+            } catch (_) {}
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            videoDevices = devices.filter(d => d.kind === 'videoinput');
+            // Prefer a back/environment camera if available
+            const backIndex = videoDevices.findIndex(d => /back|rear|environment/i.test(d.label));
+            currentDeviceIndex = backIndex >= 0 ? backIndex : 0;
+        }
+
+        // Determine constraints
+        const useDeviceId = deviceId || (videoDevices[currentDeviceIndex] && videoDevices[currentDeviceIndex].deviceId) || undefined;
+        const constraints = {
+            video: useDeviceId ? { deviceId: { exact: useDeviceId } } : { facingMode: 'environment' }
+        };
+
+        // If a stream is already active, stop it first (safety)
+        if (currentStream) {
+            try { currentStream.getTracks().forEach(t => t.stop()); } catch (_) {}
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        currentStream = stream;
+        currentVideoTrack = stream.getVideoTracks()[0] || null;
+
+        const video = document.getElementById('scanner-video');
+        video.srcObject = stream;
+        video.classList.remove('hidden');
+        // Ensure playback begins when metadata is ready (fixes white/blank video on switch)
+        video.onloadedmetadata = () => {
+            try { video.play(); } catch(_) {}
+        };
+
+        // Hide placeholder
+        document.querySelector('#scanner-container .bg-gray-100').classList.add('hidden');
+        // Hide scan complete panel if visible
+        const completePanel = document.getElementById('scan-complete');
+        if (completePanel) completePanel.classList.add('hidden');
+
+        // Reset torch state when (re)starting
+        torchOn = false;
+
+        isScanning = true;
+        document.getElementById('scanner-status').textContent = 'Scanning...';
+
+        // Start scanning loop after a brief tick to ensure frames are available
+        setTimeout(() => requestAnimationFrame(scanLoop), 50);
+    } catch (err) {
+        console.error('Error accessing camera:', err);
+        alert('Unable to access camera. Please check permissions.');
+    }
 }
 
 function stopScanner() {
@@ -295,6 +349,8 @@ function stopScanner() {
         currentStream.getTracks().forEach(track => track.stop());
         currentStream = null;
     }
+    currentVideoTrack = null;
+    torchOn = false;
     
     const video = document.getElementById('scanner-video');
     video.classList.add('hidden');
@@ -321,12 +377,18 @@ function scanLoop() {
         if (window.jsQR) {
             const result = window.jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
             if (result && result.data) {
-                isScanning = false;
-                document.getElementById('scanner-status').textContent = 'QR detected';
-                // Expect QR to contain asset code only
-                const assetCode = result.data.trim();
-                fetchAssetDetails(assetCode);
-                return;
+                const raw = result.data.trim();
+                const assetCode = parseAssetCodeFromQR(raw);
+
+                const now = Date.now();
+                if (assetCode && !(assetCode === lastScannedCode && (now - lastScanAt) < SCAN_COOLDOWN_MS)) {
+                    lastScannedCode = assetCode;
+                    lastScanAt = now;
+                    isScanning = false;
+                    document.getElementById('scanner-status').textContent = 'QR detected';
+                    fetchAssetDetails(assetCode);
+                    return;
+                }
             }
         }
     } catch (e) {
@@ -335,14 +397,77 @@ function scanLoop() {
     requestAnimationFrame(scanLoop);
 }
 
-function toggleFlash() {
-    // Implement flash toggle functionality
-    console.log('Flash toggled');
+async function toggleFlash() {
+    try {
+        if (!currentVideoTrack) {
+            alert('Start the scanner first.');
+            return;
+        }
+        const capabilities = currentVideoTrack.getCapabilities ? currentVideoTrack.getCapabilities() : {};
+        // Some browsers expose torch via fillLightMode
+        const torchCapable = capabilities.torch || (Array.isArray(capabilities.fillLightMode) && capabilities.fillLightMode.includes('flash'));
+        if (!torchCapable) {
+            alert('Flashlight is not supported on this device/browser.');
+            return;
+        }
+        torchOn = !torchOn;
+        const advanced = capabilities.torch ? { torch: torchOn } : { fillLightMode: torchOn ? 'flash' : 'off' };
+        await currentVideoTrack.applyConstraints({ advanced: [advanced] });
+        document.getElementById('scanner-status').textContent = torchOn ? 'Flashlight on' : 'Flashlight off';
+    } catch (e) {
+        console.warn('Torch toggle failed:', e);
+        alert('Unable to toggle flashlight on this device.');
+    }
 }
 
 function switchCamera() {
-    // Implement camera switching functionality
-    console.log('Camera switched');
+    try {
+        if (videoDevices.length <= 1) {
+            alert('No alternate camera found.');
+            return;
+        }
+        // Move to next camera
+        currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
+
+        // Stop current stream before switching
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+        currentVideoTrack = null;
+        torchOn = false;
+        // Stop scanning loop so startScanner can re-init
+        isScanning = false;
+
+        const nextDeviceId = videoDevices[currentDeviceIndex].deviceId;
+        startScanner(nextDeviceId);
+        document.getElementById('scanner-status').textContent = 'Switched camera';
+    } catch (e) {
+        console.warn('Camera switch failed:', e);
+        alert('Unable to switch camera.');
+    }
+}
+
+// Try to normalize the QR content to an asset code
+function parseAssetCodeFromQR(data) {
+    // 1) JSON payload case: { asset_code: "..." }
+    try {
+        const obj = JSON.parse(data);
+        if (obj && (obj.asset_code || obj.code)) {
+            return String(obj.asset_code || obj.code).trim();
+        }
+    } catch (_) {}
+
+    // 2) URL case: extract ?code=... or last path segment
+    try {
+        const url = new URL(data);
+        const qp = url.searchParams.get('code') || url.searchParams.get('asset_code');
+        if (qp) return String(qp).trim();
+        const parts = url.pathname.split('/').filter(Boolean);
+        if (parts.length) return parts[parts.length - 1].trim();
+    } catch (_) {}
+
+    // 3) Plain text case: return as-is
+    return data;
 }
 
 function lookupAsset() {
@@ -650,17 +775,56 @@ document.addEventListener('DOMContentLoaded', function() {
 async function fetchAssetDetails(assetCode) {
     document.getElementById('scanner-status').textContent = `Fetching ${assetCode}...`;
     try {
-        const res = await fetch(`/api/assets/code/${encodeURIComponent(assetCode)}`);
+        // Prefer GSU API which returns full asset details without user-ownership restriction
+        const res = await fetch(`/gsu/api/assets/code/${encodeURIComponent(assetCode)}`);
         if (!res.ok) throw new Error('Asset not found');
         const asset = await res.json();
         renderScanResult(asset);
         document.getElementById('scanner-status').textContent = 'Scan complete';
+        // Stop camera and show completion design
+        stopCameraOnly();
+        showScanCompletePanel();
     } catch (err) {
-        document.getElementById('scanner-status').textContent = 'Asset not found';
-        alert('Asset not found for code: ' + assetCode);
-        isScanning = true; // allow continue scanning
-        requestAnimationFrame(scanLoop);
+        document.getElementById('scanner-status').textContent = `Asset not found for code: ${assetCode}`;
+        // Resume scanning after a short cooldown without spamming alerts
+        setTimeout(() => {
+            isScanning = true;
+            requestAnimationFrame(scanLoop);
+        }, 800);
     }
+}
+
+// Stop only the camera stream without resetting the placeholder UI
+function stopCameraOnly() {
+    try {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+    } catch (_) {}
+    currentStream = null;
+    currentVideoTrack = null;
+    torchOn = false;
+    isScanning = false;
+    const video = document.getElementById('scanner-video');
+    if (video) video.classList.add('hidden');
+}
+
+function showScanCompletePanel() {
+    // Hide default placeholder
+    const placeholder = document.querySelector('#scanner-container .bg-gray-100');
+    if (placeholder) placeholder.classList.add('hidden');
+    // Show complete panel
+    const completePanel = document.getElementById('scan-complete');
+    if (completePanel) completePanel.classList.remove('hidden');
+}
+
+function resetScannerUIForRescan() {
+    // Hide complete panel, show placeholder and allow starting again
+    const completePanel = document.getElementById('scan-complete');
+    if (completePanel) completePanel.classList.add('hidden');
+    const placeholder = document.querySelector('#scanner-container .bg-gray-100');
+    if (placeholder) placeholder.classList.remove('hidden');
+    document.getElementById('scanner-status').textContent = 'Ready to scan';
 }
 
 function renderScanResult(asset) {
@@ -709,8 +873,9 @@ function showSuccessToast(message) {
     progressBar.style.width = '100%';
     progressBar.style.transition = 'none';
     
-    // Show toast with slide-in animation
-    toast.classList.remove('translate-x-full');
+    // Ensure toast is visible and slide-in
+    toast.classList.remove('hidden');
+    toast.classList.remove('translate-x-[calc(100%+2rem)]');
     toast.classList.add('translate-x-0');
     
     // Start progress bar animation after a brief delay
@@ -731,12 +896,13 @@ function hideSuccessToast() {
     
     // Hide toast with slide-out animation
     toast.classList.remove('translate-x-0');
-    toast.classList.add('translate-x-full');
+    toast.classList.add('translate-x-[calc(100%+2rem)]');
     
     // Reset progress bar after animation
     setTimeout(() => {
         progressBar.style.width = '100%';
         progressBar.style.transition = 'none';
+        toast.classList.add('hidden');
     }, 500);
 }
 </script>

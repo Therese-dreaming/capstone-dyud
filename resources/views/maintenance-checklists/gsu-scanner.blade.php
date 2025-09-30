@@ -58,7 +58,34 @@
             <h3 class="text-lg font-semibold text-gray-800 mb-4">QR Code Scanner</h3>
             
             <div id="scanner-container" class="mb-4">
-                <div id="qr-reader" style="width: 100%;"></div>
+                <div id="scannerPlaceholderGsu" class="bg-gray-50 border rounded-lg p-6 text-center">
+                    <i class="fas fa-qrcode text-3xl text-gray-400 mb-2"></i>
+                    <div class="text-sm text-gray-600">Scanner idle. Click Start to scan.</div>
+                </div>
+                <video id="scannerVideoGsu" class="hidden w-full rounded" autoplay playsinline muted></video>
+                <canvas id="scannerCanvasGsu" class="hidden"></canvas>
+                <!-- Scan Complete Panel -->
+                <div id="scanCompletePanelGsu" class="hidden bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                    <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-check text-2xl text-green-600"></i>
+                    </div>
+                    <div class="text-lg font-semibold text-green-800 mb-1">Scan Completed</div>
+                    <div id="scanCompleteMsgGsu" class="text-sm text-green-700 mb-4">Asset detected. Select the end status below.</div>
+                    <button type="button" id="scanAgainGsu" class="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900">
+                        <i class="fas fa-redo mr-1"></i> Scan Again
+                    </button>
+                </div>
+                <!-- Scan Error Panel -->
+                <div id="scanErrorPanelGsu" class="hidden bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                    <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
+                    </div>
+                    <div id="scanErrorTitleGsu" class="text-lg font-semibold text-red-800 mb-1">Scan Error</div>
+                    <div id="scanErrorMsgGsu" class="text-sm text-red-700 mb-4">Asset is not part of this checklist.</div>
+                    <button type="button" id="scanAgainErrorGsu" class="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900">
+                        <i class="fas fa-redo mr-1"></i> Scan Again
+                    </button>
+                </div>
             </div>
             
             <div class="text-center">
@@ -341,7 +368,6 @@
     </div>
 </div>
 
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -428,61 +454,153 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    let html5QrcodeScanner = null;
-    let isScanning = false;
+    // Build allowed checklist codes set from server data (unscanned + missing)
+    const gsuChecklistCodes = new Set([
+        @foreach($checklist->unscanned_assets as $item)
+            '{{ $item->asset_code }}',
+        @endforeach
+        @foreach($checklist->missing_assets as $item)
+            '{{ $item->asset_code }}',
+        @endforeach
+    ]);
 
-    // Scanner functionality
+    // Scanner functionality (jsQR-based, similar to create.blade.php)
     const startScannerBtn = document.getElementById('start-scanner');
     const stopScannerBtn = document.getElementById('stop-scanner');
-    const scannerContainer = document.getElementById('scanner-container');
+    const videoEl = document.getElementById('scannerVideoGsu');
+    const canvasEl = document.getElementById('scannerCanvasGsu');
+    const placeholderEl = document.getElementById('scannerPlaceholderGsu');
+    const completePanelEl = document.getElementById('scanCompletePanelGsu');
+    const errorPanelEl = document.getElementById('scanErrorPanelGsu');
+    const errorTitleEl = document.getElementById('scanErrorTitleGsu');
+    const errorMsgEl = document.getElementById('scanErrorMsgGsu');
+    let mediaStreamGsu = null;
+    let scanningGsu = false;
+    let processingScanGsu = false;
+    let lastCodeGsu = null;
+    let lastAtGsu = 0;
+    const COOLDOWN_MS_GSU = 1500;
 
-    startScannerBtn.addEventListener('click', function() {
-        if (html5QrcodeScanner) {
-            html5QrcodeScanner.clear();
+    function loadJsQRGsu(cb) {
+        if (window.jsQR) return cb();
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+        s.async = true;
+        s.onload = cb;
+        document.body.appendChild(s);
+    }
+
+    startScannerBtn.addEventListener('click', async function() {
+        try {
+            await new Promise(resolve => loadJsQRGsu(resolve));
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showMessage('Camera API not available in this browser.', 'error');
+                return;
+            }
+            if (mediaStreamGsu) {
+                try { mediaStreamGsu.getTracks().forEach(t => t.stop()); } catch(_) {}
+            }
+            mediaStreamGsu = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+            videoEl.srcObject = mediaStreamGsu;
+            videoEl.setAttribute('playsinline', 'true');
+            videoEl.muted = true;
+            await videoEl.play().catch(() => {});
+            placeholderEl.classList.add('hidden');
+            completePanelEl.classList.add('hidden');
+            errorPanelEl.classList.add('hidden');
+            videoEl.classList.remove('hidden');
+            scanningGsu = true;
+            processingScanGsu = false;
+            startScannerBtn.style.display = 'none';
+            stopScannerBtn.style.display = 'inline-block';
+            requestAnimationFrame(scanLoopGsu);
+        } catch (e) {
+            const isInsecure = location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+            let msg = 'Unable to access camera. Please check permissions.';
+            if (isInsecure) msg += ' Note: Camera requires HTTPS or localhost.';
+            showMessage(msg, 'error');
         }
-
-        html5QrcodeScanner = new Html5QrcodeScanner(
-            "qr-reader",
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            false
-        );
-
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-        isScanning = true;
-        
-        startScannerBtn.style.display = 'none';
-        stopScannerBtn.style.display = 'inline-block';
     });
 
     stopScannerBtn.addEventListener('click', function() {
-        if (html5QrcodeScanner) {
-            html5QrcodeScanner.clear();
+        if (mediaStreamGsu) {
+            mediaStreamGsu.getTracks().forEach(t => t.stop());
+            mediaStreamGsu = null;
         }
-        isScanning = false;
-        
+        scanningGsu = false;
+        videoEl.classList.add('hidden');
+        placeholderEl.classList.remove('hidden');
+        completePanelEl.classList.add('hidden');
+        errorPanelEl.classList.add('hidden');
         startScannerBtn.style.display = 'inline-block';
         stopScannerBtn.style.display = 'none';
     });
 
-    function onScanSuccess(decodedText, decodedResult) {
-        console.log(`QR Code detected: ${decodedText}`);
-        
-        // Stop scanning
-        if (html5QrcodeScanner) {
-            html5QrcodeScanner.clear();
-        }
-        isScanning = false;
-        startScannerBtn.style.display = 'inline-block';
-        stopScannerBtn.style.display = 'none';
-        
-        // Show status selection modal
-        showStatusModal(decodedText);
+    function scanLoopGsu() {
+        if (!scanningGsu) return;
+        const ctx = canvasEl.getContext('2d');
+        canvasEl.width = videoEl.videoWidth;
+        canvasEl.height = videoEl.videoHeight;
+        ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+        try {
+            const img = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+            if (window.jsQR) {
+                const res = window.jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+                if (res && res.data) {
+                    const code = (res.data || '').trim();
+                    if (code) {
+                        const now = Date.now();
+                        if (processingScanGsu || (lastCodeGsu === code && (now - lastAtGsu) < COOLDOWN_MS_GSU)) {
+                            return requestAnimationFrame(scanLoopGsu);
+                        }
+                        processingScanGsu = true;
+                        lastCodeGsu = code;
+                        lastAtGsu = now;
+                        // Stop scanning and hide video
+                        if (mediaStreamGsu) {
+                            mediaStreamGsu.getTracks().forEach(t => t.stop());
+                            mediaStreamGsu = null;
+                        }
+                        scanningGsu = false;
+                        videoEl.classList.add('hidden');
+                        startScannerBtn.style.display = 'inline-block';
+                        stopScannerBtn.style.display = 'none';
+                        // Validate membership within checklist
+                        if (gsuChecklistCodes.has(code)) {
+                            // Success: populate manual input without scrolling and show success panel
+                            const manualInput = document.getElementById('manual-asset-code');
+                            if (manualInput) manualInput.value = code;
+                            completePanelEl.classList.remove('hidden');
+                            errorPanelEl.classList.add('hidden');
+                            // Do NOT scroll; user can select status below manually
+                        } else {
+                            // Error: not part of checklist
+                            errorTitleEl.textContent = 'Not in Checklist';
+                            errorMsgEl.textContent = 'This asset is not part of the registered checklist.';
+                            errorPanelEl.classList.remove('hidden');
+                            completePanelEl.classList.add('hidden');
+                        }
+                        return;
+                    }
+                }
+            }
+        } catch {}
+        if (scanningGsu) requestAnimationFrame(scanLoopGsu);
     }
 
-    function onScanFailure(error) {
-        // Handle scan failure, but don't show error to user
-        console.log(`QR Code scan failed: ${error}`);
-    }
+    // Scan again buttons
+    document.getElementById('scanAgainGsu').addEventListener('click', () => {
+        placeholderEl.classList.add('hidden');
+        completePanelEl.classList.add('hidden');
+        errorPanelEl.classList.add('hidden');
+        startScannerBtn.click();
+    });
+    document.getElementById('scanAgainErrorGsu').addEventListener('click', () => {
+        placeholderEl.classList.add('hidden');
+        completePanelEl.classList.add('hidden');
+        errorPanelEl.classList.add('hidden');
+        startScannerBtn.click();
+    });
 
     // Handle radio button card interactions
     // Track previous state to detect unselect clicks

@@ -31,10 +31,14 @@
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
-    <nav class="bg-white shadow-lg border-b border-gray-200">
+    <nav class="bg-white shadow-lg border-b border-gray-200" x-data="{ mobileMenuOpen: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
+                    <!-- Mobile menu button -->
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden mr-3 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500">
+                        <i class="fas text-xl" :class="mobileMenuOpen ? 'fa-times' : 'fa-bars'"></i>
+                    </button>
                     <div class="flex-shrink-0 flex items-center">
                         <div class="bg-gradient-to-r from-red-600 to-red-800 text-white p-2 rounded-lg">
                             <i class="fas fa-boxes text-xl"></i>
@@ -239,7 +243,15 @@
         </div>
         
         <!-- Mobile Navigation Menu -->
-        <div class="md:hidden" x-data="{ open: false }">
+        <div x-show="mobileMenuOpen" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-1"
+             class="md:hidden"
+             style="display: none;">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
                 <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('dashboard') ? 'text-red-600 bg-red-50' : '' }}">
                     <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
@@ -256,7 +268,6 @@
                 <a href="{{ route('notifications.index') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('notifications.*') ? 'text-red-600 bg-red-50' : '' }}">
                     <i class="fas fa-bell mr-2"></i>Notifications
                 </a>
-
             </div>
         </div>
     </nav>

@@ -1,64 +1,62 @@
 @extends('layouts.admin')
 
+@section('title', 'All Assets - Asset Management')
+
 @section('content')
-<div class="container mx-auto py-8">
+<div class="container mx-auto py-4 md:py-8 px-2 sm:px-4 lg:px-0">
     @if(session('success'))
-    <div class="mb-4 bg-green-100 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+    <div class="mb-4 bg-green-100 border border-green-200 text-green-800 px-3 md:px-4 py-2 md:py-3 rounded-lg">
         <div class="flex items-start gap-2">
-            <i class="fas fa-check-circle mt-0.5"></i>
-            <span class="font-semibold">{{ session('success') }}</span>
+            <i class="fas fa-check-circle mt-0.5 text-sm md:text-base"></i>
+            <span class="font-semibold text-sm md:text-base">{{ session('success') }}</span>
         </div>
     </div>
     @endif
     @if(session('error'))
-    <div class="mb-4 bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+    <div class="mb-4 bg-red-100 border border-red-200 text-red-800 px-3 md:px-4 py-2 md:py-3 rounded-lg">
         <div class="flex items-start gap-2">
-            <i class="fas fa-times-circle mt-0.5"></i>
-            <span class="font-semibold">{{ session('error') }}</span>
+            <i class="fas fa-times-circle mt-0.5 text-sm md:text-base"></i>
+            <span class="font-semibold text-sm md:text-base">{{ session('error') }}</span>
         </div>
     </div>
     @endif
     
-    <div class="flex justify-between items-center mb-6">
-        <div class="flex items-center gap-4">
-            <h1 class="text-3xl font-bold flex items-center gap-2">
-                <i class="fas fa-box text-red-800"></i>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-3">
+        <div class="flex items-center gap-2 md:gap-4">
+            <h1 class="text-xl md:text-2xl lg:text-3xl font-bold flex items-center gap-2">
+                <i class="fas fa-box text-red-800 text-lg md:text-xl lg:text-2xl"></i>
                 All Assets
             </h1>
         </div>
-        <div class="flex items-center gap-3">
-            <div class="text-sm text-gray-600">
-                <i class="fas fa-boxes mr-2"></i>{{ $assets->total() }} assets
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 md:gap-3 w-full sm:w-auto">
+            <div class="text-xs md:text-sm text-gray-600 whitespace-nowrap">
+                <i class="fas fa-boxes mr-1 md:mr-2"></i>{{ $assets->total() }} assets
             </div>
             @if(Auth::user()->role === 'purchasing')
-                <a href="{{ route('purchasing.assets.create') }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2">
-                    <i class="fas fa-plus"></i> Create Asset
+                <a href="{{ route('purchasing.assets.create') }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 md:px-4 rounded-lg transition duration-200 flex items-center gap-2 text-sm md:text-base w-full sm:w-auto justify-center">
+                    <i class="fas fa-plus text-xs md:text-sm"></i> Create Asset
                 </a>
-            @elseif(Auth::user()->role === 'admin')
-                <div class="bg-gray-100 text-gray-500 font-semibold py-2 px-4 rounded-lg flex items-center gap-2" title="Only Purchasing can create assets">
-                    <i class="fas fa-info-circle"></i> Asset creation restricted to Purchasing role
-                </div>
-            @elseif(Auth::user()->role === 'gsu')
-                <div class="bg-gray-100 text-gray-500 font-semibold py-2 px-4 rounded-lg flex items-center gap-2" title="Only Purchasing can create assets">
-                    <i class="fas fa-info-circle"></i> Asset creation restricted to Purchasing role
+            @elseif(Auth::user()->role === 'admin' || Auth::user()->role === 'gsu')
+                <div class="bg-gray-100 text-gray-500 font-semibold py-2 px-3 md:px-4 rounded-lg flex items-center gap-2 text-xs md:text-sm" title="Only Purchasing can create assets">
+                    <i class="fas fa-info-circle"></i> <span class="hidden md:inline">Asset creation restricted to Purchasing role</span><span class="md:hidden">Purchasing only</span>
                 </div>
             @endif
         </div>
     </div>
 
     <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-        <div class="bg-gray-50 p-4 border-b border-gray-200">
-            <div class="flex items-center gap-4">
-                <button type="button" id="toggleFilters" class="inline-flex items-center px-3 py-2 bg-red-800 text-white text-sm rounded-lg hover:bg-red-900 transition">
-                    <i class="fas fa-sliders-h mr-2"></i> Filters
+        <div class="bg-gray-50 p-3 md:p-4 border-b border-gray-200">
+            <div class="flex items-center gap-2 md:gap-4">
+                <button type="button" id="toggleFilters" class="inline-flex items-center px-3 py-2 bg-red-800 text-white text-xs md:text-sm rounded-lg hover:bg-red-900 transition">
+                    <i class="fas fa-sliders-h mr-1 md:mr-2 text-xs md:text-sm"></i> Filters
                 </button>
-                <div class="text-sm text-gray-600 font-medium ml-auto">
-                    Total: <span class="text-red-800 font-bold">{{ $assets->total() }}</span> assets
+                <div class="text-xs md:text-sm text-gray-600 font-medium ml-auto">
+                    Total: <span class="text-red-800 font-bold">{{ $assets->total() }}</span> <span class="hidden sm:inline">assets</span>
                 </div>
             </div>
             <!-- Collapsible Filters -->
-            <div id="filtersPanel" class="mt-4 hidden">
-                <form method="GET" action="{{ route('assets.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div id="filtersPanel" class="mt-3 md:mt-4 hidden">
+                <form method="GET" action="{{ route('assets.index') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
                     <div class="relative">
                         <label class="block text-xs text-gray-600 mb-1">Search</label>
                         <div class="relative">
@@ -119,18 +117,146 @@
                             @endisset
                         </select>
                     </div>
-                    <div class="flex items-end gap-2 md:col-span-2">
-                        <button type="submit" class="px-4 py-2 bg-red-800 text-white text-sm rounded-lg hover:bg-red-900 transition">
-                            <i class="fas fa-filter mr-2"></i> Apply Filters
+                    <div class="flex items-end gap-2 sm:col-span-2 md:col-span-2">
+                        <button type="submit" class="px-3 md:px-4 py-2 bg-red-800 text-white text-xs md:text-sm rounded-lg hover:bg-red-900 transition flex-1 sm:flex-initial">
+                            <i class="fas fa-filter mr-1 md:mr-2"></i> Apply
                         </button>
-                        <a href="{{ route('assets.index') }}" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition">
+                        <a href="{{ route('assets.index') }}" class="px-3 md:px-4 py-2 bg-gray-100 text-gray-700 text-xs md:text-sm rounded-lg hover:bg-gray-200 transition flex-1 sm:flex-initial text-center">
                             Reset
                         </a>
                     </div>
                 </form>
             </div>
         </div>
-        <div class="overflow-x-auto">
+        <!-- Mobile Card View -->
+        <div class="block md:hidden p-3 space-y-3">
+            @forelse($assets as $asset)
+                <div class="bg-white border-2 border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+                    <!-- Card Header with Asset Code -->
+                    <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b-2 border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-red-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-box text-white text-xs"></i>
+                                </div>
+                                <div>
+                                    <div class="font-mono text-xs font-bold text-red-800 uppercase">
+                                        {{ $asset->asset_code }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">Asset Code</div>
+                                </div>
+                            </div>
+                            @if($asset->status === 'active')
+                                <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-green-500 text-white shadow-sm">
+                                    <i class="fas fa-check-circle mr-1"></i>Active
+                                </span>
+                            @elseif($asset->status === 'pending')
+                                <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-yellow-500 text-white shadow-sm">
+                                    <i class="fas fa-clock mr-1"></i>Pending
+                                </span>
+                            @elseif($asset->status === 'maintenance')
+                                <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-orange-500 text-white shadow-sm">
+                                    <i class="fas fa-wrench mr-1"></i>Maintenance
+                                </span>
+                            @elseif($asset->status === 'disposed')
+                                <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-red-500 text-white shadow-sm">
+                                    <i class="fas fa-trash mr-1"></i>Disposed
+                                </span>
+                            @else
+                                <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-gray-500 text-white shadow-sm">
+                                    {{ ucfirst($asset->status) }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    <!-- Card Body -->
+                    <div class="p-4">
+                        <!-- Asset Name -->
+                        <div class="mb-3">
+                            <div class="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Asset Name</div>
+                            <div class="font-bold text-base text-gray-900">{{ $asset->name }}</div>
+                        </div>
+                        
+                        <!-- Asset Details Grid -->
+                        <div class="space-y-2.5">
+                            <!-- Category -->
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-folder text-blue-600 text-sm w-4"></i>
+                                    <span class="text-xs font-medium text-gray-600">Category</span>
+                                </div>
+                                <span class="text-xs font-bold text-gray-900 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                                    {{ $asset->category->name ?? 'No Category' }}
+                                </span>
+                            </div>
+                            
+                            <!-- Location -->
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-map-marker-alt text-purple-600 text-sm w-4"></i>
+                                    <span class="text-xs font-medium text-gray-600">Location</span>
+                                </div>
+                                @if($asset->location)
+                                    <div class="text-right">
+                                        <div class="text-xs font-bold text-gray-900">{{ $asset->location->building }}</div>
+                                        <div class="text-xs text-gray-500">{{ $asset->location->name }}</div>
+                                    </div>
+                                @else
+                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>Not Deployed
+                                    </span>
+                                @endif
+                            </div>
+                            
+                            <!-- Condition (if available) -->
+                            @if($asset->condition)
+                            <div class="flex items-center justify-between py-2">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-star text-orange-600 text-sm w-4"></i>
+                                    <span class="text-xs font-medium text-gray-600">Condition</span>
+                                </div>
+                                <span class="text-xs font-bold text-gray-900">{{ $asset->condition }}</span>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    <!-- Card Footer with Actions -->
+                    <div class="bg-gray-50 px-4 py-3 border-t-2 border-gray-200">
+                        <div class="flex items-center gap-2">
+                            <a href="{{ url('assets/' . $asset->id) }}" 
+                               class="flex-1 inline-flex items-center justify-center px-3 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm">
+                                <i class="fas fa-eye mr-1.5"></i>View
+                            </a>
+                            @if($asset->isAvailable() && $asset->location_id && (Auth::user()->role === 'admin' || Auth::user()->role === 'gsu'))
+                                <a href="{{ route('assets.transfer-form', $asset) }}" 
+                                   class="flex-1 inline-flex items-center justify-center px-3 py-2.5 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 active:bg-purple-800 transition-colors shadow-sm">
+                                    <i class="fas fa-exchange-alt mr-1.5"></i>Transfer
+                                </a>
+                            @endif
+                            @if($asset->isAvailable())
+                                <button onclick="showDisposeModal({{ $asset->id }}, '{{ $asset->asset_code }}')" 
+                                        class="flex-1 inline-flex items-center justify-center px-3 py-2.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors shadow-sm">
+                                    <i class="fas fa-trash mr-1.5"></i>Dispose
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="p-12 text-center bg-white rounded-xl border-2 border-dashed border-gray-300">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-inbox text-3xl text-gray-400"></i>
+                    </div>
+                    <div class="text-base font-bold text-gray-900 mb-1">No assets found</div>
+                    <div class="text-sm text-gray-500">Get started by adding your first asset</div>
+                </div>
+            @endforelse
+        </div>
+        
+        <!-- Desktop Table View -->
+        <div class="hidden md:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 font-sans">
                 <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
@@ -261,8 +387,8 @@
 </div>
 
 <!-- Dispose Modal -->
-<div id="disposeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-    <div id="disposeModalCard" class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative animate-fade-in">
+<div id="disposeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden p-4">
+    <div id="disposeModalCard" class="bg-white rounded-xl shadow-xl p-6 md:p-8 w-full max-w-md relative animate-fade-in">
         <button onclick="closeDisposeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-800 text-xl"><i class="fas fa-times"></i></button>
         <div class="flex flex-col items-center">
             <div class="bg-red-100 text-red-800 rounded-full p-4 mb-4">

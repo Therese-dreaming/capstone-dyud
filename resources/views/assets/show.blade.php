@@ -1,75 +1,77 @@
 @extends('layouts.admin')
 
+@section('title', $asset->name . ' - Asset Details')
+
 @section('content')
-<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+<div class="max-w-7xl mx-auto py-4 md:py-6 px-2 sm:px-4 lg:px-8">
     <!-- Header Section -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
                 <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.locations.index' : 'locations.index') }}" 
-                   class="inline-flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
+                   class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
                     <i class="fas fa-arrow-left"></i>
                 </a>
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2 md:gap-3 truncate">
                         <i class="fas fa-cube text-red-800"></i>
                         {{ $asset->name }}
                     </h1>
-                    <p class="text-gray-600 mt-1">Asset Details & Information</p>
+                    <p class="text-gray-600 mt-1 text-xs md:text-sm">Asset Details & Information</p>
                 </div>
             </div>
-            <div class="text-right">
-                <div class="text-sm text-gray-500">Asset Code</div>
-                <div class="font-mono text-lg font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded">
+            <div class="text-left sm:text-right flex-shrink-0">
+                <div class="text-xs md:text-sm text-gray-500">Asset Code</div>
+                <div class="font-mono text-sm md:text-base lg:text-lg font-bold text-gray-900 bg-gray-100 px-2 md:px-3 py-1 rounded">
                     {{ $asset->asset_code }}
                 </div>
             </div>
         </div>
         
         <!-- Quick Actions Row -->
-        <div class="mt-4 pt-4 border-t border-gray-200">
-            <div class="flex items-center justify-between mb-3">
-                <div class="text-sm text-gray-600">
+        <div class="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between mb-2 md:mb-3">
+                <div class="text-xs md:text-sm text-gray-600">
                     <i class="fas fa-tools mr-1"></i>Quick Actions
                 </div>
             </div>
-            <div class="flex flex-wrap gap-3">
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 md:gap-3">
                 <!-- Back to Assets Button -->
                 <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.locations.index' : 'locations.index') }}" 
-                   class="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                    <i class="fas fa-list"></i>
-                    <span>Back to Assets</span>
+                   class="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-2 px-3 md:px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg text-xs md:text-sm">
+                    <i class="fas fa-list text-xs md:text-sm"></i>
+                    <span class="hidden sm:inline">Back to Assets</span><span class="sm:hidden">Back</span>
                 </a>
                 
                 <!-- Transfer Asset Button -->
                 @if($asset->isAvailable() && $asset->location_id && (auth()->user()->role === 'admin' || auth()->user()->role === 'gsu'))
                     <a href="{{ route(request()->routeIs('gsu.*') ? 'gsu.assets.transfer-form' : 'assets.transfer-form', $asset) }}" 
-                       class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                        <i class="fas fa-exchange-alt"></i>
-                        <span>Transfer Asset</span>
+                       class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 px-3 md:px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg text-xs md:text-sm">
+                        <i class="fas fa-exchange-alt text-xs md:text-sm"></i>
+                        <span class="hidden sm:inline">Transfer Asset</span><span class="sm:hidden">Transfer</span>
                     </a>
                 @else
-                    <div class="bg-gray-100 text-gray-500 font-semibold py-2 px-4 rounded-lg flex items-center gap-2 border border-gray-200" 
+                    <div class="bg-gray-100 text-gray-500 font-semibold py-2 px-3 md:px-4 rounded-lg flex items-center gap-2 border border-gray-200 text-xs md:text-sm" 
                          title="{{ !$asset->isAvailable() ? 'Asset is not available for transfer' : (!$asset->location_id ? 'Asset must be deployed to a location first' : 'Transfer restricted to Admin and GSU roles') }}">
-                        <i class="fas fa-exchange-alt"></i>
-                        <span>Transfer Asset</span>
+                        <i class="fas fa-exchange-alt text-xs md:text-sm"></i>
+                        <span class="hidden sm:inline">Transfer Asset</span><span class="sm:hidden">Transfer</span>
                     </div>
                 @endif
                 
                 <!-- Dispose Asset Button -->
                 @if($asset->isAvailable())
                     <button onclick="openDisposeModal({{ $asset->id }}, '{{ $asset->asset_code }}')" 
-                            class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                        <i class="fas fa-trash"></i>
-                        <span>Dispose Asset</span>
+                            class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-2 px-3 md:px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg text-xs md:text-sm">
+                        <i class="fas fa-trash text-xs md:text-sm"></i>
+                        <span class="hidden sm:inline">Dispose Asset</span><span class="sm:hidden">Dispose</span>
                     </button>
                 @endif
                 
                 <!-- Print QR Code Button -->
                 <button onclick="printQRCode()" 
-                        class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                    <i class="fas fa-print"></i>
-                    <span>Print QR Code</span>
+                        class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-2 px-3 md:px-4 rounded-lg transition duration-200 flex items-center gap-2 shadow-md hover:shadow-lg text-xs md:text-sm">
+                    <i class="fas fa-print text-xs md:text-sm"></i>
+                    <span class="hidden sm:inline">Print QR Code</span><span class="sm:hidden">Print</span>
                 </button>
             </div>
         </div>
@@ -80,13 +82,13 @@
         <div class="space-y-6">
             <!-- Basic Information Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
+                    <h2 class="text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
                         <i class="fas fa-info-circle text-blue-600"></i>
                         Basic Information
                     </h2>
                 </div>
-                <div class="p-6 space-y-5">
+                <div class="p-4 md:p-6 space-y-5">
                     <div class="flex items-start justify-between py-3 border-b border-gray-100 last:border-b-0">
                         <div class="flex-1">
                             <dt class="text-sm font-medium text-gray-500 mb-1">Asset Name</dt>
@@ -501,22 +503,22 @@
 
     <!-- Asset History Section -->
     <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+        <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
+            <h2 class="text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
                 <i class="fas fa-history text-indigo-600"></i>
                 Asset History
             </h2>
         </div>
         
         <!-- Tab Navigation -->
-        <div class="border-b border-gray-200">
-            <nav class="flex space-x-8 px-6" aria-label="Tabs">
+        <div class="border-b border-gray-200 overflow-x-auto">
+            <nav class="flex px-4 md:px-6" aria-label="Tabs">
 
                 
                 <button onclick="showTab('maintenance')" 
-                        class="tab-button {{ $activeTab === 'maintenance' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-4 px-1 border-b-2 font-medium text-sm hover:text-gray-700 flex items-center gap-2">
-                    <i class="fas fa-tools"></i>
-                    Maintenance Records
+                        class="tab-button flex-shrink-0 {{ $activeTab === 'maintenance' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-3 md:py-4 px-2 md:px-3 border-b-2 font-medium text-xs md:text-sm hover:text-gray-700 flex items-center gap-1 md:gap-2 whitespace-nowrap">
+                    <i class="fas fa-tools text-xs md:text-sm"></i>
+                    <span class="hidden sm:inline">Maintenance Records</span><span class="sm:hidden">Maintenance</span>
                     @if($maintenances->total() > 0)
                         <span class="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
                             {{ $maintenances->total() }}
@@ -525,9 +527,9 @@
                 </button>
                 
                 <button onclick="showTab('disposal')" 
-                        class="tab-button {{ $activeTab === 'disposal' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-4 px-1 border-b-2 font-medium text-sm hover:text-gray-700 flex items-center gap-2">
-                    <i class="fas fa-ban"></i>
-                    Disposal History
+                        class="tab-button flex-shrink-0 {{ $activeTab === 'disposal' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-3 md:py-4 px-2 md:px-3 border-b-2 font-medium text-xs md:text-sm hover:text-gray-700 flex items-center gap-1 md:gap-2 whitespace-nowrap">
+                    <i class="fas fa-ban text-xs md:text-sm"></i>
+                    <span class="hidden sm:inline">Disposal History</span><span class="sm:hidden">Disposal</span>
                     @if($disposes->total() > 0)
                         <span class="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
                             {{ $disposes->total() }}
@@ -536,9 +538,9 @@
                 </button>
                 
                 <button onclick="showTab('changes')" 
-                        class="tab-button {{ $activeTab === 'changes' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-4 px-1 border-b-2 font-medium text-sm hover:text-gray-700 flex items-center gap-2">
-                    <i class="fas fa-edit"></i>
-                    Asset Changes
+                        class="tab-button flex-shrink-0 {{ $activeTab === 'changes' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-3 md:py-4 px-2 md:px-3 border-b-2 font-medium text-xs md:text-sm hover:text-gray-700 flex items-center gap-1 md:gap-2 whitespace-nowrap">
+                    <i class="fas fa-edit text-xs md:text-sm"></i>
+                    <span class="hidden sm:inline">Asset Changes</span><span class="sm:hidden">Changes</span>
                     @if($changes->total() > 0)
                         <span class="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
                             {{ $changes->total() }}
@@ -555,7 +557,59 @@
             <!-- Maintenance Records Tab -->
             <div id="maintenance-tab" class="tab-content" style="{{ $activeTab === 'maintenance' ? 'display: block;' : 'display: none;' }}">
                 @if($maintenances->total() > 0)
-                    <div class="space-y-4">
+                    <!-- Mobile Card View -->
+                    <div class="block md:hidden space-y-3">
+                        @foreach($maintenances as $maintenance)
+                            <div class="bg-white rounded-xl p-4 border-2 border-gray-200 shadow-sm">
+                                <div class="flex items-center justify-between mb-3 pb-3 border-b-2 border-gray-100">
+                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full {{ $maintenance->status_class }}">
+                                        {{ $maintenance->end_status }}
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        {{ $maintenance->scanned_at?->format('M d, Y') }}
+                                    </span>
+                                </div>
+                                
+                                <div class="space-y-2 text-xs">
+                                    <div class="flex justify-between py-2 border-b border-gray-100">
+                                        <span class="text-gray-500">Checklist:</span>
+                                        <span class="font-medium text-gray-900">#{{ $maintenance->maintenance_checklist_id }}</span>
+                                    </div>
+                                    <div class="flex justify-between py-2 border-b border-gray-100">
+                                        <span class="text-gray-500">Scanned by:</span>
+                                        <span class="font-medium text-gray-900">{{ $maintenance->scanned_by }}</span>
+                                    </div>
+                                    <div class="flex justify-between py-2 border-b border-gray-100">
+                                        <span class="text-gray-500">From Status:</span>
+                                        <span class="font-medium text-gray-900">{{ $maintenance->start_status }}</span>
+                                    </div>
+                                    <div class="flex justify-between py-2">
+                                        <span class="text-gray-500">To Status:</span>
+                                        <span class="font-medium text-gray-900">{{ $maintenance->end_status }}</span>
+                                    </div>
+                                    @if($maintenance->location_name)
+                                    <div class="pt-2 border-t border-gray-100">
+                                        <div class="text-gray-500 mb-1">Location:</div>
+                                        <div class="bg-green-50 px-2 py-1 rounded text-green-700 text-xs">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>{{ $maintenance->location_name }}
+                                        </div>
+                                    </div>
+                                    @endif
+                                    @if(!empty($maintenance->notes))
+                                    <div class="pt-2 border-t border-gray-100">
+                                        <div class="text-gray-500 mb-1">Notes:</div>
+                                        <div class="bg-blue-50 p-2 rounded border border-blue-100 text-gray-700">
+                                            {{ $maintenance->notes }}
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    <!-- Desktop Table View -->
+                    <div class="hidden md:block space-y-4">
                         @foreach($maintenances as $maintenance)
                             <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                                 <div class="flex items-start justify-between">
@@ -569,7 +623,7 @@
                                             </span>
                                         </div>
                                         
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 text-xs md:text-sm">
                                             <div>
                                                 <span class="font-medium text-gray-700">Checklist:</span>
                                                 <span class="text-gray-900">#{{ $maintenance->maintenance_checklist_id }}</span>
@@ -632,7 +686,41 @@
             <!-- Disposal History Tab -->
             <div id="disposal-tab" class="tab-content" style="{{ $activeTab === 'disposal' ? 'display: block;' : 'display: none;' }}">
                 @if($disposes->total() > 0)
-                    <div class="space-y-4">
+                    <!-- Mobile Card View -->
+                    <div class="block md:hidden space-y-3">
+                        @foreach($disposes as $disposal)
+                            <div class="bg-white rounded-xl p-4 border-2 border-gray-200 shadow-sm">
+                                <div class="flex items-center justify-between mb-3 pb-3 border-b-2 border-gray-100">
+                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-red-100 text-red-800">
+                                        Disposed
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        {{ $disposal->disposal_date->format('M d, Y') }}
+                                    </span>
+                                </div>
+                                
+                                <div class="space-y-2 text-xs">
+                                    <div class="flex justify-between py-2 border-b border-gray-100">
+                                        <span class="text-gray-500">Disposed by:</span>
+                                        <span class="font-medium text-gray-900">{{ $disposal->disposed_by }}</span>
+                                    </div>
+                                    <div class="flex justify-between py-2 border-b border-gray-100">
+                                        <span class="text-gray-500">Method:</span>
+                                        <span class="font-medium text-gray-900">{{ $disposal->disposal_method }}</span>
+                                    </div>
+                                    <div class="pt-2 border-t border-gray-100">
+                                        <div class="text-gray-500 mb-1">Reason:</div>
+                                        <div class="bg-red-50 p-2 rounded border border-red-100 text-gray-700">
+                                            {{ $disposal->disposal_reason }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    <!-- Desktop Table View -->
+                    <div class="hidden md:block space-y-4">
                         @foreach($disposes as $disposal)
                             <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                                 <div class="flex items-start justify-between">
@@ -688,7 +776,68 @@
             <!-- Asset Changes Tab -->
             <div id="changes-tab" class="tab-content" style="{{ $activeTab === 'changes' ? 'display: block;' : 'display: none;' }}">
                 @if($changes->total() > 0)
-                    <div class="space-y-4">
+                    <!-- Mobile Card View -->
+                    <div class="block md:hidden space-y-3">
+                        @foreach($changes as $change)
+                            <div class="bg-white rounded-xl p-4 border-2 border-gray-200 shadow-sm">
+                                <div class="flex items-center justify-between mb-3 pb-3 border-b-2 border-gray-100">
+                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full {{ $change->change_type === 'transfer' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                                        {{ $change->getChangeTypeLabel() }}
+                                    </span>
+                                    <span class="text-xs text-gray-500">
+                                        {{ $change->created_at->format('M d, Y') }}
+                                    </span>
+                                </div>
+                                
+                                @if($change->change_type === 'transfer')
+                                    <div class="bg-blue-50 rounded-lg p-3 border border-blue-200 text-xs space-y-2">
+                                        <div>
+                                            <div class="text-blue-700 font-medium mb-1">From:</div>
+                                            <div class="bg-white px-2 py-1 rounded border">{{ $change->getEnhancedPreviousValue() }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-blue-700 font-medium mb-1">To:</div>
+                                            <div class="bg-white px-2 py-1 rounded border font-medium">{{ $change->getEnhancedNewValue() }}</div>
+                                        </div>
+                                        <div class="pt-2 border-t border-blue-200">
+                                            <span class="text-blue-700 font-medium">By:</span> {{ $change->changed_by }}
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="space-y-2 text-xs">
+                                        <div class="flex justify-between py-2 border-b border-gray-100">
+                                            <span class="text-gray-500">Field:</span>
+                                            <span class="font-medium text-gray-900">{{ $change->getFieldLabel() }}</span>
+                                        </div>
+                                        <div class="flex justify-between py-2 border-b border-gray-100">
+                                            <span class="text-gray-500">Changed by:</span>
+                                            <span class="font-medium text-gray-900">{{ $change->changed_by }}</span>
+                                        </div>
+                                        <div class="py-2 border-b border-gray-100">
+                                            <div class="text-gray-500 mb-1">Previous:</div>
+                                            <div class="font-medium text-gray-900">{{ $change->getEnhancedPreviousValue() }}</div>
+                                        </div>
+                                        <div class="py-2">
+                                            <div class="text-gray-500 mb-1">New:</div>
+                                            <div class="font-medium text-blue-600">{{ $change->getEnhancedNewValue() }}</div>
+                                        </div>
+                                    </div>
+                                @endif
+                                
+                                @if($change->notes)
+                                <div class="mt-3 pt-3 border-t border-gray-200">
+                                    <div class="text-gray-500 mb-1 text-xs">Notes:</div>
+                                    <div class="bg-{{ $change->change_type === 'transfer' ? 'blue' : 'purple' }}-50 p-2 rounded border border-{{ $change->change_type === 'transfer' ? 'blue' : 'purple' }}-100 text-gray-700 text-xs">
+                                        {{ $change->notes }}
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    <!-- Desktop Table View -->
+                    <div class="hidden md:block space-y-4">
                         @foreach($changes as $change)
                             <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                                 <div class="flex items-start justify-between">
@@ -792,8 +941,8 @@
 </div>
 
 <!-- Dispose Modal -->
-<div id="disposeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
-    <div id="disposeModalCard" class="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative animate-fade-in">
+<div id="disposeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden p-4">
+    <div id="disposeModalCard" class="bg-white rounded-xl shadow-xl p-6 md:p-8 w-full max-w-md relative animate-fade-in">
         <button onclick="closeDisposeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-800 text-xl"><i class="fas fa-times"></i></button>
         <div class="flex flex-col items-center">
             <div class="bg-red-100 text-red-800 rounded-full p-4 mb-4">
