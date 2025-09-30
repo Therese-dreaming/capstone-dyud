@@ -171,9 +171,7 @@
                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex-1">
                         <i class="fas fa-check"></i> Scan Asset
                     </button>
-                    <button type="button" id="mark-missing-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
-                        <i class="fas fa-times"></i> Mark Missing
-                    </button>
+                   
                 </div>
             </form>
         </div>
@@ -696,18 +694,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         scanAsset(assetCode, endStatus, notes || '');
-    });
-
-    // Mark missing button
-    document.getElementById('mark-missing-btn').addEventListener('click', function() {
-        const assetCode = document.getElementById('manual-asset-code').value;
-        
-        if (!assetCode) {
-            showMessage('Please enter an asset code first', 'error');
-            return;
-        }
-        
-        showMissingModal(assetCode);
     });
 
     // Status selection modal

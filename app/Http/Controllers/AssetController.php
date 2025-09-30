@@ -85,8 +85,10 @@ class AssetController extends Controller
     public function gsuIndex()
     {
         // Show only approved assets for GSU (for location assignment and management)
+        // Order by created_at descending so newest assets appear first
         $assets = Asset::where('approval_status', Asset::APPROVAL_APPROVED)
             ->with(['category', 'location', 'originalLocation', 'warranty', 'createdBy'])
+            ->orderBy('created_at', 'desc')
             ->paginate(10);
         return view('gsu.assets.index', compact('assets'));
     }
@@ -235,12 +237,24 @@ class AssetController extends Controller
         // Asset changes (transfers, status changes, etc.)
         $changes = $asset->changes()->with('user')->orderBy('created_at', 'desc')->paginate(10);
         
+        // Get repair count and history - all repair requests for this asset
+        $repairs = \App\Models\MaintenanceRequest::where('notes', 'like', '%REPAIR REQUEST%')
+            ->where('requested_asset_codes', 'like', '%"' . $asset->asset_code . '"%')
+            ->with(['requester', 'approver'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+        
+        $repairCount = \App\Models\MaintenanceRequest::where('notes', 'like', '%REPAIR REQUEST%')
+            ->where('requested_asset_codes', 'like', '%"' . $asset->asset_code . '"%')
+            ->where('status', 'completed')
+            ->count();
+        
         // Check if user is GSU and return appropriate view
         if (auth()->user()->role === 'gsu') {
             return view('assets.gsu-show', compact('asset'));
         }
         
-        return view('assets.show', compact('asset', 'maintenances', 'disposes', 'changes', 'activeTab'));
+        return view('assets.show', compact('asset', 'maintenances', 'disposes', 'changes', 'repairs', 'activeTab', 'repairCount'));
     }
 
     public function gsuShowByCode(string $assetCode, Request $request)
@@ -661,6 +675,69 @@ class AssetController extends Controller
 
         return redirect()->route('gsu.assets.index')
             ->with('success', 'Location assigned successfully. Asset is now deployed and available.');
+    }
+
+    /**
+     * Bulk deploy multiple assets to a single location (GSU only)
+     */
+    public function bulkDeploy(Request $request)
+    {
+        $request->validate([
+            'asset_ids' => 'required|array|min:1',
+            'asset_ids.*' => 'required|exists:assets,id',
+            'location_id' => 'required|exists:locations,id',
+        ]);
+
+        try {
+            return DB::transaction(function () use ($request) {
+                $assetIds = $request->asset_ids;
+                $locationId = $request->location_id;
+                $deployedCount = 0;
+                $skippedCount = 0;
+
+                foreach ($assetIds as $assetId) {
+                    $asset = Asset::find($assetId);
+                    
+                    // Only deploy approved assets without location
+                    if ($asset && $asset->isApproved() && !$asset->location_id) {
+                        $asset->update([
+                            'location_id' => $locationId,
+                            'original_location_id' => $locationId,
+                            'status' => Asset::STATUS_AVAILABLE,
+                        ]);
+
+                        // Notify the purchasing user that their asset has been deployed
+                        $notificationService = app(NotificationService::class);
+                        $notificationService->notifyAssetDeployed($asset);
+                        
+                        $deployedCount++;
+                    } else {
+                        $skippedCount++;
+                    }
+                }
+
+                $message = $deployedCount > 0 
+                    ? "{$deployedCount} asset(s) deployed successfully." 
+                    : "No assets were deployed.";
+                
+                if ($skippedCount > 0) {
+                    $message .= " {$skippedCount} asset(s) were skipped (already deployed or not approved).";
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'deployed' => $deployedCount,
+                    'skipped' => $skippedCount
+                ]);
+            });
+        } catch (\Exception $e) {
+            \Log::error('Bulk deployment failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to deploy assets: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

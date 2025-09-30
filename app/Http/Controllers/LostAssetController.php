@@ -41,9 +41,8 @@ class LostAssetController extends Controller
         
         // Overall counts from database (not page-limited)
         $counts = [
-            'investigating' => LostAsset::where('status', LostAsset::STATUS_INVESTIGATING)->count(),
-            'found' => LostAsset::where('status', 'found')->count(),
-            'permanently_lost' => LostAsset::where('status', 'permanently_lost')->count(),
+            'lost' => LostAsset::where('status', LostAsset::STATUS_LOST)->count(),
+            'resolved' => LostAsset::where('status', LostAsset::STATUS_RESOLVED)->count(),
         ];
         
         // Check if user is GSU and return appropriate view
@@ -76,9 +75,6 @@ class LostAssetController extends Controller
     public function store(Request $request, Asset $asset)
     {
         $validated = $request->validate([
-            'last_seen_date' => 'required|date|before_or_equal:today',
-            'description' => 'required|string|max:1000',
-            'last_known_location' => 'nullable|string|max:500',
             'investigation_notes' => 'nullable|string|max:1000',
         ]);
 
@@ -99,13 +95,10 @@ class LostAssetController extends Controller
                 $lostAsset = LostAsset::create([
                     'asset_id' => $asset->id,
                     'reported_by' => auth()->id(),
-                    'last_borrower_id' => null,
-                    'last_seen_date' => $validated['last_seen_date'],
                     'reported_date' => now()->toDateString(),
-                    'description' => $validated['description'],
                     'last_known_location' => $lastKnownLocation,
-                    'investigation_notes' => $validated['investigation_notes'],
-                    'status' => LostAsset::STATUS_INVESTIGATING,
+                    'investigation_notes' => $validated['investigation_notes'] ?? null,
+                    'status' => LostAsset::STATUS_LOST,
                 ]);
 
                 // Update asset status to 'Lost'
@@ -118,7 +111,7 @@ class LostAssetController extends Controller
                     'status',
                     ucfirst($asset->getOriginal('status')),
                     'Lost',
-                    "Asset reported as lost. Last seen: {$validated['last_seen_date']}. Description: {$validated['description']}"
+                    "Asset reported as lost. Location: {$lastKnownLocation}"
                 );
 
                 return redirect()->route('lost-assets.index')
@@ -152,9 +145,8 @@ class LostAssetController extends Controller
     public function updateStatus(Request $request, LostAsset $lostAsset)
     {
         $validated = $request->validate([
-            'status' => 'required|in:found,permanently_lost',
-            'found_date' => 'required_if:status,found|date|before_or_equal:today',
-            'found_location' => 'required_if:status,found|string|max:500',
+            'status' => 'required|in:resolved',
+            'found_date' => 'required|date|before_or_equal:today',
             'found_notes' => 'nullable|string|max:1000',
         ]);
 
@@ -164,13 +156,12 @@ class LostAssetController extends Controller
                 
                 $lostAsset->update([
                     'status' => $validated['status'],
-                    'found_date' => $validated['status'] === 'found' ? $validated['found_date'] : null,
-                    'found_location' => $validated['status'] === 'found' ? $validated['found_location'] : null,
-                    'found_notes' => $validated['status'] === 'found' ? $validated['found_notes'] : null,
+                    'found_date' => $validated['found_date'],
+                    'found_notes' => $validated['found_notes'] ?? null,
                 ]);
 
                 // Update asset status based on lost asset status
-                if ($validated['status'] === 'found') {
+                if ($validated['status'] === 'resolved') {
                     $lostAsset->asset->update(['status' => 'Available']);
                     
                     \App\Traits\TracksAssetChanges::recordChange(
@@ -179,22 +170,11 @@ class LostAssetController extends Controller
                         'status',
                         'Lost',
                         'Available',
-                        "Asset found. Found date: {$validated['found_date']}. Location: {$validated['found_location']}"
-                    );
-                } elseif ($validated['status'] === 'permanently_lost') {
-                    $lostAsset->asset->update(['status' => 'Lost']);
-                    
-                    \App\Traits\TracksAssetChanges::recordChange(
-                        $lostAsset->asset->id,
-                        AssetChange::TYPE_STATUS_CHANGE,
-                        'status',
-                        'Lost',
-                        'Lost',
-                        "Asset permanently lost. Investigation closed."
+                        "Asset found and resolved. Found date: {$validated['found_date']}"
                     );
                 }
 
-                $statusMessage = $validated['status'] === 'found' ? 'Asset marked as found successfully.' : 'Asset marked as permanently lost.';
+                $statusMessage = 'Asset marked as resolved successfully.';
                 
                 return redirect()->back()
                     ->with('success', $statusMessage);

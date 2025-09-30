@@ -167,12 +167,22 @@
                     <!-- Maintenance Requests (Admin) -->
                     <li>
                         <a href="{{ route('maintenance-requests.index') }}"
-                            class="flex items-center px-4 py-2.5 text-gray-600 rounded-lg hover:bg-blue-50 hover:text-blue-800 focus:outline-none transition {{ request()->routeIs('maintenance-requests.*') ? 'bg-blue-100 text-blue-800' : '' }}">
+                            class="flex items-center px-4 py-2.5 text-gray-600 rounded-lg hover:bg-blue-50 hover:text-blue-800 focus:outline-none transition {{ request()->routeIs('maintenance-requests.*') && !request()->routeIs('admin.repair-requests.*') ? 'bg-blue-100 text-blue-800' : '' }}">
                             <i class="fas fa-tools w-5 text-blue-600"></i>
                             <span class="ml-3 text-sm">Maintenance Requests</span>
                             <span class="ml-auto bg-blue-600 text-white text-xs px-2 py-1 rounded-full" id="maintenance-count">
                                 <!-- Will be populated by JavaScript -->
                             </span>
+                        </a>
+                    </li>
+                    
+                    <!-- Repair Requests (Admin) -->
+                    <li>
+                        <a href="{{ route('admin.repair-requests.index') }}"
+                            class="flex items-center px-4 py-2.5 text-gray-600 rounded-lg hover:bg-yellow-50 hover:text-yellow-800 focus:outline-none transition {{ request()->routeIs('admin.repair-requests.*') ? 'bg-yellow-100 text-yellow-800' : '' }}">
+                            <i class="fas fa-wrench w-5 text-yellow-600"></i>
+                            <span class="ml-3 text-sm">Repair Requests</span>
+                            <span class="ml-auto bg-yellow-600 text-white text-xs px-2 py-1 rounded-full" id="repair-count" style="display: none;">0</span>
                         </a>
                     </li>
 

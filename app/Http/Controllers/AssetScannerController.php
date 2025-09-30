@@ -246,6 +246,86 @@ class AssetScannerController extends Controller
         }
     }
 
+    public function markFound(Request $request)
+    {
+        $request->validate([
+            'asset_code' => 'required|string',
+            'found_date' => 'required|date|before_or_equal:today',
+            'found_notes' => 'nullable|string'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Find the asset
+            $asset = Asset::where('asset_code', $request->asset_code)->first();
+            if (!$asset) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Asset not found.'
+                ], 404);
+            }
+
+            // Check if asset is marked as Lost
+            if ($asset->status !== 'Lost') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This asset is not marked as lost.'
+                ], 400);
+            }
+
+            // Find the lost asset record
+            $lostAsset = \App\Models\LostAsset::where('asset_id', $asset->id)
+                ->where('status', \App\Models\LostAsset::STATUS_LOST)
+                ->first();
+
+            if (!$lostAsset) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Lost asset record not found.'
+                ], 404);
+            }
+
+            // Update the lost asset record to resolved
+            $lostAsset->update([
+                'status' => \App\Models\LostAsset::STATUS_RESOLVED,
+                'found_date' => $request->found_date,
+                'found_notes' => $request->found_notes
+            ]);
+
+            // Update asset status to Available
+            $asset->update(['status' => 'Available']);
+
+            // Record the change in asset changes
+            \App\Traits\TracksAssetChanges::recordChange(
+                $asset->id,
+                \App\Models\AssetChange::TYPE_STATUS_CHANGE,
+                'status',
+                'Lost',
+                'Available',
+                "Asset found and resolved. Found date: {$request->found_date}. Notes: " . ($request->found_notes ?? 'None')
+            );
+
+            DB::commit();
+
+            Log::info("Asset {$request->asset_code} marked as found by " . auth()->user()->name);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Asset marked as found successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Mark found asset failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark asset as found: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function getProgress(Request $request, MaintenanceChecklist $checklist)
     {
         $checklist->load('items');

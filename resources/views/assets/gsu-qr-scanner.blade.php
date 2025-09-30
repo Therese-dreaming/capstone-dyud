@@ -236,6 +236,88 @@
     </div>
 </div>
 
+<!-- Mark Asset as Found Modal -->
+<div id="found-modal" class="fixed inset-0 z-[9999] hidden" style="display: none;">
+    <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+    <div class="relative flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full relative z-10 transform transition-all duration-300 scale-100">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-5 rounded-t-2xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-white/20 p-2 rounded-lg">
+                            <i class="fas fa-check-circle text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white">Mark Asset as Found</h3>
+                            <p class="text-green-100 text-sm">Resolve lost asset status</p>
+                        </div>
+                    </div>
+                    <button onclick="closeFoundModal()" class="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-6">
+                <form id="found-form">
+                    <input type="hidden" id="found-asset-code" name="asset_code">
+                    
+                    <!-- Asset Code Display -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-barcode mr-2 text-green-600"></i>Asset Code
+                        </label>
+                        <div class="bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-3">
+                            <span id="found-asset-code-display" class="text-lg font-mono font-bold text-gray-800"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Found Date -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-calendar mr-2 text-green-600"></i>Found Date
+                        </label>
+                        <input type="date" 
+                               id="found-date" 
+                               name="found_date"
+                               value="{{ now()->format('Y-m-d') }}"
+                               max="{{ now()->format('Y-m-d') }}"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                               required>
+                    </div>
+                    
+                    <!-- Found Notes -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-sticky-note mr-2 text-green-600"></i>Found Notes (Optional)
+                        </label>
+                        <textarea id="found-notes" 
+                                  name="found_notes"
+                                  rows="3"
+                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                                  placeholder="Enter any notes about where or how the asset was found..."></textarea>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-3">
+                        <button type="button" 
+                                onclick="closeFoundModal()" 
+                                class="flex-1 px-4 py-3 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium">
+                            <i class="fas fa-times mr-2"></i>Cancel
+                        </button>
+                        <button type="submit" 
+                                class="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all font-medium shadow-lg">
+                            <i class="fas fa-check-circle mr-2"></i>Mark as Found
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Success Toast Notification -->
 <div id="success-toast" class="fixed top-4 right-4 md:top-6 md:right-6 z-[9999] hidden transform translate-x-[calc(100%+2rem)] transition-transform duration-500 ease-in-out max-w-[calc(100vw-2rem)] md:max-w-md">
     <div class="bg-white rounded-xl shadow-2xl border border-green-200 overflow-hidden">
@@ -849,9 +931,12 @@ function renderScanResult(asset) {
             </div>
             <div class="mt-3 flex flex-wrap gap-2">
                 <a href="/gsu/assets/${asset.id}" class="px-3 py-1 bg-blue-100 text-blue-600 rounded text-sm hover:bg-blue-200 transition-colors"><i class="fas fa-eye mr-1"></i>View</a>
-                ${asset.location_id ? 
-                    `<span class="px-3 py-1 bg-gray-100 text-gray-500 rounded text-sm cursor-not-allowed"><i class="fas fa-check-circle mr-1"></i>Already Deployed</span>` :
-                    `<button onclick="openDeployModal('${asset.id}', '${asset.asset_code}')" class="px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200 transition-colors"><i class="fas fa-map-marker-alt mr-1"></i>Deploy</button>`
+                ${asset.status === 'Lost' ? 
+                    `<button onclick="openFoundModal('${asset.asset_code}')" class="px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200 transition-colors font-semibold"><i class="fas fa-check-circle mr-1"></i>Mark as Found</button>` :
+                    (asset.location_id ? 
+                        `<span class="px-3 py-1 bg-gray-100 text-gray-500 rounded text-sm cursor-not-allowed"><i class="fas fa-check-circle mr-1"></i>Already Deployed</span>` :
+                        `<button onclick="openDeployModal('${asset.id}', '${asset.asset_code}')" class="px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200 transition-colors"><i class="fas fa-map-marker-alt mr-1"></i>Deploy</button>`
+                    )
                 }
                 <a href="/gsu/qrcode/asset/${asset.asset_code}" target="_blank" class="px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200 transition-colors"><i class="fas fa-qrcode mr-1"></i>QR</a>
             </div>
@@ -905,5 +990,78 @@ function hideSuccessToast() {
         toast.classList.add('hidden');
     }, 500);
 }
+
+// Mark as Found modal functions
+function openFoundModal(assetCode) {
+    document.getElementById('found-asset-code').value = assetCode;
+    document.getElementById('found-asset-code-display').textContent = assetCode;
+    document.getElementById('found-date').value = '{{ now()->format("Y-m-d") }}';
+    document.getElementById('found-notes').value = '';
+    const modal = document.getElementById('found-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'block';
+}
+
+function closeFoundModal() {
+    const modal = document.getElementById('found-modal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    document.getElementById('found-form').reset();
+}
+
+// Found form submission
+document.getElementById('found-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const assetCode = formData.get('asset_code');
+    const foundDate = formData.get('found_date');
+    const foundNotes = formData.get('found_notes');
+    
+    if (!foundDate) {
+        alert('Please select a found date');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+    submitBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/gsu/asset-scanner/mark-found', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                asset_code: assetCode,
+                found_date: foundDate,
+                found_notes: foundNotes || ''
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            showSuccessToast(data.message || 'Asset marked as found successfully!');
+            closeFoundModal();
+            // Refresh the asset details
+            setTimeout(() => {
+                fetchAssetDetails(assetCode);
+            }, 1000);
+        } else {
+            throw new Error(data.message || 'Failed to mark asset as found');
+        }
+    } catch (error) {
+        console.error('Error marking asset as found:', error);
+        alert(error.message || 'Failed to mark asset as found. Please try again.');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+});
 </script>
 @endsection 

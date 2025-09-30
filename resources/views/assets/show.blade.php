@@ -504,10 +504,25 @@
     <!-- Asset History Section -->
     <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
-            <h2 class="text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
-                <i class="fas fa-history text-indigo-600"></i>
-                Asset History
-            </h2>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h2 class="text-base md:text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fas fa-history text-indigo-600"></i>
+                    Asset History
+                </h2>
+                
+                <!-- Repair Count Badge -->
+                <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-yellow-200">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-yellow-100 p-2 rounded-full">
+                            <i class="fas fa-wrench text-yellow-600"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500">Total Repairs</div>
+                            <div class="text-lg font-bold text-gray-900">{{ $repairCount ?? 0 }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <!-- Tab Navigation -->
@@ -544,6 +559,17 @@
                     @if($changes->total() > 0)
                         <span class="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
                             {{ $changes->total() }}
+                        </span>
+                    @endif
+                </button>
+                
+                <button onclick="showTab('repairs')" 
+                        class="tab-button flex-shrink-0 {{ $activeTab === 'repairs' ? 'active border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500' }} py-3 md:py-4 px-2 md:px-3 border-b-2 font-medium text-xs md:text-sm hover:text-gray-700 flex items-center gap-1 md:gap-2 whitespace-nowrap">
+                    <i class="fas fa-wrench text-xs md:text-sm"></i>
+                    <span class="hidden sm:inline">Repair History</span><span class="sm:hidden">Repairs</span>
+                    @if($repairs->total() > 0)
+                        <span class="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs font-medium">
+                            {{ $repairs->total() }}
                         </span>
                     @endif
                 </button>
@@ -932,6 +958,129 @@
                         <i class="fas fa-edit text-4xl text-gray-300 mb-4"></i>
                         <div class="text-lg font-medium text-gray-600">No asset changes</div>
                         <div class="text-sm text-gray-500 mt-1">This asset has no history of changes</div>
+                    </div>
+                @endif
+            </div>
+            
+            <!-- Repair History Tab -->
+            <div id="repairs-tab" class="tab-content" style="{{ $activeTab === 'repairs' ? 'display: block;' : 'display: none;' }}">
+                @if($repairs->total() > 0)
+                    <div class="space-y-4">
+                        @foreach($repairs as $repair)
+                            @php
+                                // Extract priority and issue from notes
+                                preg_match('/Priority: (\w+)/', $repair->notes, $priorityMatches);
+                                preg_match('/Issue: (.+?)(?:\n\n|$)/s', $repair->notes, $issueMatches);
+                                preg_match('/COMPLETION NOTES:\n(.+)$/s', $repair->notes, $completionMatches);
+                                
+                                $priority = $priorityMatches[1] ?? 'MEDIUM';
+                                $issue = $issueMatches[1] ?? 'No description';
+                                $completionNotes = $completionMatches[1] ?? null;
+                                
+                                $priorityColors = [
+                                    'LOW' => 'bg-gray-100 text-gray-800',
+                                    'MEDIUM' => 'bg-yellow-100 text-yellow-800',
+                                    'HIGH' => 'bg-orange-100 text-orange-800',
+                                    'URGENT' => 'bg-red-100 text-red-800',
+                                ];
+                                $priorityClass = $priorityColors[$priority] ?? 'bg-gray-100 text-gray-800';
+                                
+                                $statusColors = [
+                                    'pending' => 'bg-yellow-100 text-yellow-800',
+                                    'in_progress' => 'bg-orange-100 text-orange-800',
+                                    'completed' => 'bg-green-100 text-green-800',
+                                    'rejected' => 'bg-red-100 text-red-800',
+                                ];
+                                $statusClass = $statusColors[$repair->status] ?? 'bg-gray-100 text-gray-800';
+                                $statusDisplay = $repair->status === 'in_progress' ? 'In Progress' : ucfirst($repair->status);
+                            @endphp
+                            
+                            <div class="bg-white border-2 border-gray-200 rounded-xl p-4 md:p-6 hover:border-yellow-300 transition-all">
+                                <!-- Header -->
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-4 border-b-2 border-gray-100">
+                                    <div class="flex items-center gap-3">
+                                        <div class="bg-yellow-100 p-3 rounded-full">
+                                            <i class="fas fa-wrench text-yellow-600 text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-gray-900">Repair Request #{{ $repair->id }}</div>
+                                            <div class="text-sm text-gray-500">{{ $repair->created_at->format('M d, Y g:i A') }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2 flex-wrap">
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $priorityClass }}">
+                                            {{ $priority }}
+                                        </span>
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">
+                                            {{ $statusDisplay }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Details Grid -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="text-xs font-medium text-gray-500 uppercase">Requested By</label>
+                                        <div class="text-sm font-medium text-gray-900 mt-1">
+                                            {{ $repair->requester->name ?? 'Unknown' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-medium text-gray-500 uppercase">Department</label>
+                                        <div class="text-sm font-medium text-gray-900 mt-1">
+                                            {{ $repair->department }}
+                                        </div>
+                                    </div>
+                                    @if($repair->approved_by)
+                                    <div>
+                                        <label class="text-xs font-medium text-gray-500 uppercase">Approved By</label>
+                                        <div class="text-sm font-medium text-gray-900 mt-1">
+                                            {{ $repair->approver->name ?? 'N/A' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-medium text-gray-500 uppercase">Approved At</label>
+                                        <div class="text-sm font-medium text-gray-900 mt-1">
+                                            {{ $repair->approved_at ? $repair->approved_at->format('M d, Y g:i A') : 'N/A' }}
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
+                                
+                                <!-- Issue Description -->
+                                <div class="mb-4">
+                                    <label class="text-xs font-medium text-gray-500 uppercase mb-2 block">Issue Description</label>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <p class="text-sm text-gray-900 whitespace-pre-wrap">{{ trim($issue) }}</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Completion Notes (if completed) -->
+                                @if($completionNotes)
+                                <div>
+                                    <label class="text-xs font-medium text-gray-500 uppercase mb-2 block">Completion Notes</label>
+                                    <div class="bg-green-50 border-2 border-green-200 rounded-lg p-3">
+                                        <p class="text-sm text-gray-900 whitespace-pre-wrap">{{ trim($completionNotes) }}</p>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    <!-- Pagination for Repairs -->
+                    @if($repairs->hasPages())
+                        <div class="mt-6">
+                            {{ $repairs->appends(['tab' => 'repairs'])->links() }}
+                        </div>
+                    @endif
+                @else
+                    <div class="text-center py-12">
+                        <div class="bg-yellow-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-wrench text-4xl text-yellow-400"></i>
+                        </div>
+                        <div class="text-lg font-medium text-gray-600">No Repair History</div>
+                        <div class="text-sm text-gray-500 mt-1">This asset has not been repaired yet</div>
                     </div>
                 @endif
             </div>

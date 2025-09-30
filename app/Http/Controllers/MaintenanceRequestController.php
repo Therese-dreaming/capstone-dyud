@@ -356,10 +356,214 @@ class MaintenanceRequestController extends Controller
     private function authorizeGSU(): void
     {
         $user = Auth::user();
-        if (!$user || !in_array($user->role, ['gsu','admin'])) {
+        if (!$user || $user->role !== 'gsu') {
             abort(403);
         }
     }
+
+    // User: repair request form
+    public function createRepair(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Only regular users can create repair requests
+        if ($user->role !== 'user') {
+            abort(403, 'Only regular users can create repair requests.');
+        }
+        
+        // Get asset code from query parameter
+        $assetCode = $request->query('asset_code');
+        $asset = null;
+        
+        if ($assetCode) {
+            $asset = \App\Models\Asset::where('asset_code', $assetCode)->first();
+        }
+        
+        // Get only locations owned by this user
+        $locations = $user->ownedLocations()->orderBy('building')->orderBy('room')->get();
+        
+        // Get available semesters
+        $semesters = Semester::active()->orderBy('academic_year', 'desc')->orderBy('start_date', 'desc')->get();
+        
+        return view('repair-requests.create', compact('locations', 'semesters', 'asset', 'assetCode'));
+    }
+
+    // User: submit repair request
+    public function storeRepair(Request $request)
+    {
+        $validated = $request->validate([
+            'asset_code' => 'required|exists:assets,asset_code',
+            'semester_id' => 'required|exists:semesters,id',
+            'school_year' => 'required|string|max:20',
+            'department' => 'required|string|max:100',
+            'date_reported' => 'required|date',
+            'program' => 'nullable|string|max:100',
+            'instructor_name' => 'required|string|max:100',
+            'issue_description' => 'required|string|max:1000',
+            'priority' => 'required|in:low,medium,high,urgent',
+        ]);
+
+        $user = Auth::user();
+        
+        // Only regular users can create repair requests
+        if ($user->role !== 'user') {
+            abort(403, 'Only regular users can create repair requests.');
+        }
+        
+        // Get the asset
+        $asset = \App\Models\Asset::where('asset_code', $validated['asset_code'])->firstOrFail();
+        
+        // Validate that user owns the location of the asset
+        if ($asset->location_id && !$user->ownsLocation($asset->location_id)) {
+            return back()->withErrors(['asset_code' => 'You can only submit repair requests for assets in locations you own.'])->withInput();
+        }
+        
+        try {
+            DB::beginTransaction();
+            
+            // Create maintenance request with repair type
+            $maintenanceRequest = MaintenanceRequest::create([
+                'request_scope' => 'assets',
+                'semester_id' => $validated['semester_id'],
+                'school_year' => $validated['school_year'],
+                'department' => $validated['department'],
+                'date_reported' => $validated['date_reported'],
+                'program' => $validated['program'],
+                'location_id' => $asset->location_id,
+                'instructor_name' => $validated['instructor_name'],
+                'notes' => "REPAIR REQUEST\nPriority: " . strtoupper($validated['priority']) . "\n\nIssue: " . $validated['issue_description'],
+                'requester_id' => $user->id,
+                'requested_asset_codes' => json_encode([$validated['asset_code']]),
+                'status' => 'pending',
+            ]);
+            
+            // Notify admins and user
+            $notificationService = app(NotificationService::class);
+            $notificationService->notifyMaintenanceRequest($maintenanceRequest);
+            $notificationService->notifyUserMaintenanceRequestCreated($maintenanceRequest);
+            
+            DB::commit();
+            
+            return redirect()->route('user-assets.show', $asset)
+                ->with('success', 'Repair request submitted successfully! Admins will review your request.');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Repair request creation failed: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Failed to submit repair request. Please try again.'])->withInput();
+        }
+    }
+
+    // GSU: View all repair requests
+    public function gsuIndex()
+    {
+        $this->authorizeGSU();
+        
+        // Get all maintenance requests that contain "REPAIR REQUEST" in notes
+        $repairRequests = MaintenanceRequest::where('notes', 'like', '%REPAIR REQUEST%')
+            ->with(['requester', 'location', 'semester'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+        
+        return view('gsu.repair-requests.index', compact('repairRequests'));
+    }
+
+    // GSU: View repair request details
+    public function gsuShow(MaintenanceRequest $maintenanceRequest)
+    {
+        $this->authorizeGSU();
+        
+        // Verify this is a repair request
+        if (strpos($maintenanceRequest->notes, 'REPAIR REQUEST') === false) {
+            abort(404, 'Not a repair request');
+        }
+        
+        $maintenanceRequest->load(['requester', 'location', 'semester']);
+        
+        // Get the requested assets
+        $requestedAssets = $maintenanceRequest->getRequestedAssets();
+        
+        return view('gsu.repair-requests.show', compact('maintenanceRequest', 'requestedAssets'));
+    }
+
+    // GSU: Complete repair request
+    public function gsuComplete(Request $request, MaintenanceRequest $maintenanceRequest)
+    {
+        $this->authorizeGSU();
+        
+        $validated = $request->validate([
+            'completion_notes' => 'required|string|max:1000',
+        ]);
+        
+        if ($maintenanceRequest->status !== 'in_progress') {
+            return back()->with('error', 'Only in-progress repair requests can be completed.');
+        }
+        
+        $maintenanceRequest->update([
+            'status' => 'completed',
+            'notes' => $maintenanceRequest->notes . "\n\nCOMPLETION NOTES:\n" . $validated['completion_notes'],
+        ]);
+        
+        // Notify user
+        $notificationService = app(NotificationService::class);
+        $notificationService->notifyUserMaintenanceCompleted($maintenanceRequest);
+        
+        return redirect()->route('gsu.repair-requests.index')
+            ->with('success', 'Repair request marked as completed.');
+    }
+
+    // Admin: View all repair requests
+    public function adminRepairIndex()
+    {
+        $this->authorizeAdmin();
+        
+        // Get all maintenance requests that contain "REPAIR REQUEST" in notes
+        $repairRequests = MaintenanceRequest::where('notes', 'like', '%REPAIR REQUEST%')
+            ->with(['requester', 'location', 'semester'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+        
+        return view('admin.repair-requests.index', compact('repairRequests'));
+    }
+
+    // Admin: View repair request details
+    public function adminRepairShow(MaintenanceRequest $maintenanceRequest)
+    {
+        $this->authorizeAdmin();
+        
+        // Verify this is a repair request
+        if (strpos($maintenanceRequest->notes, 'REPAIR REQUEST') === false) {
+            abort(404, 'Not a repair request');
+        }
+        
+        $maintenanceRequest->load(['requester', 'location', 'semester']);
+        
+        // Get the requested assets
+        $requestedAssets = $maintenanceRequest->getRequestedAssets();
+        
+        return view('admin.repair-requests.show', compact('maintenanceRequest', 'requestedAssets'));
+    }
+
+    // Admin: Approve repair request (sets to in_progress instead of approved)
+    public function adminRepairApprove(MaintenanceRequest $maintenanceRequest)
+    {
+        $this->authorizeAdmin();
+        
+        if ($maintenanceRequest->status !== 'pending') {
+            return back()->with('error', 'Only pending repair requests can be approved.');
+        }
+        
+        $maintenanceRequest->update([
+            'status' => 'in_progress',
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+        ]);
+        
+        // Notify user and GSU
+        $notificationService = app(NotificationService::class);
+        $notificationService->notifyUserMaintenanceRequestApproved($maintenanceRequest);
+        $notificationService->notifyMaintenanceRequestApproved($maintenanceRequest);
+        
+        return back()->with('success', 'Repair request approved and marked as In Progress. GSU can now work on it.');
+    }
 }
-
-

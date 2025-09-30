@@ -123,16 +123,36 @@
                 </div>
             </div>
             <div class="p-6">
-                <div class="text-center">
-                    <div class="mb-4">
-                        <i class="fas fa-tools text-4xl text-red-600 mb-3"></i>
-                        <h3 class="text-lg font-semibold text-gray-900">Submit Maintenance Request</h3>
-                        <p class="text-gray-600 mb-4">Report issues or request maintenance for this asset</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Request Repair -->
+                    <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-6 border-2 border-yellow-200 hover:border-yellow-300 transition-all">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-wrench text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">Request Repair</h3>
+                            <p class="text-sm text-gray-600 mb-4">Report damage or malfunction that needs repair</p>
+                            <a href="{{ route('repair-requests.create', ['asset_code' => $asset->asset_code]) }}" 
+                               class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-semibold rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg">
+                                <i class="fas fa-wrench mr-2"></i> Request Repair
+                            </a>
+                        </div>
                     </div>
-                    <a href="{{ route('maintenance-requests.create') }}" 
-                       class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
-                        <i class="fas fa-tools mr-2"></i> Submit Maintenance Request
-                    </a>
+
+                    <!-- Submit Maintenance Request -->
+                    <div class="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-6 border-2 border-red-200 hover:border-red-300 transition-all">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-tools text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">Maintenance Request</h3>
+                            <p class="text-sm text-gray-600 mb-4">Request routine maintenance or inspection</p>
+                            <a href="{{ route('maintenance-requests.create', ['asset_code' => $asset->asset_code]) }}" 
+                               class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold rounded-lg hover:from-red-600 hover:to-pink-600 transition-all shadow-md hover:shadow-lg">
+                                <i class="fas fa-tools mr-2"></i> Submit Request
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="mt-8 bg-gray-50 rounded-lg p-4">

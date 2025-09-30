@@ -252,6 +252,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start of SY Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End of SY Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scan Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
                     </tr>
@@ -325,6 +326,33 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
+                                @php
+                                    // Get current asset status
+                                    $currentAsset = \App\Models\Asset::where('asset_code', $item->asset_code)->first();
+                                    $currentStatus = $currentAsset ? $currentAsset->status : 'Unknown';
+                                    
+                                    // Determine badge color based on status
+                                    $statusColors = [
+                                        'Available' => 'bg-green-100 text-green-800',
+                                        'In Use' => 'bg-blue-100 text-blue-800',
+                                        'For Repair' => 'bg-yellow-100 text-yellow-800',
+                                        'For Replacement' => 'bg-red-100 text-red-800',
+                                        'For Maintenance' => 'bg-orange-100 text-orange-800',
+                                        'Lost' => 'bg-red-100 text-red-800',
+                                        'Disposed' => 'bg-gray-100 text-gray-800',
+                                    ];
+                                    $statusClass = $statusColors[$currentStatus] ?? 'bg-gray-100 text-gray-800';
+                                @endphp
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusClass }}">
+                                    {{ $currentStatus }}
+                                </span>
+                                @if($currentAsset && $currentAsset->condition)
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        Condition: {{ $currentAsset->condition }}
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
                                 @if($item->is_scanned)
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                         <i class="fas fa-check"></i> Scanned
@@ -335,9 +363,22 @@
                                         </div>
                                     @endif
                                 @elseif($item->is_missing)
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                        <i class="fas fa-times"></i> Missing
-                                    </span>
+                                    @php
+                                        // Check if the asset has been found (status is no longer Lost)
+                                        $asset = \App\Models\Asset::where('asset_code', $item->asset_code)->first();
+                                        $isStillLost = $asset && $asset->status === 'Lost';
+                                    @endphp
+                                    
+                                    @if($isStillLost)
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                            <i class="fas fa-times"></i> Missing
+                                        </span>
+                                    @else
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            <i class="fas fa-check-circle"></i> Found
+                                        </span>
+                                    @endif
+                                    
                                     @if($item->scanned_at)
                                         <div class="text-xs text-gray-500 mt-1">
                                             {{ $item->scanned_at->format('M d, H:i') }}

@@ -52,6 +52,7 @@ class PurchasingController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'quantity' => 'required|integer|min:1|max:100',
             'category_id' => 'required|exists:categories,id',
             'condition' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -62,40 +63,64 @@ class PurchasingController extends Controller
             'model' => 'required|string|max:255',
         ]);
 
-        // Generate unique asset code
-        $assetCode = $this->generateAssetCode();
-
+        $quantity = $request->quantity;
+        $createdAssets = [];
+        
+        // Get the category for asset code generation
+        $category = Category::find($request->category_id);
+        
+        // Get the highest sequence number for this category
+        $latestAsset = Asset::where('category_id', $category->id)
+            ->where('asset_code', 'like', $category->code . '%')
+            ->orderByRaw('CAST(SUBSTRING(asset_code, -4) AS UNSIGNED) DESC')
+            ->first();
+            
+        $startingSequence = $latestAsset ? (int)substr($latestAsset->asset_code, -4) + 1 : 1;
+        
         // Auto-detect current semester
         $currentSemester = Semester::current() ?? Semester::forDate(now());
         
-        // Create the asset
-        $asset = Asset::create([
-            'asset_code' => $assetCode,
-            'name' => $request->name,
-            'category_id' => $request->category_id,
-            'condition' => $request->condition,
-            'description' => $request->description,
-            'purchase_cost' => $request->purchase_cost,
-            'purchase_date' => $request->purchase_date,
-            'status' => 'Available', // Default status
-            'approval_status' => 'pending', // Pending approval from admin
-            'created_by' => Auth::id(),
-            'registered_semester_id' => $currentSemester?->id, // Auto-assign current semester
-        ]);
+        // Create multiple assets based on quantity
+        for ($i = 0; $i < $quantity; $i++) {
+            // Generate unique asset code for each asset
+            $sequence = $startingSequence + $i;
+            $assetCode = $category->code . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            
+            // Create the asset
+            $asset = Asset::create([
+                'asset_code' => $assetCode,
+                'name' => $request->name,
+                'category_id' => $request->category_id,
+                'condition' => $request->condition,
+                'description' => $request->description,
+                'purchase_cost' => $request->purchase_cost,
+                'purchase_date' => $request->purchase_date,
+                'status' => 'Available', // Default status
+                'approval_status' => 'pending', // Pending approval from admin
+                'created_by' => Auth::id(),
+                'registered_semester_id' => $currentSemester?->id, // Auto-assign current semester
+            ]);
 
-        // Create warranty record
-        Warranty::create([
-            'asset_id' => $asset->id,
-            'manufacturer' => $request->manufacturer,
-            'model' => $request->model,
-            'warranty_expiry' => $request->warranty_expiry,
-        ]);
+            // Create warranty record for each asset
+            Warranty::create([
+                'asset_id' => $asset->id,
+                'manufacturer' => $request->manufacturer,
+                'model' => $request->model,
+                'warranty_expiry' => $request->warranty_expiry,
+            ]);
+            
+            // Notify all admin users about the new asset pending approval
+            $this->notificationService->notifyAdminsOfPendingAsset($asset);
+            
+            $createdAssets[] = $asset;
+        }
 
-        // Notify all admin users about the new asset pending approval
-        $this->notificationService->notifyAdminsOfPendingAsset($asset);
+        $message = $quantity === 1 
+            ? 'Asset and warranty information created successfully and submitted for approval.' 
+            : "{$quantity} assets and warranties created successfully and submitted for approval.";
 
         return redirect()->route('purchasing.assets.index')
-            ->with('success', 'Asset and warranty information created successfully and submitted for approval.');
+            ->with('success', $message);
     }
 
     /**

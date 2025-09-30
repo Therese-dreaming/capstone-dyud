@@ -2,6 +2,22 @@
 
 @section('content')
 <div class="container mx-auto py-8">
+    @if(session('success'))
+    <div class="mb-4 bg-green-100 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+        <div class="flex items-start gap-2">
+            <i class="fas fa-check-circle mt-0.5"></i>
+            <span class="font-semibold">{{ session('success') }}</span>
+        </div>
+    </div>
+    @endif
+    @if(session('error'))
+    <div class="mb-4 bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+        <div class="flex items-start gap-2">
+            <i class="fas fa-times-circle mt-0.5"></i>
+            <span class="font-semibold">{{ session('error') }}</span>
+        </div>
+    </div>
+    @endif
     <div class="max-w-4xl mx-auto">
         <div class="flex justify-between items-center mb-6">
             <div>
@@ -111,43 +127,21 @@
             <form action="{{ route('lost-assets.store', $asset) }}" method="POST">
                 @csrf
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="last_seen_date" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-calendar mr-1"></i>Last Seen Date
-                        </label>
-                        <input type="date" name="last_seen_date" id="last_seen_date" 
-                               value="{{ old('last_seen_date', now()->format('Y-m-d')) }}"
-                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                               required>
-                        @error('last_seen_date')
-                            <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    
-                    
-                </div>
-
-                <div class="mt-6">
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-file-alt mr-1"></i>Description of Loss
-                    </label>
-                    <textarea name="description" id="description" rows="4" 
-                              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                              placeholder="Provide a detailed description of how the asset was lost, when it was discovered missing, and any relevant circumstances..."
-                              required>{{ old('description') }}</textarea>
-                    @error('description')
-                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+                <div class="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p class="text-sm text-yellow-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Note:</strong> The asset will be marked as lost and the last known location will be automatically recorded as: 
+                        <strong>{{ $asset->location->building ?? 'Unknown' }} - Floor {{ $asset->location->floor ?? 'N/A' }} - Room {{ $asset->location->room ?? 'N/A' }}</strong>
+                    </p>
                 </div>
 
                 <div class="mt-6">
                     <label for="investigation_notes" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-search mr-1"></i>Investigation Notes
+                        <i class="fas fa-search mr-1"></i>Investigation Notes (Optional)
                     </label>
-                    <textarea name="investigation_notes" id="investigation_notes" rows="3" 
+                    <textarea name="investigation_notes" id="investigation_notes" rows="5" 
                               class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                              placeholder="Any additional notes for the investigation, potential leads, or areas to search...">{{ old('investigation_notes') }}</textarea>
+                              placeholder="Add any notes about the circumstances of the loss, when it was discovered missing, potential leads, or areas to search...">{{ old('investigation_notes') }}</textarea>
                     @error('investigation_notes')
                         <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                     @enderror
@@ -160,7 +154,7 @@
                     </a>
                     <button type="submit" 
                             class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center gap-2">
-                        <i class="fas fa-search"></i> Report as Lost
+                        <i class="fas fa-exclamation-triangle"></i> Report as Lost
                     </button>
                 </div>
             </form>

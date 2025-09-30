@@ -166,6 +166,16 @@
                         </a>
                     </li>
                     
+                    <!-- Repair Requests -->
+                    <li>
+                        <a href="{{ route('gsu.repair-requests.index') }}"
+                            class="flex items-center px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition {{ request()->routeIs('gsu.repair-requests.*') ? 'bg-red-50 text-red-800' : '' }}">
+                            <i class="fas fa-wrench w-5"></i>
+                            <span class="ml-3 text-sm">Repair Requests</span>
+                            <span class="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full" id="repair-requests-count" style="display: none;">0</span>
+                        </a>
+                    </li>
+                    
                     <!-- Notifications -->
                     <li>
                         <a href="{{ route('notifications.index') }}"

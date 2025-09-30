@@ -44,8 +44,10 @@ class LocationController extends Controller
 
     public function show(Location $location)
     {
-        // Get assets in this location
-        $assets = $location->assets;
+        // Get assets in this location, newest first
+        $assets = \App\Models\Asset::where('location_id', $location->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
         
         // Check if user is GSU and return appropriate view
         if (auth()->user()->role === 'gsu') {

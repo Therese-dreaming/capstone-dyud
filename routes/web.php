@@ -199,6 +199,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/maintenance-requests', [MaintenanceRequestController::class, 'store'])->name('maintenance-requests.store');
     Route::get('/maintenance-requests', [MaintenanceRequestController::class, 'userIndex'])->name('maintenance-requests.user-index');
     Route::get('/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'userShow'])->name('maintenance-requests.user-show');
+    
+    // Repair Requests
+    Route::get('/repair-requests/create', [MaintenanceRequestController::class, 'createRepair'])->name('repair-requests.create');
+    Route::post('/repair-requests', [MaintenanceRequestController::class, 'storeRepair'])->name('repair-requests.store');
     Route::get('/maintenance-checklists/{maintenanceChecklist}/user-view', [MaintenanceChecklistController::class, 'userShow'])->name('maintenance-checklists.user-show');
     
     // User Asset Management
@@ -209,6 +213,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'show'])->name('maintenance-requests.show');
     Route::post('/admin/maintenance-requests/{maintenanceRequest}/approve', [MaintenanceRequestController::class, 'approve'])->name('maintenance-requests.approve');
     Route::post('/admin/maintenance-requests/{maintenanceRequest}/reject', [MaintenanceRequestController::class, 'reject'])->name('maintenance-requests.reject');
+    
+    // Admin Repair Requests
+    Route::get('/admin/repair-requests', [MaintenanceRequestController::class, 'adminRepairIndex'])->name('admin.repair-requests.index');
+    Route::get('/admin/repair-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'adminRepairShow'])->name('admin.repair-requests.show');
+    Route::post('/admin/repair-requests/{maintenanceRequest}/approve', [MaintenanceRequestController::class, 'adminRepairApprove'])->name('admin.repair-requests.approve');
     Route::get('/gsu/maintenance-requests/{maintenanceRequest}/acknowledge', [MaintenanceRequestController::class, 'acknowledge'])->name('maintenance-requests.acknowledge');
     Route::get('/api/maintenance-requests/pending-count', [MaintenanceRequestController::class, 'pendingCount'])->name('maintenance-requests.pending-count');
 
@@ -269,6 +278,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('gsu.assets.show');
         Route::get('/assets/{asset}/assign-location', [AssetController::class, 'assignLocationForm'])->name('gsu.assets.assign-location');
         Route::put('/assets/{asset}/location', [AssetController::class, 'assignLocation'])->name('gsu.assets.update-location');
+        Route::post('/assets/bulk-deploy', [AssetController::class, 'bulkDeploy'])->name('gsu.assets.bulk-deploy');
         Route::get('/assets/{asset}/transfer', [AssetController::class, 'transferForm'])->name('gsu.assets.transfer-form');
         Route::post('/assets/{asset}/transfer', [AssetController::class, 'transfer'])->name('gsu.assets.transfer');
         Route::put('/gsu/assets/{asset}/dispose', [AssetController::class, 'dispose'])->name('gsu.assets.dispose');
@@ -289,10 +299,17 @@ Route::middleware(['auth'])->group(function () {
         // Asset Scanner API routes (shared between admin and GSU)
         Route::post('/asset-scanner/scan', [AssetScannerController::class, 'scan'])->name('asset-scanner.scan');
         Route::post('/asset-scanner/mark-missing', [AssetScannerController::class, 'markMissing'])->name('asset-scanner.mark-missing');
+        Route::post('/asset-scanner/mark-found', [AssetScannerController::class, 'markFound'])->name('asset-scanner.mark-found');
         Route::get('/asset-scanner/{maintenanceChecklist}/progress', [AssetScannerController::class, 'getProgress'])->name('asset-scanner.progress');
         
         // GSU Reports - Only Lost Assets allowed
         Route::get('/gsu/lost-assets', [LostAssetController::class, 'index'])->name('gsu.lost-assets.index');
+        
+        // GSU Repair Requests
+        Route::get('/repair-requests', [MaintenanceRequestController::class, 'gsuIndex'])->name('gsu.repair-requests.index');
+        Route::get('/repair-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'gsuShow'])->name('gsu.repair-requests.show');
+        Route::post('/repair-requests/{maintenanceRequest}/acknowledge', [MaintenanceRequestController::class, 'gsuAcknowledge'])->name('gsu.repair-requests.acknowledge');
+        Route::post('/repair-requests/{maintenanceRequest}/complete', [MaintenanceRequestController::class, 'gsuComplete'])->name('gsu.repair-requests.complete');
         
         // Debug route to test if GSU routes are working
         Route::get('/gsu/test', function() {
