@@ -83,6 +83,11 @@ class MaintenanceRequestController extends Controller
                 if (!$user->ownsLocation($asset->location_id)) {
                     return back()->withErrors(['asset_codes' => 'You can only request maintenance for assets in locations you own.'])->withInput();
                 }
+                
+                // Prevent maintenance requests for disposed assets
+                if ($asset->status === 'Disposed') {
+                    return back()->withErrors(['asset_codes' => "Cannot request maintenance for asset {$asset->asset_code} - it is disposed and has been retired from service."])->withInput();
+                }
             }
         }
 
@@ -503,6 +508,30 @@ class MaintenanceRequestController extends Controller
             'status' => 'completed',
             'notes' => $maintenanceRequest->notes . "\n\nCOMPLETION NOTES:\n" . $validated['completion_notes'],
         ]);
+        
+        // Update asset status back to Available for completed repairs
+        if ($maintenanceRequest->maintenance_checklist_id) {
+            $checklist = $maintenanceRequest->checklist;
+            if ($checklist) {
+                // Get all assets from the maintenance checklist that were marked for repair
+                $assetCodes = $checklist->items()
+                    ->where('end_status', 'FOR REPAIR')
+                    ->pluck('asset_code')
+                    ->toArray();
+                
+                if (!empty($assetCodes)) {
+                    // Update asset status back to Available
+                    \App\Models\Asset::whereIn('asset_code', $assetCodes)
+                        ->where('status', 'For Repair')
+                        ->update(['status' => 'Available']);
+                        
+                    \Log::info('Updated asset status to Available after repair completion', [
+                        'maintenance_request_id' => $maintenanceRequest->id,
+                        'asset_codes' => $assetCodes
+                    ]);
+                }
+            }
+        }
         
         // Notify user
         $notificationService = app(NotificationService::class);

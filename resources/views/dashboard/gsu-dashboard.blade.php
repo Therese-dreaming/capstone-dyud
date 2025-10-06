@@ -71,7 +71,7 @@
                             <p class="text-3xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{{ number_format($totalAssets ?? 0) }}</p>
                             <p class="text-sm text-green-600 mt-1 flex items-center">
                                 <i class="fas fa-boxes mr-1"></i>
-                                {{ $availableAssets ?? 0 }} available
+                                {{ $deployedAssets ?? 0 }} deployed
                             </p>
                         </div>
                         <div class="bg-blue-100 p-3 rounded-full group-hover:bg-blue-200 transition-colors">
@@ -82,17 +82,17 @@
                 <div class="h-1 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
             </div>
 
-            <!-- Pending Approvals -->
+            <!-- Pending Deployment -->
             <div class="group bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
-                 @click="activeTab = 'approvals'">
+                 @click="activeTab = 'deployment'">
                 <div class="p-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600 group-hover:text-orange-600 transition-colors">Pending Approvals</p>
-                            <p class="text-3xl font-bold text-gray-900 group-hover:text-orange-700 transition-colors">{{ $pendingApprovalAssets ?? 0 }}</p>
+                            <p class="text-sm font-medium text-gray-600 group-hover:text-orange-600 transition-colors">Pending Deployment</p>
+                            <p class="text-3xl font-bold text-gray-900 group-hover:text-orange-700 transition-colors">{{ $pendingDeploymentAssets ?? 0 }}</p>
                             <p class="text-sm text-orange-600 mt-1 flex items-center">
                                 <i class="fas fa-clock mr-1"></i>
-                                Awaiting deployment
+                                Not yet deployed
                             </p>
                         </div>
                         <div class="bg-orange-100 p-3 rounded-full group-hover:bg-orange-200 transition-colors">
@@ -214,12 +214,12 @@
                             class="basis-1/2 sm:basis-auto flex-1 sm:flex-none py-3 sm:py-4 px-3 sm:px-6 font-medium text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-1 sm:gap-2">
                         <i class="fas fa-boxes"></i><span>Assets</span>
                     </button>
-                    <button @click="activeTab = 'approvals'" 
-                            :class="activeTab === 'approvals' ? 'bg-orange-50 text-orange-600 border-b-2 border-orange-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+                    <button @click="activeTab = 'deployment'" 
+                            :class="activeTab === 'deployment' ? 'bg-orange-50 text-orange-600 border-b-2 border-orange-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
                             class="basis-1/2 sm:basis-auto flex-1 sm:flex-none py-3 sm:py-4 px-3 sm:px-6 font-medium text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-1 sm:gap-2">
-                        <i class="fas fa-hourglass-half"></i><span>Approvals</span>
-                        @if($pendingApprovalAssets > 0)
-                        <span class="bg-orange-500 text-white text-xs rounded-full px-2 py-1 ml-1">{{ $pendingApprovalAssets }}</span>
+                        <i class="fas fa-hourglass-half"></i><span>Deployment</span>
+                        @if($pendingDeploymentAssets > 0)
+                        <span class="bg-orange-500 text-white text-xs rounded-full px-2 py-1 ml-1">{{ $pendingDeploymentAssets }}</span>
                         @endif
                     </button>
                     <button @click="activeTab = 'maintenance'" 
@@ -257,18 +257,22 @@
                             <div class="relative h-56 sm:h-64 md:h-80">
                                 <canvas id="assetStatusChart"></canvas>
                             </div>
-                            <div class="mt-4 grid grid-cols-2 gap-2 sm:gap-4 text-center">
-                                <div class="bg-green-50 p-3 rounded-lg">
-                                    <div class="text-2xl font-bold text-green-600">{{ $availableAssets ?? 0 }}</div>
-                                    <div class="text-sm text-green-700">Available</div>
+                            <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 text-center">
+                                <div class="bg-yellow-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-yellow-600">{{ $pendingDeploymentAssets ?? 0 }}</div>
+                                    <div class="text-sm text-yellow-700">Pending Deployment</div>
                                 </div>
-                                <div class="bg-blue-50 p-3 rounded-lg">
-                                    <div class="text-2xl font-bold text-blue-600">{{ $inUseAssets ?? 0 }}</div>
-                                    <div class="text-sm text-blue-700">In Use</div>
+                                <div class="bg-green-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-green-600">{{ $deployedAssets ?? 0 }}</div>
+                                    <div class="text-sm text-green-700">Deployed Assets</div>
                                 </div>
                                 <div class="bg-orange-50 p-3 rounded-lg">
                                     <div class="text-2xl font-bold text-orange-600">{{ $maintenanceAssets ?? 0 }}</div>
                                     <div class="text-sm text-orange-700">Maintenance</div>
+                                </div>
+                                <div class="bg-purple-50 p-3 rounded-lg">
+                                    <div class="text-2xl font-bold text-purple-600">{{ $lostAssets ?? 0 }}</div>
+                                    <div class="text-sm text-purple-700">Lost</div>
                                 </div>
                                 <div class="bg-red-50 p-3 rounded-lg">
                                     <div class="text-2xl font-bold text-red-600">{{ $disposedAssets ?? 0 }}</div>
@@ -406,70 +410,67 @@
                 </div>
             </div>
 
-            <!-- Approvals Tab -->
-            <div x-show="activeTab === 'approvals'" x-transition>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- Approval Status Chart -->
-                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                <i class="fas fa-chart-bar text-orange-600"></i>
-                                Asset Approval Status
-                            </h3>
-                        </div>
-                        <div class="p-6">
-                            <div class="relative">
-                                <canvas id="assetApprovalChart" width="400" height="300"></canvas>
-                            </div>
-                            <div class="mt-4 grid grid-cols-3 gap-4 text-center">
-                                <div class="bg-yellow-50 p-3 rounded-lg">
-                                    <div class="text-2xl font-bold text-yellow-600">{{ $pendingApprovalAssets ?? 0 }}</div>
-                                    <div class="text-sm text-yellow-700">Pending</div>
-                                </div>
-                                <div class="bg-green-50 p-3 rounded-lg">
-                                    <div class="text-2xl font-bold text-green-600">{{ $approvedAssets ?? 0 }}</div>
-                                    <div class="text-sm text-green-700">Approved</div>
-                                </div>
-                                <div class="bg-red-50 p-3 rounded-lg">
-                                    <div class="text-2xl font-bold text-red-600">{{ $rejectedAssets ?? 0 }}</div>
-                                    <div class="text-sm text-red-700">Rejected</div>
-                                </div>
-                            </div>
-                        </div>
+            <!-- Deployment Tab -->
+            <div x-show="activeTab === 'deployment'" x-transition>
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i class="fas fa-clock text-orange-600"></i>
+                            Pending Deployment
+                        </h3>
                     </div>
-
-                    <!-- Pending Actions -->
-                    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                        <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                <i class="fas fa-clock text-orange-600"></i>
-                                Pending Actions
-                            </h3>
-                        </div>
-                        <div class="p-4 sm:p-6">
-                            @if($pendingApprovalAssets > 0)
-                            <div class="space-y-4">
-                                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <h4 class="font-semibold text-orange-800">Assets Awaiting Deployment</h4>
-                                            <p class="text-sm text-orange-600">{{ $pendingApprovalAssets }} assets ready for deployment</p>
+                    <div class="p-4 sm:p-6">
+                        @if($pendingDeploymentAssets > 0)
+                        <div class="space-y-4">
+                            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                    <div>
+                                        <h4 class="font-semibold text-orange-800 text-lg">Assets Awaiting Deployment</h4>
+                                        <p class="text-sm text-orange-600 mt-1">{{ $pendingDeploymentAssets }} assets need to be deployed to locations</p>
+                                        <p class="text-xs text-orange-500 mt-2">These assets have been created but not yet assigned to any location.</p>
+                                    </div>
+                                    <a href="{{ route('gsu.assets.index') }}" 
+                                       class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap">
+                                        <i class="fas fa-layer-group"></i>
+                                        Deploy Now
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="mt-6">
+                                <h4 class="font-semibold text-gray-900 mb-3">Deployment Status</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm text-yellow-700 font-medium">Pending Deployment</p>
+                                                <p class="text-3xl font-bold text-yellow-600 mt-1">{{ $pendingDeploymentAssets }}</p>
+                                            </div>
+                                            <div class="bg-yellow-100 p-3 rounded-full">
+                                                <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                                            </div>
                                         </div>
-                                        <a href="{{ route('gsu.assets.index') }}" 
-                                           class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                            Deploy Now
-                                        </a>
+                                    </div>
+                                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm text-green-700 font-medium">Deployed Assets</p>
+                                                <p class="text-3xl font-bold text-green-600 mt-1">{{ ($totalAssets ?? 0) - ($pendingDeploymentAssets ?? 0) }}</p>
+                                            </div>
+                                            <div class="bg-green-100 p-3 rounded-full">
+                                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            @else
-                            <div class="text-center py-8">
-                                <i class="fas fa-check-circle text-4xl text-green-300 mb-4"></i>
-                                <h4 class="text-lg font-medium text-gray-900 mb-2">All Caught Up!</h4>
-                                <p class="text-gray-600">No pending approvals at this time.</p>
-                            </div>
-                            @endif
                         </div>
+                        @else
+                        <div class="text-center py-8">
+                            <i class="fas fa-check-circle text-4xl text-green-300 mb-4"></i>
+                            <h4 class="text-lg font-medium text-gray-900 mb-2">All Assets Deployed!</h4>
+                            <p class="text-gray-600">All assets have been deployed to their locations.</p>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -608,21 +609,21 @@ function gsuDashboardData() {
                 this.assetStatusChart = new Chart(assetStatusCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Available', 'In Use', 'Under Maintenance', 'Disposed', 'Lost'],
+                        labels: ['Pending Deployment', 'Deployed Assets', 'Maintenance', 'Lost', 'Disposed'],
                         datasets: [{
                             data: [
-                                {{ $availableAssets ?? 0 }},
-                                {{ $inUseAssets ?? 0 }},
+                                {{ $pendingDeploymentAssets ?? 0 }},
+                                {{ $deployedAssets ?? 0 }},
                                 {{ $maintenanceAssets ?? 0 }},
-                                {{ $disposedAssets ?? 0 }},
-                                {{ $lostAssets ?? 0 }}
+                                {{ $lostAssets ?? 0 }},
+                                {{ $disposedAssets ?? 0 }}
                             ],
                             backgroundColor: [
-                                '#10B981', // Green
-                                '#3B82F6', // Blue
-                                '#F59E0B', // Orange
-                                '#EF4444', // Red
-                                '#6B7280'  // Gray
+                                '#EAB308', // Yellow - Pending Deployment
+                                '#10B981', // Green - Deployed Assets
+                                '#F59E0B', // Orange - Maintenance
+                                '#8B5CF6', // Purple - Lost
+                                '#EF4444'  // Red - Disposed
                             ],
                             borderWidth: 2,
                             borderColor: '#ffffff'

@@ -238,14 +238,12 @@ class AssetController extends Controller
         $changes = $asset->changes()->with('user')->orderBy('created_at', 'desc')->paginate(10);
         
         // Get repair count and history - all repair requests for this asset
-        $repairs = \App\Models\MaintenanceRequest::where('notes', 'like', '%REPAIR REQUEST%')
-            ->where('requested_asset_codes', 'like', '%"' . $asset->asset_code . '"%')
-            ->with(['requester', 'approver'])
+        $repairs = \App\Models\RepairRequest::where('asset_id', $asset->id)
+            ->with(['requester', 'approvedBy', 'rejectedBy', 'completedBy'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
         
-        $repairCount = \App\Models\MaintenanceRequest::where('notes', 'like', '%REPAIR REQUEST%')
-            ->where('requested_asset_codes', 'like', '%"' . $asset->asset_code . '"%')
+        $repairCount = \App\Models\RepairRequest::where('asset_id', $asset->id)
             ->where('status', 'completed')
             ->count();
         

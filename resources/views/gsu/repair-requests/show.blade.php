@@ -24,13 +24,13 @@
                         </div>
                         <div class="min-w-0 flex-1">
                             <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 break-words">
-                                Repair Request #{{ $maintenanceRequest->id }}
+                                Repair Request #{{ $repairRequest->id }}
                             </h1>
                             <p class="text-sm sm:text-base text-gray-600 mt-1">
-                                Submitted by {{ $maintenanceRequest->requester->name ?? 'Unknown' }}
+                                Submitted by {{ $repairRequest->requester->name ?? 'Unknown' }}
                             </p>
                             <p class="text-xs sm:text-sm text-gray-500 mt-1">
-                                {{ $maintenanceRequest->created_at->format('M d, Y g:i A') }}
+                                {{ $repairRequest->created_at->format('M d, Y g:i A') }}
                             </p>
                         </div>
                     </div>
@@ -43,10 +43,10 @@
                             'completed' => 'bg-green-100 text-green-800 border-green-200',
                             'rejected' => 'bg-red-100 text-red-800 border-red-200',
                         ];
-                        $statusClass = $statusColors[$maintenanceRequest->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                        $statusClass = $statusColors[$repairRequest->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
                         
                         // Display friendly status name
-                        $statusDisplay = $maintenanceRequest->status === 'in_progress' ? 'In Progress' : ucfirst($maintenanceRequest->status);
+                        $statusDisplay = $repairRequest->status === 'in_progress' ? 'In Progress' : ucfirst($repairRequest->status);
                     @endphp
                     <span class="inline-flex items-center px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border-2 {{ $statusClass }} self-start sm:self-auto">
                         <i class="fas fa-circle text-xs mr-2"></i>
@@ -79,17 +79,15 @@
                     </div>
                     <div class="p-6">
                         @php
-                            // Extract priority and issue from notes
-                            preg_match('/Priority: (\w+)/', $maintenanceRequest->notes, $priorityMatches);
-                            preg_match('/Issue: (.+?)(?:\n\n|$)/s', $maintenanceRequest->notes, $issueMatches);
-                            $priority = $priorityMatches[1] ?? 'MEDIUM';
-                            $issue = $issueMatches[1] ?? 'No description provided';
+                            // Repair requests have dedicated fields, not extracted from notes
+                            $priority = ucfirst($repairRequest->urgency_level ?? 'medium');
+                            $issue = $repairRequest->issue_description ?? 'No description provided';
                             
                             $priorityColors = [
-                                'LOW' => 'bg-gray-100 text-gray-800',
-                                'MEDIUM' => 'bg-yellow-100 text-yellow-800',
-                                'HIGH' => 'bg-orange-100 text-orange-800',
-                                'URGENT' => 'bg-red-100 text-red-800',
+                                'Low' => 'bg-gray-100 text-gray-800',
+                                'Medium' => 'bg-yellow-100 text-yellow-800',
+                                'High' => 'bg-orange-100 text-orange-800',
+                                'Critical' => 'bg-red-100 text-red-800',
                             ];
                             $priorityClass = $priorityColors[$priority] ?? 'bg-gray-100 text-gray-800';
                         @endphp
@@ -112,24 +110,24 @@
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                                    <div class="text-gray-900">{{ $maintenanceRequest->department }}</div>
+                                    <div class="text-gray-900">{{ $repairRequest->department }}</div>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Program</label>
-                                    <div class="text-gray-900">{{ $maintenanceRequest->program ?? 'N/A' }}</div>
+                                    <div class="text-gray-900">{{ $repairRequest->program ?? 'N/A' }}</div>
                                 </div>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Date Reported</label>
-                                <div class="text-gray-900">{{ $maintenanceRequest->date_reported->format('F j, Y') }}</div>
+                                <div class="text-gray-900">{{ $repairRequest->date_reported->format('F j, Y') }}</div>
                             </div>
 
-                            @if($maintenanceRequest->location)
+                            @if($repairRequest->asset && $repairRequest->asset->location)
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Asset Location</label>
                                 <div class="text-gray-900">
-                                    {{ $maintenanceRequest->location->building }} - Floor {{ $maintenanceRequest->location->floor }} - Room {{ $maintenanceRequest->location->room }}
+                                    {{ $repairRequest->asset->location->building }} - Floor {{ $repairRequest->asset->location->floor }} - Room {{ $repairRequest->asset->location->room }}
                                 </div>
                             </div>
                             @endif
@@ -138,48 +136,42 @@
                 </div>
 
                 <!-- Asset Information -->
-                @if($requestedAssets->count() > 0)
+                @if($repairRequest->asset)
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
                         <h2 class="text-xl font-bold text-white">Asset Information</h2>
                     </div>
                     <div class="p-6">
-                        @foreach($requestedAssets as $asset)
                         <div class="border border-gray-200 rounded-lg p-4">
                             <div class="flex items-center justify-between mb-3">
                                 <div>
-                                    <div class="text-lg font-semibold text-gray-900">{{ $asset->name }}</div>
-                                    <div class="text-sm text-gray-600">Code: <span class="font-mono">{{ $asset->asset_code }}</span></div>
+                                    <div class="text-lg font-semibold text-gray-900">{{ $repairRequest->asset->name }}</div>
+                                    <div class="text-sm text-gray-600">Code: <span class="font-mono">{{ $repairRequest->asset->asset_code }}</span></div>
                                 </div>
                                 <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    {{ $asset->category->name ?? 'N/A' }}
+                                    {{ $repairRequest->asset->category->name ?? 'N/A' }}
                                 </span>
                             </div>
-                            @if($asset->location)
+                            @if($repairRequest->asset->location)
                             <div class="text-sm text-gray-600">
                                 <i class="fas fa-map-marker-alt mr-1"></i>
-                                {{ $asset->location->building }} - Floor {{ $asset->location->floor }} - Room {{ $asset->location->room }}
+                                {{ $repairRequest->asset->location->building }} - Floor {{ $repairRequest->asset->location->floor }} - Room {{ $repairRequest->asset->location->room }}
                             </div>
                             @endif
                         </div>
-                        @endforeach
                     </div>
                 </div>
                 @endif
 
                 <!-- Completion Notes (if completed) -->
-                @if($maintenanceRequest->status === 'completed' && strpos($maintenanceRequest->notes, 'COMPLETION NOTES:') !== false)
+                @if($repairRequest->status === 'completed' && $repairRequest->completion_notes)
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
                         <h2 class="text-xl font-bold text-white">Completion Notes</h2>
                     </div>
                     <div class="p-6">
-                        @php
-                            preg_match('/COMPLETION NOTES:\n(.+)$/s', $maintenanceRequest->notes, $completionMatches);
-                            $completionNotes = $completionMatches[1] ?? '';
-                        @endphp
                         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                            <p class="text-gray-900 whitespace-pre-wrap">{{ trim($completionNotes) }}</p>
+                            <p class="text-gray-900 whitespace-pre-wrap">{{ $repairRequest->completion_notes }}</p>
                         </div>
                     </div>
                 </div>
@@ -197,23 +189,15 @@
                         </h2>
                     </div>
                     <div class="p-4 md:p-6 space-y-3">
-                        @if($maintenanceRequest->status === 'pending')
-                            <!-- GSU can approve pending requests -->
-                            <form action="{{ route('maintenance-requests.approve', $maintenanceRequest) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-md flex items-center justify-center">
-                                    <i class="fas fa-check mr-2"></i>
-                                    <span>Approve Request</span>
-                                </button>
-                            </form>
+                        @if($repairRequest->status === 'pending')
                             <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 text-center">
                                 <i class="fas fa-clock text-yellow-600 text-2xl mb-2"></i>
-                                <p class="text-sm text-yellow-800 font-medium">Pending Approval</p>
-                                <p class="text-xs text-yellow-700 mt-1">Review and approve to start working on this repair</p>
+                                <p class="text-sm text-yellow-800 font-medium">Pending Admin Approval</p>
+                                <p class="text-xs text-yellow-700 mt-1">Waiting for admin to approve this repair request</p>
                             </div>
                         @endif
 
-                        @if($maintenanceRequest->status === 'in_progress')
+                        @if($repairRequest->status === 'in_progress')
                             <button onclick="document.getElementById('complete-modal').classList.remove('hidden')" 
                                     class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md flex items-center justify-center">
                                 <i class="fas fa-check-circle mr-2"></i>
@@ -226,7 +210,7 @@
                             </div>
                         @endif
 
-                        @if($maintenanceRequest->status === 'completed')
+                        @if($repairRequest->status === 'completed')
                             <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 text-center">
                                 <i class="fas fa-check-circle text-green-600 text-3xl mb-2"></i>
                                 <p class="text-sm text-green-800 font-medium">Repair Completed</p>
@@ -234,7 +218,7 @@
                             </div>
                         @endif
 
-                        @if($maintenanceRequest->status === 'rejected')
+                        @if($repairRequest->status === 'rejected')
                             <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4 text-center">
                                 <i class="fas fa-times-circle text-red-600 text-3xl mb-2"></i>
                                 <p class="text-sm text-red-800 font-medium">Request Rejected</p>
@@ -255,15 +239,15 @@
                     <div class="p-4 md:p-6 space-y-3">
                         <div>
                             <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Name</label>
-                            <div class="text-sm md:text-base text-gray-900 font-medium">{{ $maintenanceRequest->requester->name ?? 'Unknown' }}</div>
+                            <div class="text-sm md:text-base text-gray-900 font-medium">{{ $repairRequest->requester->name ?? 'Unknown' }}</div>
                         </div>
                         <div>
                             <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <div class="text-xs md:text-sm text-gray-900 break-all">{{ $maintenanceRequest->requester->email ?? 'N/A' }}</div>
+                            <div class="text-xs md:text-sm text-gray-900 break-all">{{ $repairRequest->requester->email ?? 'N/A' }}</div>
                         </div>
                         <div>
                             <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">Submitted</label>
-                            <div class="text-xs md:text-sm text-gray-900">{{ $maintenanceRequest->created_at->format('M d, Y g:i A') }}</div>
+                            <div class="text-xs md:text-sm text-gray-900">{{ $repairRequest->created_at->format('M d, Y g:i A') }}</div>
                         </div>
                     </div>
                 </div>
@@ -288,7 +272,7 @@
                 </button>
             </div>
             
-            <form action="{{ route('gsu.repair-requests.complete', $maintenanceRequest) }}" method="POST">
+            <form action="{{ route('gsu.repair-requests.complete', $repairRequest) }}" method="POST">
                 @csrf
                 
                 <div class="mb-6">

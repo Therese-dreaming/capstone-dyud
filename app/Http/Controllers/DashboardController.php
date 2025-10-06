@@ -8,6 +8,7 @@ use App\Models\Location;
 use App\Models\Maintenance;
 use App\Models\User;
 use App\Models\MaintenanceRequest;
+use App\Models\RepairRequest;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 
@@ -65,6 +66,15 @@ class DashboardController extends Controller
         // Get recent maintenance requests (last 5)
         $recentRequests = $maintenanceRequests->take(5);
         
+        // Get user's repair requests
+        $repairRequests = \App\Models\RepairRequest::where('requester_id', $user->id)
+            ->with(['asset'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        $totalRepairRequests = $repairRequests->count();
+        $pendingRepairRequests = $repairRequests->where('status', 'pending')->count();
+        
         // Get user's notifications
         $notifications = Notification::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
@@ -108,6 +118,9 @@ class DashboardController extends Controller
             'approvedRequests',
             'completedRequests',
             'recentRequests',
+            'repairRequests',
+            'totalRepairRequests',
+            'pendingRepairRequests',
             'notifications',
             'unreadNotifications',
             'assetStatusData',
@@ -122,16 +135,22 @@ class DashboardController extends Controller
     {
         // Get comprehensive asset statistics
         $totalAssets = Asset::count();
-        $availableAssets = Asset::where('status', 'Available')->count();
-        $inUseAssets = Asset::where('status', 'In Use')->count();
+        
+        // Pending deployment = assets without location assigned (not deployed yet)
+        $pendingDeploymentAssets = Asset::whereNull('location_id')
+            ->where('status', '!=', 'Disposed')
+            ->where('status', '!=', 'Lost')
+            ->count();
+        
+        // Deployed assets = all assets that have been assigned to a location
+        $deployedAssets = Asset::whereNotNull('location_id')
+            ->where('status', '!=', 'Disposed')
+            ->where('status', '!=', 'Lost')
+            ->count();
+        
         $maintenanceAssets = Asset::where('status', 'Under Maintenance')->count();
         $disposedAssets = Asset::where('status', 'Disposed')->count();
         $lostAssets = Asset::where('status', 'Lost')->count();
-        
-        // Get pending assets for approval (from purchasing workflow)
-        $pendingApprovalAssets = Asset::where('approval_status', Asset::APPROVAL_PENDING ?? 'pending')->count();
-        $approvedAssets = Asset::where('approval_status', Asset::APPROVAL_APPROVED ?? 'approved')->count();
-        $rejectedAssets = Asset::where('approval_status', Asset::APPROVAL_REJECTED ?? 'rejected')->count();
         
         // Get maintenance statistics
         $totalMaintenanceRequests = MaintenanceRequest::count();
@@ -185,17 +204,11 @@ class DashboardController extends Controller
 
         // Prepare chart data
         $assetStatusData = [
-            'Available' => $availableAssets,
-            'In Use' => $inUseAssets,
-            'Under Maintenance' => $maintenanceAssets,
-            'Disposed' => $disposedAssets,
+            'Pending Deployment' => $pendingDeploymentAssets,
+            'Deployed Assets' => $deployedAssets,
+            'Maintenance' => $maintenanceAssets,
             'Lost' => $lostAssets,
-        ];
-        
-        $assetApprovalData = [
-            'Pending' => $pendingApprovalAssets,
-            'Approved' => $approvedAssets,
-            'Rejected' => $rejectedAssets,
+            'Disposed' => $disposedAssets,
         ];
         
         $maintenanceStatusData = [
@@ -216,14 +229,11 @@ class DashboardController extends Controller
 
         return view('dashboard.gsu-dashboard', compact(
             'totalAssets',
-            'availableAssets',
-            'inUseAssets',
+            'deployedAssets',
             'maintenanceAssets',
             'disposedAssets',
             'lostAssets',
-            'pendingApprovalAssets',
-            'approvedAssets',
-            'rejectedAssets',
+            'pendingDeploymentAssets',
             'totalMaintenanceRequests',
             'pendingMaintenanceRequests',
             'approvedMaintenanceRequests',
@@ -242,7 +252,6 @@ class DashboardController extends Controller
             'notifications',
             'unreadNotifications',
             'assetStatusData',
-            'assetApprovalData',
             'maintenanceStatusData',
             'userRoleData',
             'assetsByCategory'
@@ -334,6 +343,13 @@ class DashboardController extends Controller
         $approvedMaintenanceRequests = MaintenanceRequest::where('status', 'approved')->count();
         $completedMaintenanceRequests = MaintenanceRequest::where('status', 'completed')->count();
         $pendingMaintenances = Maintenance::whereIn('status', ['Scheduled', 'In Progress'])->count();
+        
+        // Get repair request statistics
+        $totalRepairRequests = RepairRequest::count();
+        $pendingRepairRequests = RepairRequest::where('status', 'pending')->count();
+        $inProgressRepairRequests = RepairRequest::where('status', 'in_progress')->count();
+        $completedRepairRequests = RepairRequest::where('status', 'completed')->count();
+        $criticalRepairRequests = RepairRequest::where('urgency_level', 'critical')->count();
         
         // Get user statistics
         $totalUsers = User::count();

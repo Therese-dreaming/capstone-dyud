@@ -678,4 +678,156 @@ class NotificationService
             $userLocation->assigned_by
         );
     }
+
+    // ==================== REPAIR REQUEST NOTIFICATIONS ====================
+
+    /**
+     * Send notification to admins when a new repair request is submitted
+     */
+    public function notifyRepairRequest($repairRequest): void
+    {
+        $assetStr = $repairRequest->asset->asset_code . ' - ' . $repairRequest->asset->name;
+        $requesterName = $repairRequest->requester->name ?? 'Unknown User';
+        $urgencyLabel = ucfirst($repairRequest->urgency_level);
+        
+        $this->notifyAdmins(
+            'repair_request_submitted',
+            'New Repair Request Submitted',
+            "A new {$urgencyLabel} priority repair request has been submitted by {$requesterName} for asset {$assetStr}. Issue: " . substr($repairRequest->issue_description, 0, 100) . (strlen($repairRequest->issue_description) > 100 ? '...' : ''),
+            [
+                'repair_request_id' => $repairRequest->id,
+                'asset_code' => $repairRequest->asset->asset_code,
+                'asset_name' => $repairRequest->asset->name,
+                'requester_name' => $requesterName,
+                'urgency_level' => $repairRequest->urgency_level,
+                'issue_description' => $repairRequest->issue_description,
+                'submitted_at' => $repairRequest->created_at,
+            ],
+            $repairRequest->requester_id
+        );
+    }
+
+    /**
+     * Send notification to GSU when repair request is approved
+     */
+    public function notifyRepairRequestApproved($repairRequest): void
+    {
+        $assetStr = $repairRequest->asset->asset_code . ' - ' . $repairRequest->asset->name;
+        $approvedByName = $repairRequest->approvedBy->name ?? 'Admin';
+        $urgencyLabel = ucfirst($repairRequest->urgency_level);
+        
+        $this->notifyGSU(
+            'repair_request_approved',
+            'Repair Request Approved',
+            "A {$urgencyLabel} priority repair request for asset {$assetStr} has been approved by {$approvedByName} and is ready for repair work.",
+            [
+                'repair_request_id' => $repairRequest->id,
+                'asset_code' => $repairRequest->asset->asset_code,
+                'asset_name' => $repairRequest->asset->name,
+                'approved_by_name' => $approvedByName,
+                'urgency_level' => $repairRequest->urgency_level,
+                'issue_description' => $repairRequest->issue_description,
+                'approved_at' => $repairRequest->approved_at,
+            ],
+            $repairRequest->approved_by
+        );
+    }
+
+    /**
+     * Send notification to user when their repair request is approved
+     */
+    public function notifyUserRepairRequestApproved($repairRequest): void
+    {
+        $assetStr = $repairRequest->asset->asset_code . ' - ' . $repairRequest->asset->name;
+        $approvedByName = $repairRequest->approvedBy->name ?? 'Admin';
+        
+        $this->notifyUser(
+            $repairRequest->requester_id,
+            'repair_request_approved',
+            'Repair Request Approved',
+            "Your repair request for asset {$assetStr} has been approved by {$approvedByName}. GSU staff will begin working on the repair soon.",
+            [
+                'repair_request_id' => $repairRequest->id,
+                'asset_code' => $repairRequest->asset->asset_code,
+                'asset_name' => $repairRequest->asset->name,
+                'approved_by_name' => $approvedByName,
+                'approved_at' => $repairRequest->approved_at,
+            ],
+            $repairRequest->approved_by
+        );
+    }
+
+    /**
+     * Send notification to user when their repair request is rejected
+     */
+    public function notifyUserRepairRequestRejected($repairRequest): void
+    {
+        $assetStr = $repairRequest->asset->asset_code . ' - ' . $repairRequest->asset->name;
+        $rejectedByName = $repairRequest->rejectedBy->name ?? 'Admin';
+        
+        $this->notifyUser(
+            $repairRequest->requester_id,
+            'repair_request_rejected',
+            'Repair Request Rejected',
+            "Your repair request for asset {$assetStr} has been rejected by {$rejectedByName}. Reason: {$repairRequest->rejection_reason}",
+            [
+                'repair_request_id' => $repairRequest->id,
+                'asset_code' => $repairRequest->asset->asset_code,
+                'asset_name' => $repairRequest->asset->name,
+                'rejected_by_name' => $rejectedByName,
+                'rejection_reason' => $repairRequest->rejection_reason,
+                'rejected_at' => $repairRequest->rejected_at,
+            ],
+            $repairRequest->rejected_by
+        );
+    }
+
+    /**
+     * Send notification to user when GSU starts working on their repair
+     */
+    public function notifyUserRepairStarted($repairRequest): void
+    {
+        $assetStr = $repairRequest->asset->asset_code . ' - ' . $repairRequest->asset->name;
+        $gsuStaffName = $repairRequest->acknowledgedBy->name ?? 'GSU Staff';
+        
+        $this->notifyUser(
+            $repairRequest->requester_id,
+            'repair_started',
+            'Repair Work Started',
+            "GSU staff member {$gsuStaffName} has started working on the repair for asset {$assetStr}. You will be notified when the repair is completed.",
+            [
+                'repair_request_id' => $repairRequest->id,
+                'asset_code' => $repairRequest->asset->asset_code,
+                'asset_name' => $repairRequest->asset->name,
+                'gsu_staff_name' => $gsuStaffName,
+                'acknowledged_at' => $repairRequest->acknowledged_at,
+            ],
+            $repairRequest->acknowledged_by
+        );
+    }
+
+    /**
+     * Send notification to user when their repair is completed
+     */
+    public function notifyUserRepairCompleted($repairRequest): void
+    {
+        $assetStr = $repairRequest->asset->asset_code . ' - ' . $repairRequest->asset->name;
+        $gsuStaffName = $repairRequest->completedBy->name ?? 'GSU Staff';
+        
+        $this->notifyUser(
+            $repairRequest->requester_id,
+            'repair_completed',
+            'Repair Completed',
+            "The repair for asset {$assetStr} has been completed by {$gsuStaffName}. The asset is now available for use again.",
+            [
+                'repair_request_id' => $repairRequest->id,
+                'asset_code' => $repairRequest->asset->asset_code,
+                'asset_name' => $repairRequest->asset->name,
+                'gsu_staff_name' => $gsuStaffName,
+                'completion_notes' => $repairRequest->completion_notes,
+                'completed_at' => $repairRequest->completed_at,
+            ],
+            $repairRequest->completed_by
+        );
+    }
 }

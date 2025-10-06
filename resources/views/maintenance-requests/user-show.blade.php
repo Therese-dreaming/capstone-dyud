@@ -193,6 +193,24 @@
                                         @else
                                             <div class="text-xs text-gray-500 mt-1">No location assigned</div>
                                         @endif
+                                        
+                                        <!-- Request Repair Button -->
+                                        @if($asset->status !== 'Disposed')
+                                        <div class="mt-3 pt-3 border-t border-gray-200">
+                                            <a href="{{ route('repair-requests.create', ['asset_code' => $asset->asset_code]) }}" 
+                                               class="inline-flex items-center px-3 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-700 text-xs font-medium rounded-lg transition-colors">
+                                                <i class="fas fa-wrench mr-1"></i>
+                                                Request Repair
+                                            </a>
+                                        </div>
+                                        @else
+                                        <div class="mt-3 pt-3 border-t border-gray-200">
+                                            <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-lg">
+                                                <i class="fas fa-ban mr-1"></i>
+                                                Asset Disposed
+                                            </span>
+                                        </div>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>

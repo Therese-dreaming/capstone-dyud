@@ -434,8 +434,12 @@
                                         Deployed
                                     </span>
                                     <div class="mt-2 p-3 bg-green-50 rounded-lg border border-green-200">
-                                        <p class="text-sm font-medium text-green-900">{{ $asset->location->building }}</p>
-                                        <p class="text-xs text-green-700">Floor {{ $asset->location->floor }} - Room {{ $asset->location->room }}</p>
+                                        @if($asset->location)
+                                            <p class="text-sm font-medium text-green-900">{{ $asset->location->building }}</p>
+                                            <p class="text-xs text-green-700">Floor {{ $asset->location->floor }} - Room {{ $asset->location->room }}</p>
+                                        @else
+                                            <p class="text-sm font-medium text-gray-500">Location not assigned</p>
+                                        @endif
                                     </div>
                                 </div>
                             @else

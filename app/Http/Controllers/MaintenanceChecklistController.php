@@ -49,7 +49,7 @@ class MaintenanceChecklistController extends Controller
             return null;
         }
     }
-    public function index()
+    public function index(Request $request)
     {
         // Check if user has permission to access maintenance checklists
         $user = auth()->user();
@@ -57,16 +57,26 @@ class MaintenanceChecklistController extends Controller
             abort(403, 'Unauthorized access.');
         }
         
-        $checklists = MaintenanceChecklist::with(['items', 'location'])
-            ->orderBy('date_reported', 'desc')
-            ->paginate(10);
+        // Build query with status filtering
+        $query = MaintenanceChecklist::with(['items', 'location']);
+        
+        // Handle status filtering
+        $status = $request->get('status');
+        if ($status) {
+            $query->where('status', $status);
+        }
+        
+        $checklists = $query->orderBy('date_reported', 'desc')->paginate(10);
+        
+        // Preserve query parameters in pagination
+        $checklists->appends($request->query());
         
         // Check if user is GSU and return appropriate view
         if ($user->role === 'gsu') {
-            return view('maintenance-checklists.gsu-index', compact('checklists'));
+            return view('maintenance-checklists.gsu-index', compact('checklists', 'status'));
         }
         
-        return view('maintenance-checklists.index', compact('checklists'));
+        return view('maintenance-checklists.index', compact('checklists', 'status'));
     }
 
     public function create(Request $request)
@@ -579,6 +589,36 @@ class MaintenanceChecklistController extends Controller
                 'completed_at' => now(),
                 'completed_by' => auth()->id()
             ]);
+            
+            // Update related maintenance request status to 'completed'
+            $maintenanceRequest = $maintenanceChecklist->maintenanceRequest;
+            if ($maintenanceRequest) {
+                $maintenanceRequest->update([
+                    'status' => 'completed'
+                ]);
+            }
+            
+            // Update asset status back to Available for completed repairs
+            // Get all asset codes from this maintenance checklist
+            $allAssetCodes = $maintenanceChecklist->items()
+                ->pluck('asset_code')
+                ->toArray();
+            
+            if (!empty($allAssetCodes)) {
+                // Update any assets that are currently "For Repair" back to "Available"
+                // This handles cases where the repair was completed but end_status might not be set correctly
+                $updatedAssets = \App\Models\Asset::whereIn('asset_code', $allAssetCodes)
+                    ->where('status', 'For Repair')
+                    ->update(['status' => 'Available']);
+                    
+                if ($updatedAssets > 0) {
+                    \Log::info('Updated asset status to Available after maintenance checklist submission', [
+                        'maintenance_checklist_id' => $maintenanceChecklist->id,
+                        'asset_codes' => $allAssetCodes,
+                        'updated_count' => $updatedAssets
+                    ]);
+                }
+            }
 
             DB::commit();
 
@@ -679,6 +719,28 @@ class MaintenanceChecklistController extends Controller
                 $maintenanceRequest->update([
                     'status' => 'completed'
                 ]);
+            }
+            
+            // Update asset status back to Available for completed repairs
+            // Get all asset codes from this maintenance checklist
+            $allAssetCodes = $maintenanceChecklist->items()
+                ->pluck('asset_code')
+                ->toArray();
+            
+            if (!empty($allAssetCodes)) {
+                // Update any assets that are currently "For Repair" back to "Available"
+                // This handles cases where the repair was completed but end_status might not be set correctly
+                $updatedAssets = \App\Models\Asset::whereIn('asset_code', $allAssetCodes)
+                    ->where('status', 'For Repair')
+                    ->update(['status' => 'Available']);
+                    
+                if ($updatedAssets > 0) {
+                    \Log::info('Updated asset status to Available after maintenance checklist completion', [
+                        'maintenance_checklist_id' => $maintenanceChecklist->id,
+                        'asset_codes' => $allAssetCodes,
+                        'updated_count' => $updatedAssets
+                    ]);
+                }
             }
 
             // Send notification to admins

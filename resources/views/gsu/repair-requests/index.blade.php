@@ -1,55 +1,37 @@
 @extends('layouts.gsu')
 
+@section('title', 'Repair Requests - GSU')
+
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-yellow-50">
-    <!-- Header Section -->
-    <div class="bg-gradient-to-r from-red-600 to-red-600 text-white p-6 mb-6 rounded-xl shadow-lg relative overflow-hidden">
-        <div class="absolute inset-0 bg-black opacity-10"></div>
-        <div class="relative z-10">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="bg-white/20 p-3 rounded-full">
-                        <i class="fas fa-wrench text-2xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-2xl md:text-3xl font-bold">Repair Requests</h1>
-                        <p class="text-yellow-100 text-sm md:text-base">Review and manage repair requests from users</p>
-                    </div>
+<div class="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center">
+                    <i class="fas fa-wrench text-white text-2xl"></i>
                 </div>
-                <div class="text-right">
-                    <div class="text-sm text-yellow-200">Total Requests</div>
-                    <div class="text-2xl font-bold text-white">{{ $repairRequests->total() }}</div>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Repair Requests</h1>
+                    <p class="text-gray-600">Manage and complete asset repair requests</p>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <!-- Flash Messages -->
         @if(session('success'))
-            <div class="mb-6 bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-xl shadow-sm">
-                <div class="flex items-start gap-3">
-                    <div class="bg-green-100 p-2 rounded-full">
-                        <i class="fas fa-check-circle text-green-600"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold">Success!</h4>
-                        <p class="text-sm">{{ session('success') }}</p>
-                    </div>
+            <div class="mb-6 bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-xl">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-3"></i>
+                    {{ session('success') }}
                 </div>
             </div>
         @endif
 
         @if(session('error'))
-            <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-xl shadow-sm">
-                <div class="flex items-start gap-3">
-                    <div class="bg-red-100 p-2 rounded-full">
-                        <i class="fas fa-exclamation-circle text-red-600"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold">Error!</h4>
-                        <p class="text-sm">{{ session('error') }}</p>
-                    </div>
+            <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-xl">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle mr-3"></i>
+                    {{ session('error') }}
                 </div>
             </div>
         @endif
@@ -62,8 +44,8 @@
                         <i class="fas fa-clock text-yellow-600 text-xl"></i>
                     </div>
                     <div class="text-right">
-                        <div class="text-2xl font-bold text-gray-900">{{ $repairRequests->where('status', 'pending')->count() }}</div>
-                        <div class="text-sm text-gray-500">Pending</div>
+                        <div class="text-2xl font-bold text-gray-900">{{ $repairRequests->where('status', 'in_progress')->count() }}</div>
+                        <div class="text-sm text-gray-500">In Progress</div>
                     </div>
                 </div>
             </div>
@@ -71,23 +53,23 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center justify-between">
                     <div class="bg-blue-100 p-3 rounded-xl">
-                        <i class="fas fa-check text-blue-600 text-xl"></i>
+                        <i class="fas fa-tools text-blue-600 text-xl"></i>
                     </div>
                     <div class="text-right">
-                        <div class="text-2xl font-bold text-gray-900">{{ $repairRequests->where('status', 'approved')->count() }}</div>
-                        <div class="text-sm text-gray-500">Approved</div>
+                        <div class="text-2xl font-bold text-gray-900">{{ $repairRequests->where('status', 'in_progress')->count() }}</div>
+                        <div class="text-sm text-gray-500">In Progress</div>
                     </div>
                 </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center justify-between">
-                    <div class="bg-orange-100 p-3 rounded-xl">
-                        <i class="fas fa-tools text-orange-600 text-xl"></i>
+                    <div class="bg-red-100 p-3 rounded-xl">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
                     </div>
                     <div class="text-right">
-                        <div class="text-2xl font-bold text-gray-900">{{ $repairRequests->where('status', 'in_progress')->count() }}</div>
-                        <div class="text-sm text-gray-500">In Progress</div>
+                        <div class="text-2xl font-bold text-gray-900">{{ $repairRequests->where('urgency_level', 'critical')->count() }}</div>
+                        <div class="text-sm text-gray-500">Critical</div>
                     </div>
                 </div>
             </div>
@@ -105,105 +87,104 @@
             </div>
         </div>
 
-        <!-- Repair Requests List -->
-        @if($repairRequests->count() > 0)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request ID</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requester</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($repairRequests as $request)
-                                @php
-                                    // Extract priority from notes
-                                    preg_match('/Priority: (\w+)/', $request->notes, $matches);
-                                    $priority = $matches[1] ?? 'MEDIUM';
+        <!-- Repair Requests Table -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
+                <h2 class="text-xl font-bold text-white">Active Repair Requests</h2>
+                <p class="text-red-100 text-sm">{{ $repairRequests->total() }} total requests</p>
+            </div>
+
+            @if($repairRequests->count() > 0)
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Urgency</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requester</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach($repairRequests as $request)
+                        <tr class="hover:bg-gray-50 {{ $request->urgency_level === 'critical' ? 'bg-red-50' : '' }}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <div class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <i class="fas fa-box text-gray-400"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ $request->asset->asset_code }}</div>
+                                        <div class="text-sm text-gray-500">{{ $request->asset->name }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900">{{ Str::limit($request->issue_description, 50) }}</div>
+                                <div class="text-sm text-gray-500">{{ $request->asset->category->name ?? 'N/A' }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {{ $request->urgency_level === 'critical' ? 'bg-red-100 text-red-800' : 
+                                       ($request->urgency_level === 'high' ? 'bg-orange-100 text-orange-800' : 
+                                       ($request->urgency_level === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800')) }}">
+                                    {{ ucfirst($request->urgency_level) }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ $request->requester->name }}</div>
+                                <div class="text-sm text-gray-500">{{ $request->department }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {{ $request->status === 'completed' ? 'bg-green-100 text-green-800' : 
+                                       ($request->status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
+                                       ($request->status === 'approved' ? 'bg-indigo-100 text-indigo-800' : 'bg-yellow-100 text-yellow-800')) }}">
+                                    {{ $request->formatted_status }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $request->date_reported->format('M j, Y') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex items-center space-x-2">
+                                    <a href="{{ route('gsu.repair-requests.show', $request) }}" 
+                                       class="inline-flex items-center px-3 py-1 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                        <i class="fas fa-eye mr-1"></i> View
+                                    </a>
                                     
-                                    $priorityColors = [
-                                        'LOW' => 'bg-gray-100 text-gray-800',
-                                        'MEDIUM' => 'bg-yellow-100 text-yellow-800',
-                                        'HIGH' => 'bg-orange-100 text-orange-800',
-                                        'URGENT' => 'bg-red-100 text-red-800',
-                                    ];
-                                    $priorityClass = $priorityColors[$priority] ?? 'bg-gray-100 text-gray-800';
-                                    
-                                    $statusColors = [
-                                        'pending' => 'bg-yellow-100 text-yellow-800',
-                                        'approved' => 'bg-blue-100 text-blue-800',
-                                        'in_progress' => 'bg-orange-100 text-orange-800',
-                                        'acknowledged' => 'bg-orange-100 text-orange-800',
-                                        'completed' => 'bg-green-100 text-green-800',
-                                        'rejected' => 'bg-red-100 text-red-800',
-                                    ];
-                                    $statusClass = $statusColors[$request->status] ?? 'bg-gray-100 text-gray-800';
-                                    $statusDisplay = $request->status === 'in_progress' ? 'In Progress' : ucfirst($request->status);
-                                    
-                                    $assetCodes = $request->getRequestedAssetCodes();
-                                @endphp
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">#{{ $request->id }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">{{ $request->requester->name ?? 'Unknown' }}</div>
-                                        <div class="text-sm text-gray-500">{{ $request->department }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @if(count($assetCodes) > 0)
-                                            <div class="text-sm font-mono font-medium text-gray-900">{{ $assetCodes[0] }}</div>
-                                        @else
-                                            <span class="text-sm text-gray-400">N/A</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $priorityClass }}">
-                                            {{ $priority }}
+                                    @if($request->status === 'in_progress')
+                                        <span class="inline-flex items-center px-3 py-1 bg-orange-100 text-orange-800 text-sm leading-4 font-medium rounded-md">
+                                            <i class="fas fa-tools mr-1"></i> Ready to Complete
                                         </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusClass }}">
-                                            {{ $statusDisplay }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $request->created_at->format('M d, Y') }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{{ route('gsu.repair-requests.show', $request) }}" 
-                                           class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
-                                            <i class="fas fa-eye mr-1"></i> View
-                                        </a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
 
             <!-- Pagination -->
-            <div class="mt-6">
+            <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
                 {{ $repairRequests->links() }}
             </div>
-        @else
-            <!-- Empty State -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                <div class="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-wrench text-yellow-400 text-3xl"></i>
+            @else
+            <div class="p-12 text-center">
+                <div class="flex flex-col items-center">
+                    <i class="fas fa-wrench text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No repair requests found</h3>
+                    <p class="text-gray-500">All repair requests have been completed or there are no pending requests.</p>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">No Repair Requests</h3>
-                <p class="text-gray-600">There are currently no repair requests to review.</p>
             </div>
-        @endif
+            @endif
+        </div>
     </div>
 </div>
 @endsection

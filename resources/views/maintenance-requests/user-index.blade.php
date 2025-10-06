@@ -252,6 +252,50 @@
                                     @elseif($req->status === 'pending')
                                         <span class="text-gray-500 text-sm">Awaiting review</span>
                                     @endif
+                                    
+                                    <!-- Request Repair Dropdown for Asset-based Requests -->
+                                    @if($req->isSpecificAssetsRequest())
+                                        @php
+                                            $assetCodes = $req->getRequestedAssetCodes();
+                                            $availableAssets = \App\Models\Asset::whereIn('asset_code', $assetCodes)
+                                                ->where('status', '!=', 'Disposed')
+                                                ->pluck('asset_code')
+                                                ->toArray();
+                                        @endphp
+                                        @if(count($availableAssets) > 0)
+                                            <div class="relative" x-data="{ open: false }">
+                                                <button @click="open = !open" 
+                                                        class="inline-flex items-center px-3 py-2 border border-orange-300 text-sm leading-4 font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 transition-colors">
+                                                    <i class="fas fa-wrench mr-1"></i> Request Repair
+                                                    <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                                                </button>
+                                                
+                                                <div x-show="open" @click.away="open = false" 
+                                                     x-transition:enter="transition ease-out duration-100"
+                                                     x-transition:enter-start="transform opacity-0 scale-95"
+                                                     x-transition:enter-end="transform opacity-100 scale-100"
+                                                     x-transition:leave="transition ease-in duration-75"
+                                                     x-transition:leave-start="transform opacity-100 scale-100"
+                                                     x-transition:leave-end="transform opacity-0 scale-95"
+                                                     class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10"
+                                                     style="display: none;">
+                                                    <div class="py-1">
+                                                        @foreach($availableAssets as $assetCode)
+                                                            <a href="{{ route('repair-requests.create', ['asset_code' => $assetCode]) }}" 
+                                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-900">
+                                                                <i class="fas fa-wrench mr-2 text-orange-600"></i>
+                                                                {{ $assetCode }}
+                                                            </a>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @elseif(count($assetCodes) > 0)
+                                            <span class="inline-flex items-center px-3 py-2 text-sm text-gray-500 bg-gray-100 rounded-md">
+                                                <i class="fas fa-ban mr-1"></i> Assets Disposed
+                                            </span>
+                                        @endif
+                                    @endif
                                 </div>
                             </td>
                         </tr>

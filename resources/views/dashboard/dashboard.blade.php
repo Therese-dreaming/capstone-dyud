@@ -91,6 +91,15 @@
                     <span class="bg-purple-500 text-white text-xs rounded-full px-1.5 md:px-2 py-0.5 md:py-1 ml-1">{{ $pendingMaintenanceRequests }}</span>
                     @endif
                 </button>
+                <button @click="activeTab = 'repairs'" 
+                        :class="activeTab === 'repairs' ? 'bg-yellow-50 text-yellow-600 border-b-2 border-yellow-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+                        class="flex-1 min-w-[120px] py-3 md:py-4 px-4 md:px-6 font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap">
+                    <i class="fas fa-wrench text-xs md:text-sm"></i><span class="hidden sm:inline">Repairs</span><span class="sm:hidden">Repair</span>
+                    @php $pendingRepairs = \App\Models\RepairRequest::where('status', 'pending')->count(); @endphp
+                    @if($pendingRepairs > 0)
+                    <span class="bg-yellow-500 text-white text-xs rounded-full px-1.5 md:px-2 py-0.5 md:py-1 ml-1">{{ $pendingRepairs }}</span>
+                    @endif
+                </button>
                 <button @click="activeTab = 'quick-actions'" 
                         :class="activeTab === 'quick-actions' ? 'bg-green-50 text-green-600 border-b-2 border-green-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
                         class="flex-1 min-w-[120px] py-3 md:py-4 px-4 md:px-6 font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap">
@@ -168,24 +177,25 @@
                         <div class="h-1 bg-gradient-to-r from-purple-500 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
                     </div>
 
-                    <!-- System Users -->
-                    <div class="group bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                    <!-- Repair Requests -->
+                    <div class="group bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                         @click="activeTab = 'repairs'">
                         <div class="p-6">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-sm font-medium text-gray-600 group-hover:text-green-600 transition-colors">System Users</p>
-                                    <p class="text-3xl font-bold text-gray-900 group-hover:text-green-700 transition-colors">{{ number_format($totalUsers ?? 0) }}</p>
-                                    <p class="text-sm text-green-600 mt-1 flex items-center">
-                                        <i class="fas fa-users mr-1"></i>
-                                        {{ $regularUsers ?? 0 }} regular users
+                                    <p class="text-sm font-medium text-gray-600 group-hover:text-yellow-600 transition-colors">Repair Requests</p>
+                                    <p class="text-3xl font-bold text-gray-900 group-hover:text-yellow-700 transition-colors">{{ \App\Models\RepairRequest::count() }}</p>
+                                    <p class="text-sm text-yellow-600 mt-1 flex items-center">
+                                        <i class="fas fa-wrench mr-1"></i>
+                                        {{ \App\Models\RepairRequest::where('status', 'pending')->count() }} pending
                                     </p>
                                 </div>
-                                <div class="bg-green-100 p-3 rounded-full group-hover:bg-green-200 transition-colors">
-                                    <i class="fas fa-users text-green-600 text-xl group-hover:scale-110 transition-transform"></i>
+                                <div class="bg-yellow-100 p-3 rounded-full group-hover:bg-yellow-200 transition-colors">
+                                    <i class="fas fa-tools text-yellow-600 text-xl group-hover:scale-110 transition-transform"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="h-1 bg-gradient-to-r from-green-500 to-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                        <div class="h-1 bg-gradient-to-r from-yellow-500 to-yellow-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
                     </div>
                 </div>
 
@@ -535,6 +545,77 @@
                 </div>
             </div>
 
+            <!-- Repairs Tab -->
+            <div x-show="activeTab === 'repairs'" x-transition>
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i class="fas fa-wrench text-yellow-600"></i>
+                            Recent Repair Requests
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        @php $recentRepairRequests = \App\Models\RepairRequest::with(['requester', 'asset'])->orderBy('created_at', 'desc')->take(5)->get(); @endphp
+                        @if($recentRepairRequests->count() > 0)
+                        <div class="space-y-4">
+                            @foreach($recentRepairRequests as $request)
+                            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="bg-yellow-100 p-2 rounded-full">
+                                            <i class="fas fa-tools text-yellow-600"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900">Repair Request #{{ $request->id }}</h4>
+                                            <p class="text-sm text-gray-600">
+                                                Asset: {{ $request->asset->asset_code ?? 'Unknown' }} - 
+                                                {{ $request->asset->name ?? 'Unknown Asset' }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            @if($request->urgency_level === 'critical') bg-red-100 text-red-800
+                                            @elseif($request->urgency_level === 'high') bg-orange-100 text-orange-800
+                                            @elseif($request->urgency_level === 'medium') bg-yellow-100 text-yellow-800
+                                            @else bg-gray-100 text-gray-800 @endif">
+                                            {{ ucfirst($request->urgency_level) }}
+                                        </span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            @if($request->status === 'pending') bg-yellow-100 text-yellow-800
+                                            @elseif($request->status === 'in_progress') bg-blue-100 text-blue-800
+                                            @elseif($request->status === 'completed') bg-green-100 text-green-800
+                                            @elseif($request->status === 'rejected') bg-red-100 text-red-800
+                                            @else bg-gray-100 text-gray-800 @endif">
+                                            {{ $request->status === 'in_progress' ? 'In Progress' : ucfirst($request->status) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-700 mb-3">{{ Str::limit($request->issue_description, 100) }}</p>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span>
+                                        <i class="fas fa-user mr-1"></i>
+                                        {{ $request->requester->name ?? 'Unknown User' }}
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        {{ $request->created_at->diffForHumans() }}
+                                    </span>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @else
+                        <div class="text-center py-8">
+                            <i class="fas fa-wrench text-4xl text-gray-300 mb-4"></i>
+                            <h4 class="text-lg font-medium text-gray-900 mb-2">No Repair Requests</h4>
+                            <p class="text-gray-600">No repair requests have been submitted.</p>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -592,17 +673,8 @@
                             </div>
                         </a>
 
-                        <a href="{{ route('users.create') }}" class="group">
-                            <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 text-center hover:from-yellow-100 hover:to-yellow-200 transition-all duration-300 border border-yellow-200 hover:border-yellow-300">
-                                <div class="bg-yellow-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-user-plus text-white text-xl"></i>
-                                </div>
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Add User</h3>
-                                <p class="text-sm text-gray-600">Create a new system user</p>
-                            </div>
-                        </a>
 
-                        <a href="{{ route('locations.index') }}" class="group">
+                        <a href="{{ route('assets.index') }}" class="group">
                             <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 text-center hover:from-red-100 hover:to-red-200 transition-all duration-300 border border-red-200 hover:border-red-300">
                                 <div class="bg-red-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">
                                     <i class="fas fa-tools text-white text-xl"></i>
@@ -622,13 +694,13 @@
                             </div>
                         </a>
 
-                        <a href="{{ route('locations.index') }}" class="group">
+                        <a href="{{ route('disposals.history') }}" class="group">
                             <div class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-6 text-center hover:from-teal-100 hover:to-teal-200 transition-all duration-300 border border-teal-200 hover:border-teal-300">
                                 <div class="bg-teal-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">
                                     <i class="fas fa-file-alt text-white text-xl"></i>
                                 </div>
                                 <h3 class="text-lg font-semibold text-gray-900 mb-2">Generate Report</h3>
-                                <p class="text-sm text-gray-600">Create asset reports</p>
+                                <p class="text-sm text-gray-600">View disposal history and reports</p>
                             </div>
                         </a>
                     </div>

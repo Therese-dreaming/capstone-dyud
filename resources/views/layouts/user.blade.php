@@ -57,7 +57,7 @@
                     <a href="{{ route('user-assets.index') }}" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('user-assets.*') ? 'text-red-600 bg-red-50' : '' }}">
                         <i class="fas fa-boxes mr-2"></i>My Assets
                     </a>
-                    <a href="{{ route('maintenance-requests.user-index') }}" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('maintenance-requests.user-index') || request()->routeIs('maintenance-requests.user-show') ? 'text-red-600 bg-red-50' : '' }}">
+                    <a href="{{ route('my-requests.index') }}" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('my-requests.*') || request()->routeIs('maintenance-requests.user-*') || request()->routeIs('repair-requests.show') ? 'text-red-600 bg-red-50' : '' }}">
                         <i class="fas fa-history mr-2"></i>My Requests
                     </a>
                     <a href="{{ route('notifications.index') }}" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('notifications.*') ? 'text-red-600 bg-red-50' : '' }}">
@@ -227,7 +227,7 @@
                             <a href="{{ route('maintenance-requests.create') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <i class="fas fa-tools mr-2"></i>Maintenance Request
                             </a>
-                            <a href="{{ route('maintenance-requests.user-index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <a href="{{ route('my-requests.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <i class="fas fa-history mr-2"></i>My Requests
                             </a>
                             <form method="POST" action="{{ route('logout') }}" class="block">
@@ -262,7 +262,7 @@
                 <a href="{{ route('user-assets.index') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('user-assets.*') ? 'text-red-600 bg-red-50' : '' }}">
                     <i class="fas fa-boxes mr-2"></i>My Assets
                 </a>
-                <a href="{{ route('maintenance-requests.user-index') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('maintenance-requests.user-index') || request()->routeIs('maintenance-requests.user-show') ? 'text-red-600 bg-red-50' : '' }}">
+                <a href="{{ route('my-requests.index') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('my-requests.*') || request()->routeIs('maintenance-requests.user-*') || request()->routeIs('repair-requests.show') ? 'text-red-600 bg-red-50' : '' }}">
                     <i class="fas fa-history mr-2"></i>My Requests
                 </a>
                 <a href="{{ route('notifications.index') }}" class="text-gray-700 hover:text-red-600 block px-3 py-2 rounded-md text-base font-medium transition-colors {{ request()->routeIs('notifications.*') ? 'text-red-600 bg-red-50' : '' }}">

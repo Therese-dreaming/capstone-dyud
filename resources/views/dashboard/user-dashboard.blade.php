@@ -5,35 +5,47 @@
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50" x-data="dashboardData()">
     <!-- Welcome Banner -->
-    <div x-show="showWelcome" x-transition class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 md:p-6 mb-6 rounded-xl shadow-lg relative overflow-hidden mx-4 mt-4">
+    <div x-show="showWelcome" x-transition class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white p-6 md:p-8 mb-8 rounded-2xl shadow-2xl relative overflow-hidden mx-4 mt-4">
         <div class="absolute inset-0 bg-black opacity-10"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
         <div class="relative z-10 flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <div class="bg-white/20 p-3 rounded-full">
-                    <i class="fas fa-user-circle text-2xl"></i>
+            <div class="flex items-center space-x-5">
+                <div class="bg-white/20 backdrop-blur-sm p-4 rounded-2xl shadow-lg">
+                    <i class="fas fa-user-circle text-3xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold">Welcome back, {{ auth()->user()->name }}! 👋</h1>
+                    <h1 class="text-2xl md:text-3xl font-bold mb-1">Welcome back, {{ auth()->user()->name }}! 👋</h1>
                     <p class="text-blue-100 text-sm md:text-base">Here's an overview of your assigned locations and assets</p>
+                    <div class="flex items-center space-x-4 mt-2">
+                        <span class="text-xs bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
+                            <i class="fas fa-calendar mr-1"></i>{{ now()->format('l, F j, Y') }}
+                        </span>
+                        <span class="text-xs bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
+                            <i class="fas fa-clock mr-1"></i>{{ now()->format('g:i A') }}
+                        </span>
+                    </div>
                 </div>
             </div>
-            <button @click="showWelcome = false" class="text-white/80 hover:text-white transition-colors">
-                <i class="fas fa-times text-xl"></i>
+            <button @click="showWelcome = false" class="text-white/80 hover:text-white transition-all hover:rotate-90 duration-300">
+                <i class="fas fa-times text-2xl"></i>
             </button>
         </div>
     </div>
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <!-- Dashboard Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10">
             <div>
-                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 flex items-center gap-3">
-                    <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-3 rounded-xl shadow-lg">
-                        <i class="fas fa-tachometer-alt text-xl"></i>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 flex items-center gap-4">
+                    <div class="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white p-4 rounded-2xl shadow-2xl transform hover:scale-105 transition-transform">
+                        <i class="fas fa-tachometer-alt text-2xl"></i>
                     </div>
-                    My Dashboard
+                    <div>
+                        <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">My Dashboard</span>
+                        <div class="h-1 w-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mt-1"></div>
+                    </div>
                 </h1>
-                <p class="text-gray-600 mt-2 text-sm md:text-base">Monitor your assigned locations, assets, and maintenance requests</p>
+                <p class="text-gray-600 mt-3 text-sm md:text-base ml-20">Monitor your assigned locations, assets, and maintenance requests</p>
             </div>
             <div class="mt-4 sm:mt-0 flex items-center space-x-3">
                 @if($unreadNotifications > 0)
@@ -50,69 +62,136 @@
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
             <!-- Assigned Locations -->
-            <div class="group bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+            <div class="group bg-white rounded-2xl shadow-lg border-2 border-gray-100 overflow-hidden hover:shadow-2xl hover:border-blue-300 transform hover:-translate-y-2 transition-all duration-300 cursor-pointer"
                  @click="activeTab = 'overview'">
-                <div class="p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600 group-hover:text-blue-600 transition-colors">Assigned Locations</p>
-                            <p class="text-3xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{{ $totalLocations ?? 0 }}</p>
-                            <p class="text-sm text-green-600 mt-1 flex items-center">
-                                <i class="fas fa-map-marker-alt mr-1"></i>
-                                Active assignments
-                            </p>
+                <div class="p-6 bg-gradient-to-br from-white to-blue-50">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                            <i class="fas fa-building text-white text-2xl"></i>
                         </div>
-                        <div class="bg-blue-100 p-3 rounded-full group-hover:bg-blue-200 transition-colors">
-                            <i class="fas fa-building text-blue-600 text-xl group-hover:scale-110 transition-transform"></i>
+                        <div class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold">
+                            <i class="fas fa-arrow-up"></i>
                         </div>
                     </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Locations</p>
+                        <p class="text-4xl font-bold text-gray-900 mb-2">{{ $totalLocations ?? 0 }}</p>
+                        <p class="text-xs text-green-600 font-medium flex items-center">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            Active assignments
+                        </p>
+                    </div>
                 </div>
-                <div class="h-1 bg-gradient-to-r from-blue-500 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                <div class="h-1.5 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
             </div>
 
             <!-- Total Assets -->
-            <div class="group bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+            <div class="group bg-white rounded-2xl shadow-lg border-2 border-gray-100 overflow-hidden hover:shadow-2xl hover:border-green-300 transform hover:-translate-y-2 transition-all duration-300 cursor-pointer"
                  @click="activeTab = 'assets'">
-                <div class="p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600 group-hover:text-green-600 transition-colors">Total Assets</p>
-                            <p class="text-3xl font-bold text-gray-900 group-hover:text-green-700 transition-colors">{{ $totalAssets ?? 0 }}</p>
-                            <p class="text-sm text-blue-600 mt-1 flex items-center">
-                                <i class="fas fa-boxes mr-1"></i>
-                                Under your management
-                            </p>
+                <div class="p-6 bg-gradient-to-br from-white to-green-50">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="bg-gradient-to-br from-green-500 to-green-600 p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                            <i class="fas fa-cube text-white text-2xl"></i>
                         </div>
-                        <div class="bg-green-100 p-3 rounded-full group-hover:bg-green-200 transition-colors">
-                            <i class="fas fa-cube text-green-600 text-xl group-hover:scale-110 transition-transform"></i>
+                        <div class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-bold">
+                            <i class="fas fa-chart-line"></i>
                         </div>
                     </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Assets</p>
+                        <p class="text-4xl font-bold text-gray-900 mb-2">{{ $totalAssets ?? 0 }}</p>
+                        <p class="text-xs text-blue-600 font-medium flex items-center">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            Under management
+                        </p>
+                    </div>
                 </div>
-                <div class="h-1 bg-gradient-to-r from-green-500 to-green-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                <div class="h-1.5 bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
             </div>
 
             <!-- Maintenance Requests -->
-            <div class="group bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+            <div class="group bg-white rounded-2xl shadow-lg border-2 border-gray-100 overflow-hidden hover:shadow-2xl hover:border-purple-300 transform hover:-translate-y-2 transition-all duration-300 cursor-pointer"
                  @click="activeTab = 'maintenance'">
-                <div class="p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium text-gray-600 group-hover:text-orange-600 transition-colors">Maintenance Requests</p>
-                            <p class="text-3xl font-bold text-gray-900 group-hover:text-orange-700 transition-colors">{{ $totalRequests ?? 0 }}</p>
-                            <p class="text-sm text-orange-600 mt-1 flex items-center">
-                                <i class="fas fa-tools mr-1"></i>
-                                {{ $pendingRequests ?? 0 }} pending
-                            </p>
+                <div class="p-6 bg-gradient-to-br from-white to-purple-50">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                            <i class="fas fa-tools text-white text-2xl"></i>
                         </div>
-                        <div class="bg-orange-100 p-3 rounded-full group-hover:bg-orange-200 transition-colors">
-                            <i class="fas fa-wrench text-orange-600 text-xl group-hover:scale-110 transition-transform"></i>
+                        @if($pendingRequests > 0)
+                        <div class="bg-purple-100 text-purple-600 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                            {{ $pendingRequests }}
                         </div>
+                        @endif
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Maintenance</p>
+                        <p class="text-4xl font-bold text-gray-900 mb-2">{{ $totalRequests ?? 0 }}</p>
+                        <p class="text-xs text-purple-600 font-medium flex items-center">
+                            <i class="fas fa-clock mr-1"></i>
+                            {{ $pendingRequests ?? 0 }} pending
+                        </p>
                     </div>
                 </div>
-                <div class="h-1 bg-gradient-to-r from-orange-500 to-orange-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                <div class="h-1.5 bg-gradient-to-r from-purple-500 via-purple-600 to-indigo-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
             </div>
+
+            <!-- Repair Requests -->
+            <div class="group bg-white rounded-2xl shadow-lg border-2 border-gray-100 overflow-hidden hover:shadow-2xl hover:border-orange-300 transform hover:-translate-y-2 transition-all duration-300 cursor-pointer"
+                 @click="activeTab = 'repairs'">
+                <div class="p-6 bg-gradient-to-br from-white to-orange-50">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                            <i class="fas fa-wrench text-white text-2xl"></i>
+                        </div>
+                        @if($pendingRepairRequests > 0)
+                        <div class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                            {{ $pendingRepairRequests }}
+                        </div>
+                        @endif
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Repairs</p>
+                        <p class="text-4xl font-bold text-gray-900 mb-2">{{ $totalRepairRequests ?? 0 }}</p>
+                        <p class="text-xs text-orange-600 font-medium flex items-center">
+                            <i class="fas fa-clock mr-1"></i>
+                            {{ $pendingRepairRequests ?? 0 }} pending
+                        </p>
+                    </div>
+                </div>
+                <div class="h-1.5 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <i class="fas fa-bolt text-yellow-500"></i>
+                Quick Actions
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <a href="{{ route('maintenance-requests.create') }}" 
+                   class="flex items-center p-4 bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg hover:from-purple-100 hover:to-purple-200 transition-all duration-200 group">
+                    <div class="bg-purple-500 p-3 rounded-full mr-4 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-tools text-white"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Maintenance</h4>
+                        <p class="text-sm text-gray-600">New request</p>
+                    </div>
+                </a>
+                
+                <a href="{{ route('repair-requests.create') }}" 
+                   class="flex items-center p-4 bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg hover:from-orange-100 hover:to-orange-200 transition-all duration-200 group">
+                    <div class="bg-orange-500 p-3 rounded-full mr-4 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-wrench text-white"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Repair</h4>
+                        <p class="text-sm text-gray-600">Report issue</p>
+                    </div>
+                </a>
 
             <!-- Notifications -->
             <div class="group bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
@@ -143,25 +222,14 @@
                 Quick Actions
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <a href="{{ route('maintenance-requests.create') }}" 
-                   class="flex items-center p-4 bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg hover:from-orange-100 hover:to-orange-200 transition-all duration-200 group">
-                    <div class="bg-orange-500 p-3 rounded-full mr-4 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-plus text-white"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold text-gray-900">New Maintenance Request</h4>
-                        <p class="text-sm text-gray-600">Submit a new maintenance request</p>
-                    </div>
-                </a>
-                
                 <a href="{{ route('notifications.index') }}" 
                    class="flex items-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg hover:from-blue-100 hover:to-blue-200 transition-all duration-200 group">
                     <div class="bg-blue-500 p-3 rounded-full mr-4 group-hover:scale-110 transition-transform">
                         <i class="fas fa-bell text-white"></i>
                     </div>
                     <div>
-                        <h4 class="font-semibold text-gray-900">View All Notifications</h4>
-                        <p class="text-sm text-gray-600">Check your notification history</p>
+                        <h4 class="font-semibold text-gray-900">Notifications</h4>
+                        <p class="text-sm text-gray-600">View all</p>
                     </div>
                 </a>
                 
@@ -171,8 +239,8 @@
                         <i class="fas fa-sync-alt text-white"></i>
                     </div>
                     <div>
-                        <h4 class="font-semibold text-gray-900">Refresh Dashboard</h4>
-                        <p class="text-sm text-gray-600">Update all data and charts</p>
+                        <h4 class="font-semibold text-gray-900">Refresh</h4>
+                        <p class="text-sm text-gray-600">Update data</p>
                     </div>
                 </button>
             </div>
@@ -193,9 +261,14 @@
                         <i class="fas fa-boxes"></i>Assets
                     </button>
                     <button @click="activeTab = 'maintenance'" 
-                            :class="activeTab === 'maintenance' ? 'bg-orange-50 text-orange-600 border-b-2 border-orange-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+                            :class="activeTab === 'maintenance' ? 'bg-purple-50 text-purple-600 border-b-2 border-purple-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
                             class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
                         <i class="fas fa-tools"></i>Maintenance
+                    </button>
+                    <button @click="activeTab = 'repairs'" 
+                            :class="activeTab === 'repairs' ? 'bg-orange-50 text-orange-600 border-b-2 border-orange-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+                            class="flex-1 py-4 px-6 font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-wrench"></i>Repairs
                     </button>
                     <button @click="activeTab = 'notifications'" 
                             :class="activeTab === 'notifications' ? 'bg-red-50 text-red-600 border-b-2 border-red-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
@@ -374,11 +447,11 @@
                 <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            <i class="fas fa-tools text-orange-600"></i>
+                            <i class="fas fa-tools text-purple-600"></i>
                             Your Maintenance Requests
                         </h3>
                         <a href="{{ route('maintenance-requests.create') }}" 
-                           class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                           class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                             <i class="fas fa-plus mr-2"></i>New Request
                         </a>
                     </div>
@@ -389,8 +462,8 @@
                             <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                 <div class="flex items-center justify-between mb-3">
                                     <div class="flex items-center space-x-3">
-                                        <div class="bg-orange-100 p-2 rounded-full">
-                                            <i class="fas fa-wrench text-orange-600"></i>
+                                        <div class="bg-purple-100 p-2 rounded-full">
+                                            <i class="fas fa-tools text-purple-600"></i>
                                         </div>
                                         <div>
                                             <h4 class="font-semibold text-gray-900">Request #{{ $request->id }}</h4>
@@ -430,8 +503,85 @@
                             <h4 class="text-lg font-medium text-gray-900 mb-2">No Maintenance Requests</h4>
                             <p class="text-gray-600 mb-4">You haven't submitted any maintenance requests yet.</p>
                             <a href="{{ route('maintenance-requests.create') }}" 
-                               class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                               class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
                                 <i class="fas fa-plus mr-2"></i>Submit Your First Request
+                            </a>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Repairs Tab -->
+            <div x-show="activeTab === 'repairs'" x-transition>
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <i class="fas fa-wrench text-orange-600"></i>
+                            Your Repair Requests
+                        </h3>
+                        <a href="{{ route('repair-requests.create') }}" 
+                           class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            <i class="fas fa-plus mr-2"></i>New Repair
+                        </a>
+                    </div>
+                    <div class="p-6">
+                        @if($repairRequests->count() > 0)
+                        <div class="space-y-4">
+                            @foreach($repairRequests as $request)
+                            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="bg-orange-100 p-2 rounded-full">
+                                            <i class="fas fa-wrench text-orange-600"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900">Repair Request #{{ $request->id }}</h4>
+                                            <p class="text-sm text-gray-600">
+                                                Asset: {{ $request->asset->asset_code }} - {{ $request->asset->name }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            @if($request->urgency_level === 'critical') bg-red-100 text-red-800
+                                            @elseif($request->urgency_level === 'high') bg-orange-100 text-orange-800
+                                            @elseif($request->urgency_level === 'medium') bg-yellow-100 text-yellow-800
+                                            @else bg-green-100 text-green-800 @endif">
+                                            {{ ucfirst($request->urgency_level) }}
+                                        </span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            @if($request->status === 'pending') bg-yellow-100 text-yellow-800
+                                            @elseif($request->status === 'in_progress') bg-blue-100 text-blue-800
+                                            @elseif($request->status === 'completed') bg-green-100 text-green-800
+                                            @elseif($request->status === 'rejected') bg-red-100 text-red-800
+                                            @else bg-gray-100 text-gray-800 @endif">
+                                            {{ $request->status === 'in_progress' ? 'In Progress' : ucfirst($request->status) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-700 mb-3">{{ Str::limit($request->issue_description, 100) }}</p>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span>
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        Submitted {{ $request->created_at->diffForHumans() }}
+                                    </span>
+                                    <a href="{{ route('repair-requests.show', $request) }}" 
+                                       class="text-orange-600 hover:text-orange-800 font-medium">
+                                        View Details <i class="fas fa-arrow-right ml-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @else
+                        <div class="text-center py-8">
+                            <i class="fas fa-wrench text-4xl text-gray-300 mb-4"></i>
+                            <h4 class="text-lg font-medium text-gray-900 mb-2">No Repair Requests</h4>
+                            <p class="text-gray-600 mb-4">You haven't submitted any repair requests yet.</p>
+                            <a href="{{ route('repair-requests.create') }}" 
+                               class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Submit Your First Repair Request
                             </a>
                         </div>
                         @endif

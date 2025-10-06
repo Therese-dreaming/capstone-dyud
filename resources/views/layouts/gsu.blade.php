@@ -113,21 +113,21 @@
                     </li>
                     
                     <!-- Maintenance -->
-                    <li x-data="{ open: false }">
+                    <li x-data="{ open: {{ request()->routeIs('maintenance-checklists.*') ? 'true' : 'false' }} }">
                         <button @click="open = !open" type="button"
                             class="flex items-center w-full px-4 py-2.5 text-gray-600 rounded-lg hover:bg-red-50 hover:text-red-800 focus:outline-none transition justify-between"
-                            :class="{ 'bg-red-50 text-red-800': open }">
+                            :class="{ 'bg-red-50 text-red-800': open || {{ request()->routeIs('maintenance-checklists.*') ? 'true' : 'false' }} }">
                             <span class="flex items-center">
-                                <i class="fas fa-clipboard-check w-5"></i>
+                                <i class="fas fa-tools w-5"></i>
                                 <span class="ml-3 text-sm">Maintenance</span>
                             </span>
                             <i class="fas fa-chevron-down ml-2 transition-transform" :class="{ 'rotate-180': open }"></i>
                         </button>
-                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="display: none;">
+                        <ul x-show="open" x-transition class="ml-8 mt-2 space-y-1" style="{{ request()->routeIs('maintenance-checklists.*') ? '' : 'display: none;' }}">
                             <li>
                                 <a href="{{ route('maintenance-checklists.index') }}"
-                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('maintenance-checklists.index') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-list mr-2 w-4"></i> All Checklists
+                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->routeIs('maintenance-checklists.index') && !request()->has('status') ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
+                                    <i class="fas fa-th-list mr-2 w-4"></i> All Checklists
                                 </a>
                             </li>
                             <li>
@@ -139,13 +139,13 @@
                             <li>
                                 <a href="{{ route('maintenance-checklists.index', ['status' => 'acknowledged']) }}"
                                     class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->get('status') == 'acknowledged' ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-play mr-2 w-4"></i> Ready to Start
+                                    <i class="fas fa-play-circle mr-2 w-4"></i> Ready to Start
                                 </a>
                             </li>
                             <li>
                                 <a href="{{ route('maintenance-checklists.index', ['status' => 'in_progress']) }}"
                                     class="flex items-center px-3 py-2 text-sm rounded hover:bg-red-100 hover:text-red-800 {{ request()->get('status') == 'in_progress' ? 'bg-red-100 text-red-800' : 'text-gray-600' }}">
-                                    <i class="fas fa-qrcode mr-2 w-4"></i> In Progress
+                                    <i class="fas fa-spinner mr-2 w-4"></i> In Progress
                                 </a>
                             </li>
                             <li>

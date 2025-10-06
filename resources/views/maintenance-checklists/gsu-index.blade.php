@@ -7,8 +7,45 @@
             <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
                 <i class="fas fa-clipboard-check text-red-800"></i>
                 Maintenance Checklists
+                @if(isset($status))
+                    <span class="text-lg font-normal text-gray-600">
+                        - {{ ucfirst(str_replace('_', ' ', $status)) }}
+                    </span>
+                @endif
             </h1>
-            <p class="text-gray-600 mt-1">View and manage maintenance checklists assigned to you</p>
+            <p class="text-gray-600 mt-1">
+                @if(isset($status))
+                    Showing {{ str_replace('_', ' ', $status) }} maintenance checklists
+                @else
+                    View and manage maintenance checklists assigned to you
+                @endif
+            </p>
+        </div>
+    </div>
+
+    <!-- Status Filter Navigation -->
+    <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('maintenance-checklists.index') }}" 
+               class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ !request()->has('status') ? 'bg-red-800 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                <i class="fas fa-th-list mr-1"></i> All Checklists
+            </a>
+            <a href="{{ route('maintenance-checklists.index', ['status' => 'created']) }}" 
+               class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ request()->get('status') == 'created' ? 'bg-red-800 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                <i class="fas fa-clock mr-1"></i> Pending Acknowledgment
+            </a>
+            <a href="{{ route('maintenance-checklists.index', ['status' => 'acknowledged']) }}" 
+               class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ request()->get('status') == 'acknowledged' ? 'bg-red-800 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                <i class="fas fa-play-circle mr-1"></i> Ready to Start
+            </a>
+            <a href="{{ route('maintenance-checklists.index', ['status' => 'in_progress']) }}" 
+               class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ request()->get('status') == 'in_progress' ? 'bg-red-800 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                <i class="fas fa-spinner mr-1"></i> In Progress
+            </a>
+            <a href="{{ route('maintenance-checklists.index', ['status' => 'completed']) }}" 
+               class="px-4 py-2 rounded-lg text-sm font-medium transition-colors {{ request()->get('status') == 'completed' ? 'bg-red-800 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                <i class="fas fa-check-circle mr-1"></i> Completed
+            </a>
         </div>
     </div>
 
@@ -26,7 +63,18 @@
 
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-900">All Maintenance Checklists</h2>
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-gray-900">
+                    @if(isset($status))
+                        {{ ucfirst(str_replace('_', ' ', $status)) }} Maintenance Checklists
+                    @else
+                        All Maintenance Checklists
+                    @endif
+                </h2>
+                <div class="text-sm text-gray-500">
+                    Total: {{ $checklists->total() }} checklists
+                </div>
+            </div>
         </div>
         
         @if($checklists->count() > 0)
@@ -178,10 +226,22 @@
             <div class="bg-gray-100 p-4 rounded-full inline-block mb-4">
                 <i class="fas fa-clipboard-list text-gray-400 text-2xl"></i>
             </div>
-            <p class="text-gray-500 text-sm">No maintenance checklists found</p>
-            <a href="{{ route('maintenance-checklists.create') }}" class="mt-4 inline-block bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-900 transition-colors">
-                Create Your First Checklist
-            </a>
+            <p class="text-gray-500 text-sm">
+                @if(isset($status))
+                    No {{ str_replace('_', ' ', $status) }} maintenance checklists found
+                @else
+                    No maintenance checklists found
+                @endif
+            </p>
+            @if(!isset($status))
+                <a href="{{ route('maintenance-checklists.index') }}" class="mt-4 inline-block bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-900 transition-colors">
+                    View All Checklists
+                </a>
+            @else
+                <a href="{{ route('maintenance-checklists.index') }}" class="mt-4 inline-block bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                    View All Checklists
+                </a>
+            @endif
         </div>
         @endif
     </div>

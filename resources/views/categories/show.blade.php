@@ -36,7 +36,11 @@
                                 <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{{ $asset->asset_code }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-gray-900">{{ $asset->name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    {{ $asset->location->building }} - Floor {{ $asset->location->floor }} - Room {{ $asset->location->room }}
+                                    @if($asset->location)
+                                        {{ $asset->location->building }} - Floor {{ $asset->location->floor }} - Room {{ $asset->location->room }}
+                                    @else
+                                        <span class="text-gray-400 italic">Not assigned</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -67,10 +71,17 @@
         <div class="text-center text-gray-500 py-12 bg-white rounded-lg shadow">
             <i class="fas fa-inbox text-4xl mb-4"></i>
             <div class="text-lg font-medium">No assets found in this category</div>
-            <div class="text-sm mt-2">Add some assets to see them here.</div>
-            <a href="{{ route('assets.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-red-800 hover:bg-red-900 text-white rounded-lg transition-colors">
-                <i class="fas fa-plus mr-2"></i>Add Asset
-            </a>
+            <div class="text-sm mt-2">Assets will appear here once they are created and approved.</div>
+            @if(Auth::user()->role === 'purchasing')
+                <a href="{{ route('purchasing.assets.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Register New Asset
+                </a>
+            @else
+                <div class="mt-4 text-sm text-gray-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Contact purchasing department to add new assets
+                </div>
+            @endif
         </div>
     @endif
 </div>

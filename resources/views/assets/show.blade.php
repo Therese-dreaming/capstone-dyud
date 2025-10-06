@@ -968,20 +968,16 @@
                     <div class="space-y-4">
                         @foreach($repairs as $repair)
                             @php
-                                // Extract priority and issue from notes
-                                preg_match('/Priority: (\w+)/', $repair->notes, $priorityMatches);
-                                preg_match('/Issue: (.+?)(?:\n\n|$)/s', $repair->notes, $issueMatches);
-                                preg_match('/COMPLETION NOTES:\n(.+)$/s', $repair->notes, $completionMatches);
-                                
-                                $priority = $priorityMatches[1] ?? 'MEDIUM';
-                                $issue = $issueMatches[1] ?? 'No description';
-                                $completionNotes = $completionMatches[1] ?? null;
+                                // Use RepairRequest dedicated fields
+                                $priority = ucfirst($repair->urgency_level ?? 'medium');
+                                $issue = $repair->issue_description ?? 'No description';
+                                $completionNotes = $repair->completion_notes ?? null;
                                 
                                 $priorityColors = [
-                                    'LOW' => 'bg-gray-100 text-gray-800',
-                                    'MEDIUM' => 'bg-yellow-100 text-yellow-800',
-                                    'HIGH' => 'bg-orange-100 text-orange-800',
-                                    'URGENT' => 'bg-red-100 text-red-800',
+                                    'Low' => 'bg-gray-100 text-gray-800',
+                                    'Medium' => 'bg-yellow-100 text-yellow-800',
+                                    'High' => 'bg-orange-100 text-orange-800',
+                                    'Critical' => 'bg-red-100 text-red-800',
                                 ];
                                 $priorityClass = $priorityColors[$priority] ?? 'bg-gray-100 text-gray-800';
                                 
@@ -1035,7 +1031,7 @@
                                     <div>
                                         <label class="text-xs font-medium text-gray-500 uppercase">Approved By</label>
                                         <div class="text-sm font-medium text-gray-900 mt-1">
-                                            {{ $repair->approver->name ?? 'N/A' }}
+                                            {{ $repair->approvedBy->name ?? 'N/A' }}
                                         </div>
                                     </div>
                                     <div>

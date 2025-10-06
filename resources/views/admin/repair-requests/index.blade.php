@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-yellow-50">
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-yellow-50" x-data="{ showRejectModal: false, selectedRequestId: null }">
     <!-- Header Section -->
     <div class="bg-gradient-to-r from-red-600 to-red-600 text-white p-6 mb-6 rounded-xl shadow-lg relative overflow-hidden">
         <div class="absolute inset-0 bg-black opacity-10"></div>
@@ -124,15 +124,14 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($repairRequests as $request)
                                 @php
-                                    // Extract priority from notes
-                                    preg_match('/Priority: (\w+)/', $request->notes, $matches);
-                                    $priority = $matches[1] ?? 'MEDIUM';
+                                    // Use repair request urgency level field
+                                    $priority = ucfirst($request->urgency_level ?? 'medium');
                                     
                                     $priorityColors = [
-                                        'LOW' => 'bg-gray-100 text-gray-800',
-                                        'MEDIUM' => 'bg-yellow-100 text-yellow-800',
-                                        'HIGH' => 'bg-orange-100 text-orange-800',
-                                        'URGENT' => 'bg-red-100 text-red-800',
+                                        'Low' => 'bg-gray-100 text-gray-800',
+                                        'Medium' => 'bg-yellow-100 text-yellow-800',
+                                        'High' => 'bg-orange-100 text-orange-800',
+                                        'Critical' => 'bg-red-100 text-red-800',
                                     ];
                                     $priorityClass = $priorityColors[$priority] ?? 'bg-gray-100 text-gray-800';
                                     
@@ -145,7 +144,7 @@
                                     $statusClass = $statusColors[$request->status] ?? 'bg-gray-100 text-gray-800';
                                     $statusDisplay = $request->status === 'in_progress' ? 'In Progress' : ucfirst($request->status);
                                     
-                                    $assetCodes = $request->getRequestedAssetCodes();
+                                    // Repair requests have a single asset, not multiple asset codes
                                 @endphp
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -156,11 +155,8 @@
                                         <div class="text-sm text-gray-500">{{ $request->department }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        @if(count($assetCodes) > 0)
-                                            <div class="text-sm font-mono font-medium text-gray-900">{{ $assetCodes[0] }}</div>
-                                        @else
-                                            <span class="text-sm text-gray-400">N/A</span>
-                                        @endif
+                                        <div class="text-sm font-mono font-medium text-gray-900">{{ $request->asset->asset_code }}</div>
+                                        <div class="text-sm text-gray-500">{{ $request->asset->name }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $priorityClass }}">
@@ -176,10 +172,27 @@
                                         {{ $request->created_at->format('M d, Y') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{{ route('admin.repair-requests.show', $request) }}" 
-                                           class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
-                                            <i class="fas fa-eye mr-1"></i> View
-                                        </a>
+                                        <div class="flex items-center justify-end space-x-2">
+                                            <a href="{{ route('admin.repair-requests.show', $request) }}" 
+                                               class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
+                                                <i class="fas fa-eye mr-1"></i> View
+                                            </a>
+                                            
+                                            @if($request->status === 'pending')
+                                                <form action="{{ route('admin.repair-requests.approve', $request) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="inline-flex items-center px-3 py-1 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors" 
+                                                            onclick="return confirm('Approve this repair request?')">
+                                                        <i class="fas fa-check mr-1"></i> Approve
+                                                    </button>
+                                                </form>
+                                                
+                                                <button @click="showRejectModal = true; selectedRequestId = {{ $request->id }}; console.log('Reject clicked for request:', {{ $request->id }})" 
+                                                        class="inline-flex items-center px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors">
+                                                    <i class="fas fa-times mr-1"></i> Reject
+                                                </button>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -204,4 +217,45 @@
         @endif
     </div>
 </div>
+
+<!-- Reject Modal -->
+<div x-show="showRejectModal" x-transition class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+    <div @click.away="showRejectModal = false" class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Reject Repair Request</h3>
+                <button @click="showRejectModal = false" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form :action="`{{ url('/admin/repair-requests') }}/${selectedRequestId}/reject`" method="POST">
+                @csrf
+                <div class="mb-4">
+                    <label for="rejection_reason" class="block text-sm font-medium text-gray-700 mb-2">
+                        Reason for Rejection <span class="text-red-500">*</span>
+                    </label>
+                    <textarea 
+                        id="rejection_reason" 
+                        name="rejection_reason" 
+                        rows="4" 
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                        placeholder="Please provide a reason for rejecting this repair request..."
+                        required></textarea>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" @click="showRejectModal = false" class="flex-1 bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">
+                        <i class="fas fa-times mr-2"></i>
+                        Reject Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection

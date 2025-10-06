@@ -194,15 +194,20 @@ Route::middleware(['auth'])->group(function () {
         
     });
 
+    // My Requests (Unified view for maintenance and repair requests)
+    Route::get('/my-requests', [App\Http\Controllers\MyRequestsController::class, 'index'])->name('my-requests.index');
+    
     // Maintenance Requests
     Route::get('/maintenance-requests/create', [MaintenanceRequestController::class, 'create'])->name('maintenance-requests.create');
     Route::post('/maintenance-requests', [MaintenanceRequestController::class, 'store'])->name('maintenance-requests.store');
     Route::get('/maintenance-requests', [MaintenanceRequestController::class, 'userIndex'])->name('maintenance-requests.user-index');
     Route::get('/maintenance-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'userShow'])->name('maintenance-requests.user-show');
     
-    // Repair Requests
-    Route::get('/repair-requests/create', [MaintenanceRequestController::class, 'createRepair'])->name('repair-requests.create');
-    Route::post('/repair-requests', [MaintenanceRequestController::class, 'storeRepair'])->name('repair-requests.store');
+    // Repair Requests (User)
+    Route::get('/repair-requests', [App\Http\Controllers\RepairRequestController::class, 'index'])->name('repair-requests.index');
+    Route::get('/repair-requests/create', [App\Http\Controllers\RepairRequestController::class, 'create'])->name('repair-requests.create');
+    Route::post('/repair-requests', [App\Http\Controllers\RepairRequestController::class, 'store'])->name('repair-requests.store');
+    Route::get('/repair-requests/{repairRequest}', [App\Http\Controllers\RepairRequestController::class, 'show'])->name('repair-requests.show');
     Route::get('/maintenance-checklists/{maintenanceChecklist}/user-view', [MaintenanceChecklistController::class, 'userShow'])->name('maintenance-checklists.user-show');
     
     // User Asset Management
@@ -215,9 +220,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/maintenance-requests/{maintenanceRequest}/reject', [MaintenanceRequestController::class, 'reject'])->name('maintenance-requests.reject');
     
     // Admin Repair Requests
-    Route::get('/admin/repair-requests', [MaintenanceRequestController::class, 'adminRepairIndex'])->name('admin.repair-requests.index');
-    Route::get('/admin/repair-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'adminRepairShow'])->name('admin.repair-requests.show');
-    Route::post('/admin/repair-requests/{maintenanceRequest}/approve', [MaintenanceRequestController::class, 'adminRepairApprove'])->name('admin.repair-requests.approve');
+    Route::get('/admin/repair-requests', [App\Http\Controllers\RepairRequestController::class, 'adminIndex'])->name('admin.repair-requests.index');
+    Route::get('/admin/repair-requests/{repairRequest}', [App\Http\Controllers\RepairRequestController::class, 'adminShow'])->name('admin.repair-requests.show');
+    Route::post('/admin/repair-requests/{repairRequest}/approve', [App\Http\Controllers\RepairRequestController::class, 'approve'])->name('admin.repair-requests.approve');
+    Route::post('/admin/repair-requests/{repairRequest}/reject', [App\Http\Controllers\RepairRequestController::class, 'reject'])->name('admin.repair-requests.reject');
     Route::get('/gsu/maintenance-requests/{maintenanceRequest}/acknowledge', [MaintenanceRequestController::class, 'acknowledge'])->name('maintenance-requests.acknowledge');
     Route::get('/api/maintenance-requests/pending-count', [MaintenanceRequestController::class, 'pendingCount'])->name('maintenance-requests.pending-count');
 
@@ -306,10 +312,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/gsu/lost-assets', [LostAssetController::class, 'index'])->name('gsu.lost-assets.index');
         
         // GSU Repair Requests
-        Route::get('/repair-requests', [MaintenanceRequestController::class, 'gsuIndex'])->name('gsu.repair-requests.index');
-        Route::get('/repair-requests/{maintenanceRequest}', [MaintenanceRequestController::class, 'gsuShow'])->name('gsu.repair-requests.show');
-        Route::post('/repair-requests/{maintenanceRequest}/acknowledge', [MaintenanceRequestController::class, 'gsuAcknowledge'])->name('gsu.repair-requests.acknowledge');
-        Route::post('/repair-requests/{maintenanceRequest}/complete', [MaintenanceRequestController::class, 'gsuComplete'])->name('gsu.repair-requests.complete');
+        Route::get('/repair-requests', [App\Http\Controllers\RepairRequestController::class, 'gsuIndex'])->name('gsu.repair-requests.index');
+        Route::get('/repair-requests/{repairRequest}', [App\Http\Controllers\RepairRequestController::class, 'gsuShow'])->name('gsu.repair-requests.show');
+        Route::post('/repair-requests/{repairRequest}/acknowledge', [App\Http\Controllers\RepairRequestController::class, 'gsuAcknowledge'])->name('gsu.repair-requests.acknowledge');
+        Route::post('/repair-requests/{repairRequest}/complete', [App\Http\Controllers\RepairRequestController::class, 'gsuComplete'])->name('gsu.repair-requests.complete');
         
         // Debug route to test if GSU routes are working
         Route::get('/gsu/test', function() {

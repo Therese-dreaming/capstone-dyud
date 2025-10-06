@@ -190,9 +190,32 @@
                                     <span class="text-sm font-medium text-gray-900">{{ $asset->createdBy->name ?? 'Unknown' }}</span>
                                 </div>
 
-                                <!-- Location Status -->
+                                <!-- Asset Status -->
                                 <div class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-600">Status</span>
+                                    <span class="text-sm text-gray-600">Asset Status</span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ 
+                                        $asset->status === 'Available' ? 'bg-green-100 text-green-800' : 
+                                        ($asset->status === 'In Use' ? 'bg-blue-100 text-blue-800' : 
+                                        ($asset->status === 'For Repair' ? 'bg-yellow-100 text-yellow-800' : 
+                                        ($asset->status === 'For Maintenance' ? 'bg-orange-100 text-orange-800' :
+                                        ($asset->status === 'Lost' ? 'bg-red-100 text-red-800' : 
+                                        ($asset->status === 'Disposed' ? 'bg-gray-100 text-gray-800' : 'bg-gray-100 text-gray-800')))))
+                                    }}">
+                                        <i class="fas {{ 
+                                            $asset->status === 'Available' ? 'fa-check-circle' : 
+                                            ($asset->status === 'In Use' ? 'fa-user' : 
+                                            ($asset->status === 'For Repair' ? 'fa-wrench' : 
+                                            ($asset->status === 'For Maintenance' ? 'fa-tools' :
+                                            ($asset->status === 'Lost' ? 'fa-exclamation-triangle' : 
+                                            ($asset->status === 'Disposed' ? 'fa-trash' : 'fa-question-circle')))))
+                                        }} mr-1"></i>
+                                        {{ $asset->status }}
+                                    </span>
+                                </div>
+
+                                <!-- Deployment Status -->
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600">Deployment</span>
                                     @if($asset->location_id)
                                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             <i class="fas fa-map-marker-alt mr-1"></i>
@@ -301,9 +324,32 @@
                                     <span class="text-sm font-medium text-gray-900">{{ $asset->createdBy->name ?? 'Unknown' }}</span>
                                 </div>
 
-                                <!-- Location Status -->
+                                <!-- Asset Status -->
                                 <div class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-600">Status</span>
+                                    <span class="text-sm text-gray-600">Asset Status</span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ 
+                                        $asset->status === 'Available' ? 'bg-green-100 text-green-800' : 
+                                        ($asset->status === 'In Use' ? 'bg-blue-100 text-blue-800' : 
+                                        ($asset->status === 'For Repair' ? 'bg-yellow-100 text-yellow-800' : 
+                                        ($asset->status === 'For Maintenance' ? 'bg-orange-100 text-orange-800' :
+                                        ($asset->status === 'Lost' ? 'bg-red-100 text-red-800' : 
+                                        ($asset->status === 'Disposed' ? 'bg-gray-100 text-gray-800' : 'bg-gray-100 text-gray-800')))))
+                                    }}">
+                                        <i class="fas {{ 
+                                            $asset->status === 'Available' ? 'fa-check-circle' : 
+                                            ($asset->status === 'In Use' ? 'fa-user' : 
+                                            ($asset->status === 'For Repair' ? 'fa-wrench' : 
+                                            ($asset->status === 'For Maintenance' ? 'fa-tools' :
+                                            ($asset->status === 'Lost' ? 'fa-exclamation-triangle' : 
+                                            ($asset->status === 'Disposed' ? 'fa-trash' : 'fa-question-circle')))))
+                                        }} mr-1"></i>
+                                        {{ $asset->status }}
+                                    </span>
+                                </div>
+
+                                <!-- Deployment Status -->
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600">Deployment</span>
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <i class="fas fa-map-marker-alt mr-1"></i>
                                         Deployed
