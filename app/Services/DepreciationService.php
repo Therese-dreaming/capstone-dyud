@@ -28,6 +28,7 @@ class DepreciationService
                 'useful_life_years' => (float) $asset->useful_life_years,
                 'age_years' => 0,
                 'age_months' => 0,
+                'age_days' => 0,
                 'accumulated_depreciation' => 0,
                 'current_book_value' => (float) $asset->purchase_cost,
                 'annual_depreciation' => 0,
