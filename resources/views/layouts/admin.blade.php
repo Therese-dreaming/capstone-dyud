@@ -161,6 +161,14 @@
                                     </span>
                                 </a>
                             </li>
+                            <li>
+                                <a href="{{ route('depreciation.index') }}"
+                                    class="flex items-center px-3 py-2 text-sm rounded hover:bg-purple-100 hover:text-purple-800 {{ request()->routeIs('depreciation.*') ? 'bg-purple-100 text-purple-800' : 'text-gray-600' }}">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-chart-line mr-2 w-4"></i> Depreciation Report
+                                    </span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
 

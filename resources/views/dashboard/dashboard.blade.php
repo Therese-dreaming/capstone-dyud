@@ -694,6 +694,16 @@
                             </div>
                         </a>
 
+                        <a href="{{ route('depreciation.index') }}" class="group">
+                            <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 text-center hover:from-purple-100 hover:to-purple-200 transition-all duration-300 border border-purple-200 hover:border-purple-300">
+                                <div class="bg-purple-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-chart-line text-white text-xl"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Depreciation Report</h3>
+                                <p class="text-sm text-gray-600">Track asset depreciation</p>
+                            </div>
+                        </a>
+
                         <a href="{{ route('disposals.history') }}" class="group">
                             <div class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-6 text-center hover:from-teal-100 hover:to-teal-200 transition-all duration-300 border border-teal-200 hover:border-teal-300">
                                 <div class="bg-teal-500 p-3 rounded-full inline-block mb-4 group-hover:scale-110 transition-transform">

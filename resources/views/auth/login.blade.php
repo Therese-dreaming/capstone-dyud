@@ -16,8 +16,7 @@
                     <div class="flex justify-center items-center">
                         <img src="{{ asset('images/logo-small.png') }}" alt="Logo" class="w-32 h-32 md:w-52 md:h-52 mb-4 md:mb-8">
                     </div>
-                    <h1 class="text-2xl md:text-3xl font-bold mb-2 md:mb-4">Inventory Management System</h1>
-                    <p class="text-lg md:text-xl opacity-90">GSU Department</p>
+                    <h1 class="text-2xl md:text-3xl font-bold mb-2 md:mb-4">Asset Management System</h1>
                 </div>
             </div>
             

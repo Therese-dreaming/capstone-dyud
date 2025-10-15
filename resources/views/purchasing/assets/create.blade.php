@@ -259,6 +259,83 @@
                 </div>
             </div>
 
+            <!-- Depreciation Settings -->
+            <div class="mb-8">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-chart-line text-purple-600 mr-2"></i>
+                    <h3 class="text-lg font-semibold text-gray-900">Depreciation Settings</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div>
+                        <label for="depreciation_method" class="block text-sm font-medium text-gray-700 mb-2">
+                            Depreciation Method <span class="text-red-500">*</span>
+                        </label>
+                        <select id="depreciation_method" 
+                                name="depreciation_method" 
+                                required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('depreciation_method') border-red-500 ring-2 ring-red-200 @enderror">
+                            <option value="straight_line" {{ old('depreciation_method', 'straight_line') == 'straight_line' ? 'selected' : '' }}>Straight-Line</option>
+                            <option value="declining_balance" {{ old('depreciation_method') == 'declining_balance' ? 'selected' : '' }}>Declining Balance</option>
+                            <option value="sum_of_years_digits" {{ old('depreciation_method') == 'sum_of_years_digits' ? 'selected' : '' }}>Sum of Years Digits</option>
+                        </select>
+                        @error('depreciation_method')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div>
+                        <label for="useful_life_years" class="block text-sm font-medium text-gray-700 mb-2">
+                            Useful Life (Years) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" 
+                               step="0.1" 
+                               min="0.1" 
+                               max="100"
+                               id="useful_life_years" 
+                               name="useful_life_years" 
+                               value="{{ old('useful_life_years', '5') }}" 
+                               required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('useful_life_years') border-red-500 ring-2 ring-red-200 @enderror">
+                        @error('useful_life_years')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div>
+                        <label for="salvage_value" class="block text-sm font-medium text-gray-700 mb-2">
+                            Salvage Value (₱) <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 text-sm">₱</span>
+                            </div>
+                            <input type="number" 
+                                   step="0.01" 
+                                   min="0"
+                                   id="salvage_value" 
+                                   name="salvage_value" 
+                                   value="{{ old('salvage_value', '0') }}" 
+                                   required
+                                   class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('salvage_value') border-red-500 ring-2 ring-red-200 @enderror">
+                        </div>
+                        @error('salvage_value')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-purple-600 mt-0.5 mr-3"></i>
+                        <div class="text-sm text-purple-700">
+                            <p class="font-medium mb-1">Depreciation Information</p>
+                            <p>These settings determine how the asset's value decreases over time. Straight-line is the most common method with equal depreciation each year.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Description -->
             <div class="mb-6">
                 <label for="description" class="block text-sm font-medium text-gray-700 mb-2">

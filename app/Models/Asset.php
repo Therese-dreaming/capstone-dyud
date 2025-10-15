@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\TracksAssetChanges;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -43,13 +44,22 @@ class Asset extends Model
         'created_by',
         'registered_semester_id',
         'disposed_semester_id',
-        'lost_semester_id'
+        'lost_semester_id',
+        'depreciation_method',
+        'useful_life_years',
+        'salvage_value',
+        'declining_balance_rate',
+        'depreciation_start_date'
     ];
 
     protected $casts = [
         'purchase_date' => 'date',
         'purchase_cost' => 'decimal:2',
         'approved_at' => 'datetime',
+        'useful_life_years' => 'decimal:2',
+        'salvage_value' => 'decimal:2',
+        'declining_balance_rate' => 'decimal:2',
+        'depreciation_start_date' => 'date',
     ];
 
     public function category(): BelongsTo
@@ -285,5 +295,65 @@ class Asset extends Model
         }
 
         return $lastMaintenance->scanned_at->diffInDays(now());
+    }
+
+    // Depreciation helper methods
+    
+    /**
+     * Get depreciation calculation for this asset
+     */
+    public function getDepreciation(?Carbon $asOfDate = null): array
+    {
+        $service = app(\App\Services\DepreciationService::class);
+        return $service->calculateDepreciation($this, $asOfDate);
+    }
+    
+    /**
+     * Get current book value
+     */
+    public function getCurrentBookValue(): float
+    {
+        $depreciation = $this->getDepreciation();
+        return $depreciation['current_book_value'];
+    }
+    
+    /**
+     * Get accumulated depreciation
+     */
+    public function getAccumulatedDepreciation(): float
+    {
+        $depreciation = $this->getDepreciation();
+        return $depreciation['accumulated_depreciation'];
+    }
+    
+    /**
+     * Check if asset is fully depreciated
+     */
+    public function isFullyDepreciated(): bool
+    {
+        $depreciation = $this->getDepreciation();
+        return $depreciation['is_fully_depreciated'];
+    }
+    
+    /**
+     * Get depreciation schedule
+     */
+    public function getDepreciationSchedule(): array
+    {
+        $service = app(\App\Services\DepreciationService::class);
+        return $service->calculateDepreciationSchedule($this);
+    }
+    
+    /**
+     * Get depreciation method label
+     */
+    public function getDepreciationMethodLabel(): string
+    {
+        return match($this->depreciation_method) {
+            'straight_line' => 'Straight-Line',
+            'declining_balance' => 'Declining Balance',
+            'sum_of_years_digits' => 'Sum of Years Digits',
+            default => ucwords(str_replace('_', ' ', $this->depreciation_method))
+        };
     }
 }

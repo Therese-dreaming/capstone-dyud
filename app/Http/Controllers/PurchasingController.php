@@ -61,6 +61,11 @@ class PurchasingController extends Controller
             // Warranty validation
             'manufacturer' => 'required|string|max:255',
             'model' => 'required|string|max:255',
+            'warranty_expiry' => 'required|date',
+            // Depreciation validation
+            'depreciation_method' => 'required|in:straight_line,declining_balance,sum_of_years_digits',
+            'useful_life_years' => 'required|numeric|min:0.1|max:100',
+            'salvage_value' => 'required|numeric|min:0',
         ]);
 
         $quantity = $request->quantity;
@@ -99,6 +104,12 @@ class PurchasingController extends Controller
                 'approval_status' => 'pending', // Pending approval from admin
                 'created_by' => Auth::id(),
                 'registered_semester_id' => $currentSemester?->id, // Auto-assign current semester
+                // Depreciation fields
+                'depreciation_method' => $request->depreciation_method,
+                'useful_life_years' => $request->useful_life_years,
+                'salvage_value' => $request->salvage_value,
+                'declining_balance_rate' => $request->depreciation_method === 'declining_balance' ? 2 : 2, // Default to 2 for all methods
+                'depreciation_start_date' => $request->purchase_date, // Start depreciation from purchase date
             ]);
 
             // Create warranty record for each asset

@@ -386,6 +386,28 @@
                     @endempty
                 @endif
             </div>
+
+            <!-- 📝 Asset Description -->
+            @if($asset->description)
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b border-gray-100">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-file-alt text-indigo-600 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">Asset Description</h3>
+                                <p class="text-sm text-gray-600">Additional details and specifications</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="prose prose-gray max-w-none">
+                            <p class="text-gray-700 leading-relaxed text-lg">{{ $asset->description }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <!-- 📊 Sidebar -->
@@ -618,28 +640,6 @@
             </div>
         </div>
     </div>
-
-    <!-- 📝 Description Section -->
-    @if($asset->description)
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-8">
-            <div class="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b border-gray-100">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-file-alt text-indigo-600 text-lg"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-900">Asset Description</h3>
-                        <p class="text-sm text-gray-600">Additional details and specifications</p>
-                    </div>
-                </div>
-            </div>
-            <div class="p-8">
-                <div class="prose prose-gray max-w-none">
-                    <p class="text-gray-700 leading-relaxed text-lg">{{ $asset->description }}</p>
-                </div>
-            </div>
-        </div>
-    @endif
 
     <!-- 🚨 Status Messages & Alerts -->
     @if($asset->isRejected() && $asset->rejection_reason)

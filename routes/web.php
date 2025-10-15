@@ -19,6 +19,7 @@ use App\Http\Controllers\MaintenanceChecklistController;
 use App\Http\Controllers\AssetScannerController;
 use App\Http\Controllers\MaintenanceRequestController;
 use App\Http\Controllers\SemesterAssetController;
+use App\Http\Controllers\DepreciationController;
 
 // Default route - redirect to login
 Route::get('/', function () {
@@ -137,6 +138,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/semester-assets', [SemesterAssetController::class, 'index'])->name('semester-assets.index');
         Route::get('/semester-assets/details', [SemesterAssetController::class, 'getAssetDetails'])->name('semester-assets.details');
         Route::get('/semester-assets/export', [SemesterAssetController::class, 'exportReport'])->name('semester-assets.export');
+
+        // Depreciation Management - Admin only
+        Route::get('/depreciation', [DepreciationController::class, 'index'])->name('depreciation.index');
+        Route::get('/depreciation/export', [DepreciationController::class, 'export'])->name('depreciation.export');
+        Route::get('/depreciation/{asset}', [DepreciationController::class, 'show'])->name('depreciation.show');
+        Route::get('/depreciation/{asset}/edit', [DepreciationController::class, 'edit'])->name('depreciation.edit');
+        Route::put('/depreciation/{asset}', [DepreciationController::class, 'update'])->name('depreciation.update');
+        Route::get('/api/depreciation/by-category', [DepreciationController::class, 'byCategory'])->name('api.depreciation.by-category');
+        Route::get('/api/depreciation/trend', [DepreciationController::class, 'trend'])->name('api.depreciation.trend');
 
     });
 

@@ -385,6 +385,79 @@
                 </div>
             </div>
             
+            <!-- Depreciation Information Card -->
+            @php
+                $depreciation = $asset->getDepreciation();
+            @endphp
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <i class="fas fa-chart-line text-purple-600"></i>
+                            Depreciation Information
+                        </h2>
+                        <a href="{{ route('depreciation.show', $asset) }}" class="text-sm text-purple-600 hover:text-purple-800 font-medium">
+                            View Full Details <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="p-6 space-y-5">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <dt class="text-sm font-medium text-green-700 mb-1">Current Book Value</dt>
+                            <dd class="text-2xl font-bold text-green-600">₱{{ number_format($depreciation['current_book_value'], 2) }}</dd>
+                            <div class="text-xs text-green-600 mt-1">
+                                {{ number_format(($depreciation['current_book_value'] / $depreciation['purchase_cost']) * 100, 1) }}% of original
+                            </div>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                            <dt class="text-sm font-medium text-red-700 mb-1">Accumulated Depreciation</dt>
+                            <dd class="text-2xl font-bold text-red-600">₱{{ number_format($depreciation['accumulated_depreciation'], 2) }}</dd>
+                            <div class="text-xs text-red-600 mt-1">
+                                {{ number_format(($depreciation['accumulated_depreciation'] / ($depreciation['purchase_cost'] - $depreciation['salvage_value'])) * 100, 1) }}% depreciated
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start justify-between py-3 border-b border-gray-100">
+                        <div class="flex-1">
+                            <dt class="text-sm font-medium text-gray-500 mb-1">Depreciation Method</dt>
+                            <dd class="text-base font-medium text-gray-900">{{ $asset->getDepreciationMethodLabel() }}</dd>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start justify-between py-3 border-b border-gray-100">
+                        <div class="flex-1">
+                            <dt class="text-sm font-medium text-gray-500 mb-1">Useful Life / Age</dt>
+                            <dd class="text-base text-gray-700">
+                                {{ $depreciation['age_years'] }} of {{ $depreciation['useful_life_years'] }} years
+                                <span class="text-sm text-gray-500">({{ $depreciation['remaining_useful_life_years'] }} years remaining)</span>
+                            </dd>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start justify-between py-3">
+                        <div class="flex-1">
+                            <dt class="text-sm font-medium text-gray-500 mb-1">Annual Depreciation</dt>
+                            <dd class="text-base font-medium text-gray-900">₱{{ number_format($depreciation['annual_depreciation'], 2) }} / year</dd>
+                            <div class="text-sm text-gray-600 mt-1">₱{{ number_format($depreciation['monthly_depreciation'], 2) }} / month</div>
+                        </div>
+                    </div>
+                    
+                    @if($depreciation['is_fully_depreciated'])
+                        <div class="bg-gray-100 border-l-4 border-gray-500 p-4 rounded">
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-gray-600 text-xl mr-3"></i>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Fully Depreciated</p>
+                                    <p class="text-sm text-gray-600">This asset has reached its salvage value.</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+            
             <!-- Disposal Information Card (only shown if disposed) -->
             @if($asset->status === 'Disposed' && $asset->disposes->isNotEmpty())
             @php
