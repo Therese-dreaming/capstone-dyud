@@ -407,14 +407,25 @@
                             <dt class="text-sm font-medium text-green-700 mb-1">Current Book Value</dt>
                             <dd class="text-2xl font-bold text-green-600">₱{{ number_format($depreciation['current_book_value'], 2) }}</dd>
                             <div class="text-xs text-green-600 mt-1">
-                                {{ number_format(($depreciation['current_book_value'] / $depreciation['purchase_cost']) * 100, 1) }}% of original
+                                @if($depreciation['purchase_cost'] > 0)
+                                    {{ number_format(($depreciation['current_book_value'] / $depreciation['purchase_cost']) * 100, 1) }}% of original
+                                @else
+                                    N/A
+                                @endif
                             </div>
                         </div>
                         <div class="bg-red-50 p-4 rounded-lg border border-red-200">
                             <dt class="text-sm font-medium text-red-700 mb-1">Accumulated Depreciation</dt>
                             <dd class="text-2xl font-bold text-red-600">₱{{ number_format($depreciation['accumulated_depreciation'], 2) }}</dd>
                             <div class="text-xs text-red-600 mt-1">
-                                {{ number_format(($depreciation['accumulated_depreciation'] / ($depreciation['purchase_cost'] - $depreciation['salvage_value'])) * 100, 1) }}% depreciated
+                                @php
+                                    $depreciableAmount = $depreciation['purchase_cost'] - $depreciation['salvage_value'];
+                                @endphp
+                                @if($depreciableAmount > 0)
+                                    {{ number_format(($depreciation['accumulated_depreciation'] / $depreciableAmount) * 100, 1) }}% depreciated
+                                @else
+                                    N/A
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -600,7 +611,8 @@
         
         <!-- Tab Navigation -->
         <div class="border-b border-gray-200 overflow-x-auto">
-            <nav class="flex px-4 md:px-6" aria-label="Tabs">
+            <div class="flex items-center justify-between px-4 md:px-6">
+                <nav class="flex flex-1" aria-label="Tabs">
 
                 
                 <button onclick="showTab('maintenance')" 
@@ -646,7 +658,14 @@
                         </span>
                     @endif
                 </button>
-            </nav>
+                </nav>
+                
+                <!-- Print History Button -->
+                <button onclick="printAssetHistory()" class="no-print bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-sm px-3 md:px-4 py-2 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center gap-2 ml-4" title="Print Asset History">
+                    <i class="fas fa-print text-sm"></i>
+                    <span class="hidden md:inline text-sm font-medium">Print History</span>
+                </button>
+            </div>
         </div>
         
         <!-- Tab Content -->
@@ -1357,6 +1376,258 @@ function showTabOnLoad(tabName) {
         targetButton.classList.remove('border-transparent', 'text-gray-500');
     }
 }
+
+// Print Asset History Function
+function printAssetHistory() {
+    // Store original display states
+    const tabs = document.querySelectorAll('.tab-content');
+    const originalStates = [];
+    
+    tabs.forEach(tab => {
+        originalStates.push({
+            element: tab,
+            display: tab.style.display
+        });
+        // Show all tabs for printing
+        tab.style.display = 'block';
+    });
+    
+    // Hide tab navigation buttons
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(btn => btn.style.display = 'none');
+    
+    // Add print header
+    const printHeader = document.createElement('div');
+    printHeader.className = 'print-only';
+    printHeader.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px; padding: 20px; border-bottom: 3px solid #4F46E5;">
+            <h1 style="font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 10px;">
+                Asset History Report
+            </h1>
+            <p style="color: #6B7280; font-size: 16px; margin-bottom: 5px;">
+                Asset: {{ $asset->name }} ({{ $asset->asset_code }})
+            </p>
+            <p style="color: #6B7280; font-size: 14px;">
+                Generated on: ${new Date().toLocaleString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                })}
+            </p>
+            <p style="color: #6B7280; font-size: 14px;">
+                Generated by: {{ Auth::user()->name ?? 'Admin' }}
+            </p>
+        </div>
+    `;
+    document.body.insertBefore(printHeader, document.body.firstChild);
+    
+    // Trigger print
+    window.print();
+    
+    // Restore original states
+    originalStates.forEach(state => {
+        state.element.style.display = state.display;
+    });
+    
+    // Restore tab buttons
+    tabButtons.forEach(btn => btn.style.display = '');
+    
+    // Remove print header
+    printHeader.remove();
+}
 </script>
+
+<style>
+/* Print Styles for Asset History */
+@media print {
+    /* Hide unnecessary elements */
+    .no-print,
+    button:not(.print-only),
+    .tab-button,
+    .pagination,
+    .bg-gradient-to-r.from-gray-600,
+    .bg-gradient-to-r.from-blue-600:not(.print-only),
+    .bg-gradient-to-r.from-red-600,
+    .bg-gradient-to-r.from-green-600 {
+        display: none !important;
+    }
+    
+    /* Keep repair count badge visible */
+    .bg-white.px-4.py-2.rounded-lg.shadow-sm.border.border-yellow-200 {
+        display: flex !important;
+        background: white !important;
+        border: 1px solid #fbbf24 !important;
+    }
+    
+    /* Show desktop view, hide mobile view for printing */
+    .block.md\:hidden {
+        display: none !important;
+    }
+    
+    .hidden.md\:block {
+        display: block !important;
+    }
+    
+    /* Show all tab content */
+    .tab-content {
+        display: block !important;
+        page-break-before: auto;
+        page-break-after: auto;
+        page-break-inside: avoid;
+    }
+    
+    /* Show print header */
+    .print-only {
+        display: block !important;
+    }
+    
+    /* Adjust page layout */
+    body {
+        background: white !important;
+    }
+    
+    /* Remove shadows and gradients */
+    .shadow-lg,
+    .shadow-xl,
+    .shadow-sm {
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    
+    .bg-gradient-to-r,
+    .bg-gradient-to-br {
+        background: white !important;
+        color: #1F2937 !important;
+    }
+    
+    /* Ensure text is readable */
+    .text-white {
+        color: #1F2937 !important;
+    }
+    
+    /* Table styling for print */
+    table {
+        page-break-inside: auto;
+        width: 100%;
+    }
+    
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    
+    thead {
+        display: table-header-group;
+    }
+    
+    /* Card styling for mobile views */
+    .space-y-3 > div,
+    .space-y-4 > div {
+        page-break-inside: avoid;
+        margin-bottom: 10px;
+    }
+    
+    /* Asset Changes specific styling */
+    #changes-tab .bg-gray-50,
+    #changes-tab .bg-white {
+        page-break-inside: avoid;
+        margin-bottom: 15px;
+    }
+    
+    #changes-tab .grid {
+        display: block !important;
+    }
+    
+    #changes-tab .md\:grid-cols-2 > div {
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 8px;
+    }
+    
+    #changes-tab .md\:col-span-2 {
+        display: block !important;
+        width: 100% !important;
+    }
+    
+    /* Ensure all text in changes is visible */
+    #changes-tab .text-gray-900,
+    #changes-tab .text-gray-700,
+    #changes-tab span {
+        color: #1F2937 !important;
+    }
+    
+    /* Make backgrounds print-friendly */
+    #changes-tab .bg-blue-50,
+    #changes-tab .bg-purple-50,
+    #changes-tab .bg-orange-50 {
+        background-color: #f9fafb !important;
+        border: 1px solid #d1d5db !important;
+    }
+    
+    /* Add section headers before each tab */
+    #maintenance-tab::before {
+        content: "Maintenance Records";
+        display: block;
+        font-size: 20px;
+        font-weight: bold;
+        color: #1F2937;
+        margin: 30px 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #4F46E5;
+    }
+    
+    #disposal-tab::before {
+        content: "Disposal History";
+        display: block;
+        font-size: 20px;
+        font-weight: bold;
+        color: #1F2937;
+        margin: 30px 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #4F46E5;
+    }
+    
+    #changes-tab::before {
+        content: "Asset Changes";
+        display: block;
+        font-size: 20px;
+        font-weight: bold;
+        color: #1F2937;
+        margin: 30px 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #4F46E5;
+    }
+    
+    #repairs-tab::before {
+        content: "Repair History";
+        display: block;
+        font-size: 20px;
+        font-weight: bold;
+        color: #1F2937;
+        margin: 30px 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #4F46E5;
+    }
+    
+    /* Page settings */
+    @page {
+        margin: 1.5cm;
+        size: A4;
+    }
+    
+    /* Adjust spacing */
+    .mb-8,
+    .mb-6 {
+        margin-bottom: 1rem !important;
+    }
+}
+
+/* Hide print-only elements on screen */
+.print-only {
+    display: none;
+}
+</style>
 
 @endsection

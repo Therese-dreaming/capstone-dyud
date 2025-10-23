@@ -16,9 +16,15 @@
                     <p class="text-xs text-red-200 mt-1">Last login: {{ Auth::user()->last_login ? Auth::user()->last_login->diffForHumans() : 'Never' }}</p>
                 </div>
             </div>
-            <div class="text-right">
-                <div class="text-sm text-red-200">Access Level</div>
-                <div class="text-lg font-bold text-yellow-300">User Management Only</div>
+            <div class="text-right flex items-center gap-4">
+                <div>
+                    <div class="text-sm text-red-200">Access Level</div>
+                    <div class="text-lg font-bold text-yellow-300">User Management Only</div>
+                </div>
+                <button onclick="window.print()" class="bg-white text-red-800 rounded-lg shadow-sm px-4 py-2 hover:bg-red-50 transition-all duration-200 flex items-center gap-2 no-print" title="Print Dashboard">
+                    <i class="fas fa-print"></i>
+                    <span class="font-medium">Print</span>
+                </button>
             </div>
         </div>
     </div>
@@ -251,4 +257,32 @@
         </div>
     </div>
 </div>
+
+<style>
+@media print {
+    .no-print, button:not(.print-only), a.group {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+    }
+    .bg-gradient-to-br, .bg-gradient-to-r {
+        background: white !important;
+        color: #1F2937 !important;
+    }
+    .text-white {
+        color: #1F2937 !important;
+    }
+    .shadow-sm, .shadow-lg {
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    .grid {
+        page-break-inside: avoid;
+    }
+    @page {
+        margin: 1cm;
+    }
+}
+</style>
 @endsection

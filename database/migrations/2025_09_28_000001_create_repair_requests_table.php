@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Check if table already exists before creating
+        if (Schema::hasTable('repair_requests')) {
+            return;
+        }
+        
         Schema::create('repair_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('requester_id')->constrained('users')->onDelete('cascade');

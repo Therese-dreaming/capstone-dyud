@@ -243,8 +243,8 @@ class AssetController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
         
+        // Count all repair requests for this asset (not just completed ones)
         $repairCount = \App\Models\RepairRequest::where('asset_id', $asset->id)
-            ->where('status', 'completed')
             ->count();
         
         // Check if user is GSU and return appropriate view

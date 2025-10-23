@@ -3,9 +3,15 @@
 @section('content')
 <div class="max-w-7xl mx-auto">
     <!-- Page Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Purchasing Dashboard</h1>
-        <p class="mt-2 text-gray-600">Manage your asset submissions and track approval status</p>
+    <div class="mb-8 flex justify-between items-start">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Purchasing Dashboard</h1>
+            <p class="mt-2 text-gray-600">Manage your asset submissions and track approval status</p>
+        </div>
+        <button onclick="window.print()" class="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-sm px-4 py-2 border border-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center gap-2 no-print" title="Print Dashboard">
+            <i class="fas fa-print"></i>
+            <span class="font-medium">Print</span>
+        </button>
     </div>
 
     <!-- Stats Cards -->
@@ -245,4 +251,35 @@
         </div>
     </div>
 </div>
+
+<style>
+@media print {
+    .no-print, button:not(.print-only), a.bg-purple-600, a.bg-blue-600, a.bg-gray-600 {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+    }
+    .max-w-7xl {
+        max-width: 100% !important;
+    }
+    .shadow-sm {
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    table {
+        page-break-inside: auto;
+    }
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    .grid {
+        page-break-inside: avoid;
+    }
+    @page {
+        margin: 1cm;
+    }
+}
+</style>
 @endsection

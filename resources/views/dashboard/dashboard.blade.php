@@ -56,6 +56,10 @@
                     <div class="text-xs text-gray-500">Last updated</div>
                     <div class="text-xs md:text-sm font-medium text-gray-900 whitespace-nowrap">{{ now()->format('M d, h:i A') }}</div>
                 </div>
+                <button @click="printDashboard()" class="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-sm px-3 md:px-4 py-2 border border-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center gap-2" title="Print Dashboard">
+                    <i class="fas fa-print text-sm md:text-base"></i>
+                    <span class="hidden md:inline text-xs md:text-sm font-medium">Print</span>
+                </button>
                 <button @click="refreshDashboard()" class="bg-white rounded-lg shadow-sm p-2 border border-gray-200 hover:bg-gray-50 transition-colors" title="Refresh">
                     <i class="fas fa-sync-alt text-gray-600 text-sm md:text-base"></i>
                 </button>
@@ -793,6 +797,100 @@
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 150ms;
 }
+
+/* Print Styles */
+@media print {
+    /* Hide unnecessary elements */
+    button,
+    nav,
+    .no-print,
+    .bg-gradient-to-r.from-red-600 {
+        display: none !important;
+    }
+    
+    /* Only show visible tab content (Alpine.js x-show handles this) */
+    [x-show][style*="display: none"] {
+        display: none !important;
+    }
+    
+    /* Adjust page layout */
+    body {
+        background: white !important;
+    }
+    
+    .container {
+        max-width: 100% !important;
+        padding: 20px !important;
+    }
+    
+    /* Ensure charts are visible and properly sized */
+    canvas {
+        max-width: 100% !important;
+        page-break-inside: avoid;
+    }
+    
+    /* Page breaks */
+    .grid {
+        page-break-inside: avoid;
+    }
+    
+    /* Print title styling */
+    .print-only {
+        display: block !important;
+    }
+    
+    /* Remove shadows and gradients for better printing */
+    .shadow-lg,
+    .shadow-xl,
+    .shadow-sm {
+        box-shadow: none !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    
+    /* Ensure text is readable */
+    .text-white {
+        color: #1F2937 !important;
+    }
+    
+    /* Remove background gradients */
+    .bg-gradient-to-r,
+    .bg-gradient-to-br {
+        background: white !important;
+        color: #1F2937 !important;
+    }
+    
+    /* Adjust spacing for print */
+    .mb-8,
+    .mb-6 {
+        margin-bottom: 1rem !important;
+    }
+    
+    /* Ensure cards are visible */
+    .bg-white {
+        background: white !important;
+    }
+    
+    /* Better table printing */
+    table {
+        page-break-inside: auto;
+    }
+    
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    
+    /* Ensure proper card sizing */
+    .rounded-xl,
+    .rounded-lg {
+        border-radius: 8px !important;
+    }
+}
+
+/* Hide print-only elements on screen */
+.print-only {
+    display: none;
+}
 </style>
 <!-- Chart.js Script -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1081,6 +1179,71 @@ function adminDashboardData() {
                     }
                 });
             }
+        },
+        
+        printDashboard() {
+            // Get the current active tab name
+            const tabNames = {
+                'overview': 'Overview',
+                'analytics': 'Analytics',
+                'approvals': 'Pending Approvals',
+                'maintenance': 'Maintenance Requests',
+                'repairs': 'Repair Requests',
+                'quick-actions': 'Quick Actions'
+            };
+            const currentTabName = tabNames[this.activeTab] || 'Dashboard';
+            
+            // Hide elements that shouldn't be printed
+            const elementsToHide = [
+                '.no-print',
+                'button',
+                '.bg-gradient-to-r.from-red-600', // Welcome banner
+                'nav' // Tab navigation
+            ];
+            
+            // Store original display values
+            const originalDisplays = [];
+            elementsToHide.forEach(selector => {
+                document.querySelectorAll(selector).forEach(el => {
+                    originalDisplays.push({ el, display: el.style.display });
+                    el.style.display = 'none';
+                });
+            });
+            
+            // Add print title
+            const printTitle = document.createElement('div');
+            printTitle.className = 'print-only';
+            printTitle.innerHTML = `
+                <div style="text-align: center; margin-bottom: 30px; padding: 20px; border-bottom: 3px solid #DC2626;">
+                    <h1 style="font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 10px;">
+                        Admin Dashboard - ${currentTabName}
+                    </h1>
+                    <p style="color: #6B7280; font-size: 14px;">
+                        Generated on: ${new Date().toLocaleString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric', 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        })}
+                    </p>
+                    <p style="color: #6B7280; font-size: 14px;">
+                        Generated by: {{ Auth::user()->name ?? 'Admin' }}
+                    </p>
+                </div>
+            `;
+            document.body.insertBefore(printTitle, document.body.firstChild);
+            
+            // Trigger print
+            window.print();
+            
+            // Restore original display values
+            originalDisplays.forEach(({ el, display }) => {
+                el.style.display = display;
+            });
+            
+            // Remove print title
+            printTitle.remove();
         },
         
         refreshDashboard() {
