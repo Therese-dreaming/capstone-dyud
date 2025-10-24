@@ -44,19 +44,61 @@
                     <span class="truncate">Analytics Dashboard</span>
                 </h1>
                 <p class="text-gray-600 mt-1 md:mt-2 text-xs md:text-sm lg:text-base">Comprehensive asset management insights and performance metrics</p>
+                @if(request()->has('month') || request()->has('year'))
+                <div class="mt-2 inline-flex items-center px-3 py-1 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+                    <i class="fas fa-filter mr-2"></i>
+                    <span class="font-medium">
+                        Filtered: 
+                        @if(request('month'))
+                            {{ ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][request('month')] }}
+                        @endif
+                        @if(request('year'))
+                            {{ request('year') }}
+                        @endif
+                    </span>
+                </div>
+                @endif
             </div>
-            <div class="flex items-center space-x-2 md:space-x-3 w-full sm:w-auto">
+            <div class="flex items-center space-x-2 md:space-x-3 w-full sm:w-auto flex-wrap gap-2">
+                <!-- Period Filter Form -->
+                <form method="GET" class="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-2 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <select name="month" class="text-xs border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 py-1">
+                            <option value="">All Months</option>
+                            @php $months = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'May',6=>'Jun',7=>'Jul',8=>'Aug',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dec']; @endphp
+                            @foreach($months as $num => $name)
+                                <option value="{{ $num }}" {{ request('month') == $num ? 'selected' : '' }}>{{ $name }}</option>
+                            @endforeach
+                        </select>
+                        <select name="year" class="text-xs border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 py-1">
+                            @php $currentYear = now()->year; @endphp
+                            <option value="">All Years</option>
+                            @for($y = $currentYear; $y >= $currentYear - 10; $y--)
+                                <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-md whitespace-nowrap">
+                        <i class="fas fa-filter mr-1"></i>Apply
+                    </button>
+                    @if(request()->has('month') || request()->has('year'))
+                        <a href="{{ url()->current() }}" class="text-xs text-gray-600 hover:text-gray-800 px-2 whitespace-nowrap">
+                            <i class="fas fa-times mr-1"></i>Clear
+                        </a>
+                    @endif
+                </form>
+
                 @if($unreadNotifications > 0)
                 <div class="bg-red-50 border border-red-200 text-red-800 px-3 md:px-4 py-1.5 md:py-2 rounded-lg flex items-center gap-2">
                     <i class="fas fa-bell animate-pulse text-sm md:text-base"></i>
                     <span class="font-medium text-xs md:text-sm whitespace-nowrap">{{ $unreadNotifications }} <span class="hidden sm:inline">unread notification{{ $unreadNotifications > 1 ? 's' : '' }}</span><span class="sm:hidden">unread</span></span>
                 </div>
                 @endif
-                <div class="bg-white rounded-lg shadow-sm px-3 md:px-4 py-1.5 md:py-2 border border-gray-200 hidden sm:block">
+                <div class="bg-white rounded-lg shadow-sm px-3 md:px-4 py-1.5 md:py-2 border border-gray-200 hidden lg:block">
                     <div class="text-xs text-gray-500">Last updated</div>
                     <div class="text-xs md:text-sm font-medium text-gray-900 whitespace-nowrap">{{ now()->format('M d, h:i A') }}</div>
                 </div>
-                <button @click="printDashboard()" class="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-sm px-3 md:px-4 py-2 border border-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center gap-2" title="Print Dashboard">
+                <button @click="openPrintDialog()" class="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-sm px-3 md:px-4 py-2 border border-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center gap-2" title="Print Dashboard">
                     <i class="fas fa-print text-sm md:text-base"></i>
                     <span class="hidden md:inline text-xs md:text-sm font-medium">Print</span>
                 </button>
@@ -99,9 +141,8 @@
                         :class="activeTab === 'repairs' ? 'bg-yellow-50 text-yellow-600 border-b-2 border-yellow-500' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
                         class="flex-1 min-w-[120px] py-3 md:py-4 px-4 md:px-6 font-medium text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-1 md:gap-2 whitespace-nowrap">
                     <i class="fas fa-wrench text-xs md:text-sm"></i><span class="hidden sm:inline">Repairs</span><span class="sm:hidden">Repair</span>
-                    @php $pendingRepairs = \App\Models\RepairRequest::where('status', 'pending')->count(); @endphp
-                    @if($pendingRepairs > 0)
-                    <span class="bg-yellow-500 text-white text-xs rounded-full px-1.5 md:px-2 py-0.5 md:py-1 ml-1">{{ $pendingRepairs }}</span>
+                    @if(($pendingRepairRequests ?? 0) > 0)
+                    <span class="bg-yellow-500 text-white text-xs rounded-full px-1.5 md:px-2 py-0.5 md:py-1 ml-1">{{ $pendingRepairRequests }}</span>
                     @endif
                 </button>
                 <button @click="activeTab = 'quick-actions'" 
@@ -114,6 +155,36 @@
 
         <!-- Tab Content -->
         <div class="space-y-8">
+            <!-- Print Selection Modal -->
+            <div x-show="showPrintModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Select Period to Print</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm text-gray-700 mb-1">Month</label>
+                            <select x-model="printMonth" class="w-full text-sm border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
+                                <option value="">All</option>
+                                <template x-for="(name, num) in months" :key="num">
+                                    <option :value="num" x-text="name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-700 mb-1">Year</label>
+                            <select x-model="printYear" class="w-full text-sm border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
+                                <option value="">All</option>
+                                <template x-for="y in years" :key="y">
+                                    <option :value="y" x-text="y"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button @click="showPrintModal=false" class="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
+                        <button @click="confirmPrint()" class="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700">Print</button>
+                    </div>
+                </div>
+            </div>
             <!-- Overview Tab -->
             <div x-show="activeTab === 'overview'" x-transition>
                 <!-- Enhanced Key Metrics Cards -->
@@ -188,10 +259,10 @@
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-sm font-medium text-gray-600 group-hover:text-yellow-600 transition-colors">Repair Requests</p>
-                                    <p class="text-3xl font-bold text-gray-900 group-hover:text-yellow-700 transition-colors">{{ \App\Models\RepairRequest::count() }}</p>
+                                    <p class="text-3xl font-bold text-gray-900 group-hover:text-yellow-700 transition-colors">{{ $totalRepairRequests ?? 0 }}</p>
                                     <p class="text-sm text-yellow-600 mt-1 flex items-center">
                                         <i class="fas fa-wrench mr-1"></i>
-                                        {{ \App\Models\RepairRequest::where('status', 'pending')->count() }} pending
+                                        {{ $pendingRepairRequests ?? 0 }} pending
                                     </p>
                                 </div>
                                 <div class="bg-yellow-100 p-3 rounded-full group-hover:bg-yellow-200 transition-colors">
@@ -245,27 +316,38 @@
                         </h3>
                     </div>
                     <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                             <div class="text-center">
-                                <div class="text-3xl font-bold text-gray-900 mb-2">{{ round(($availableAssets / max($totalAssets, 1)) * 100) }}%</div>
-                                <div class="text-sm text-gray-600 mb-2">Asset Availability Rate</div>
-                                <div class="bg-green-100 rounded-full h-2">
-                                    <div class="bg-green-500 h-2 rounded-full" style="width: {{ round(($availableAssets / max($totalAssets, 1)) * 100) }}%"></div>
+                                <div class="text-3xl font-bold text-green-600 mb-2">{{ round(($availableAssets / max($totalAssets, 1)) * 100) }}%</div>
+                                <div class="text-sm text-gray-600 mb-2 font-medium">Asset Availability</div>
+                                <div class="bg-green-100 rounded-full h-3">
+                                    <div class="bg-green-500 h-3 rounded-full transition-all" style="width: {{ round(($availableAssets / max($totalAssets, 1)) * 100) }}%"></div>
                                 </div>
+                                <div class="text-xs text-gray-500 mt-2">{{ $availableAssets ?? 0 }} of {{ $totalAssets ?? 0 }}</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-3xl font-bold text-gray-900 mb-2">{{ $totalCategories ?? 0 }}</div>
-                                <div class="text-sm text-gray-600 mb-2">Asset Categories</div>
-                                <div class="bg-blue-100 rounded-full h-2">
-                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 85%"></div>
+                                <div class="text-3xl font-bold text-blue-600 mb-2">{{ $totalCategories ?? 0 }}</div>
+                                <div class="text-sm text-gray-600 mb-2 font-medium">Asset Categories</div>
+                                <div class="bg-blue-100 rounded-full h-3">
+                                    <div class="bg-blue-500 h-3 rounded-full transition-all" style="width: {{ min(($totalCategories ?? 0) * 10, 100) }}%"></div>
                                 </div>
+                                <div class="text-xs text-gray-500 mt-2">Active types</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-3xl font-bold text-gray-900 mb-2">{{ $totalLocations ?? 0 }}</div>
-                                <div class="text-sm text-gray-600 mb-2">Active Locations</div>
-                                <div class="bg-purple-100 rounded-full h-2">
-                                    <div class="bg-purple-500 h-2 rounded-full" style="width: 92%"></div>
+                                <div class="text-3xl font-bold text-purple-600 mb-2">{{ $totalLocations ?? 0 }}</div>
+                                <div class="text-sm text-gray-600 mb-2 font-medium">Active Locations</div>
+                                <div class="bg-purple-100 rounded-full h-3">
+                                    <div class="bg-purple-500 h-3 rounded-full transition-all" style="width: {{ min(($totalLocations ?? 0) * 8, 100) }}%"></div>
                                 </div>
+                                <div class="text-xs text-gray-500 mt-2">Deployment sites</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-orange-600 mb-2">{{ $totalUsers ?? 0 }}</div>
+                                <div class="text-sm text-gray-600 mb-2 font-medium">System Users</div>
+                                <div class="bg-orange-100 rounded-full h-3">
+                                    <div class="bg-orange-500 h-3 rounded-full transition-all" style="width: {{ min(($totalUsers ?? 0) * 5, 100) }}%"></div>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-2">Registered accounts</div>
                             </div>
                         </div>
                     </div>
@@ -491,10 +573,23 @@
             <div x-show="activeTab === 'maintenance'" x-transition>
                 <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            <i class="fas fa-tools text-purple-600"></i>
-                            Recent Maintenance Requests
-                        </h3>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="fas fa-tools text-purple-600"></i>
+                                Recent Maintenance Requests
+                            </h3>
+                            @if(request()->has('month') || request()->has('year'))
+                            <span class="text-xs text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
+                                <i class="fas fa-filter mr-1"></i>
+                                @if(request('month'))
+                                    {{ ['','January','February','March','April','May','June','July','August','September','October','November','December'][request('month')] }}
+                                @endif
+                                @if(request('year'))
+                                    {{ request('year') }}
+                                @endif
+                            </span>
+                            @endif
+                        </div>
                     </div>
                     <div class="p-6">
                         @if($recentMaintenanceRequests->count() > 0)
@@ -553,14 +648,26 @@
             <div x-show="activeTab === 'repairs'" x-transition>
                 <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                            <i class="fas fa-wrench text-yellow-600"></i>
-                            Recent Repair Requests
-                        </h3>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                <i class="fas fa-wrench text-yellow-600"></i>
+                                Recent Repair Requests
+                            </h3>
+                            @if(request()->has('month') || request()->has('year'))
+                            <span class="text-xs text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-200">
+                                <i class="fas fa-filter mr-1"></i>
+                                @if(request('month'))
+                                    {{ ['','January','February','March','April','May','June','July','August','September','October','November','December'][request('month')] }}
+                                @endif
+                                @if(request('year'))
+                                    {{ request('year') }}
+                                @endif
+                            </span>
+                            @endif
+                        </div>
                     </div>
                     <div class="p-6">
-                        @php $recentRepairRequests = \App\Models\RepairRequest::with(['requester', 'asset'])->orderBy('created_at', 'desc')->take(5)->get(); @endphp
-                        @if($recentRepairRequests->count() > 0)
+                        @if(($recentRepairRequests ?? collect())->count() > 0)
                         <div class="space-y-4">
                             @foreach($recentRepairRequests as $request)
                             <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -800,6 +907,12 @@
 
 /* Print Styles */
 @media print {
+    /* Page setup */
+    @page {
+        size: A4;
+        margin: 15mm;
+    }
+    
     /* Hide unnecessary elements */
     button,
     nav,
@@ -816,63 +929,158 @@
     /* Adjust page layout */
     body {
         background: white !important;
+        color: #000 !important;
+        font-size: 12pt !important;
+        line-height: 1.5 !important;
     }
     
     .container {
         max-width: 100% !important;
-        padding: 20px !important;
+        padding: 0 !important;
     }
     
     /* Ensure charts are visible and properly sized */
     canvas {
         max-width: 100% !important;
+        max-height: 400px !important;
+        height: auto !important;
+        page-break-inside: avoid;
+        margin-bottom: 15px !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    /* Chart containers must be visible */
+    canvas#overviewAssetStatusChart,
+    canvas#overviewTrendChart,
+    canvas#assetStatusChart,
+    canvas#userRoleChart,
+    canvas#monthlyTrendChart,
+    canvas#categoryChart,
+    canvas#assetApprovalChart {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* Ensure chart parent containers are visible */
+    .relative {
+        position: relative !important;
+        display: block !important;
+    }
+    
+    /* Flatten grids to single column and avoid page breaks */
+    .grid {
+        display: block !important;
         page-break-inside: avoid;
     }
     
-    /* Page breaks */
-    .grid {
+    .grid > * {
         page-break-inside: avoid;
+        break-inside: avoid;
+        width: 100% !important;
+        margin-bottom: 15px !important;
+        border: 1px solid #ddd !important;
+        padding: 10px !important;
+        background: white !important;
     }
     
     /* Print title styling */
     .print-only {
         display: block !important;
+        page-break-after: avoid;
     }
     
-    /* Remove shadows and gradients for better printing */
+    /* Cards and sections */
     .shadow-lg,
     .shadow-xl,
     .shadow-sm {
         box-shadow: none !important;
-        border: 1px solid #e5e7eb !important;
+    }
+    
+    .rounded-xl,
+    .rounded-lg {
+        border: 1px solid #ddd !important;
+        border-radius: 4px !important;
+        margin-bottom: 12px !important;
+        padding: 10px !important;
+        background: white !important;
+        page-break-inside: avoid;
+    }
+    
+    /* Chart cards need special handling */
+    .rounded-xl:has(canvas),
+    .rounded-lg:has(canvas) {
+        border: 2px solid #333 !important;
+        padding: 15px !important;
+        margin-bottom: 20px !important;
+    }
+    
+    /* Card headers */
+    .px-6.py-4.border-b {
+        padding: 8px 10px !important;
+        border-bottom: 2px solid #ddd !important;
+        margin-bottom: 10px !important;
+        background: #f9fafb !important;
+    }
+    
+    /* Section headers */
+    h1, h2, h3, h4 {
+        page-break-after: avoid;
+        color: #000 !important;
+        font-weight: bold !important;
     }
     
     /* Ensure text is readable */
-    .text-white {
+    .text-white,
+    .text-gray-600,
+    .text-gray-700,
+    .text-gray-800 {
         color: #1F2937 !important;
     }
     
     /* Remove background gradients */
     .bg-gradient-to-r,
-    .bg-gradient-to-br {
+    .bg-gradient-to-br,
+    .bg-red-50,
+    .bg-blue-50,
+    .bg-green-50,
+    .bg-yellow-50,
+    .bg-purple-50,
+    .bg-orange-50 {
         background: white !important;
         color: #1F2937 !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    
+    /* Status badges - print with borders */
+    .bg-red-100,
+    .bg-yellow-100,
+    .bg-green-100,
+    .bg-blue-100,
+    .bg-purple-100,
+    .bg-orange-100 {
+        background: white !important;
+        border: 1.5px solid #000 !important;
+        padding: 2px 6px !important;
+        border-radius: 3px !important;
     }
     
     /* Adjust spacing for print */
     .mb-8,
     .mb-6 {
-        margin-bottom: 1rem !important;
+        margin-bottom: 12px !important;
     }
     
-    /* Ensure cards are visible */
-    .bg-white {
-        background: white !important;
+    .p-6 {
+        padding: 10px !important;
     }
     
     /* Better table printing */
     table {
         page-break-inside: auto;
+        border-collapse: collapse !important;
+        width: 100% !important;
     }
     
     tr {
@@ -880,10 +1088,35 @@
         page-break-after: auto;
     }
     
-    /* Ensure proper card sizing */
-    .rounded-xl,
-    .rounded-lg {
-        border-radius: 8px !important;
+    /* Only add borders to data tables, not layout tables */
+    table:not(.print-only table) td,
+    table:not(.print-only table) th {
+        border: 1px solid #ddd !important;
+        padding: 6px !important;
+    }
+    
+    /* Remove borders from print header table */
+    .print-only table,
+    .print-only table tr,
+    .print-only table td,
+    .print-only table th {
+        border: none !important;
+    }
+    
+    /* Icons should be visible */
+    i.fas, i.fa {
+        color: #000 !important;
+    }
+    
+    /* Ensure proper spacing between sections */
+    .space-y-4 > *,
+    .space-y-8 > * {
+        margin-bottom: 15px !important;
+    }
+    
+    /* Page breaks */
+    .page-break {
+        page-break-before: always;
     }
 }
 
@@ -900,6 +1133,11 @@ function adminDashboardData() {
     return {
         showWelcome: true,
         activeTab: 'overview',
+        showPrintModal: false,
+        printMonth: '{{ request('month') }}',
+        printYear: '{{ request('year') }}',
+        months: {1:'January',2:'February',3:'March',4:'April',5:'May',6:'June',7:'July',8:'August',9:'September',10:'October',11:'November',12:'December'},
+        years: [],
         assetStatusChart: null,
         userRoleChart: null,
         assetApprovalChart: null,
@@ -911,6 +1149,19 @@ function adminDashboardData() {
         init() {
             this.$nextTick(() => {
                 this.initCharts();
+                // build years list (current year going back 10 years)
+                const cy = new Date().getFullYear();
+                this.years = Array.from({length: 11}, (_, i) => cy - i);
+                // Auto-print if ?print=1 present
+                const url = new URL(window.location.href);
+                if (url.searchParams.get('print') === '1') {
+                    setTimeout(() => {
+                        this.printDashboard();
+                        // remove print=1 from URL
+                        url.searchParams.delete('print');
+                        window.history.replaceState({}, '', url.toString());
+                    }, 250);
+                }
             });
         },
         
@@ -1213,23 +1464,58 @@ function adminDashboardData() {
             // Add print title
             const printTitle = document.createElement('div');
             printTitle.className = 'print-only';
+            // Determine selected period
+            const filterMonthValue = '{{ request('month') }}';
+            const filterYearValue = '{{ request('year') }}';
+            const monthNames = {1:'January',2:'February',3:'March',4:'April',5:'May',6:'June',7:'July',8:'August',9:'September',10:'October',11:'November',12:'December'};
+            let periodText = 'All Time';
+            if (filterYearValue) {
+                if (filterMonthValue) {
+                    periodText = `${monthNames[parseInt(filterMonthValue)]} ${filterYearValue}`;
+                } else {
+                    periodText = `Year ${filterYearValue}`;
+                }
+            } else if (filterMonthValue) {
+                periodText = monthNames[parseInt(filterMonthValue)];
+            }
+            // Create logo element separately with proper Laravel URL
+            const logoUrl = '{{ asset("images/logo-small.png") }}';
+            
             printTitle.innerHTML = `
-                <div style="text-align: center; margin-bottom: 30px; padding: 20px; border-bottom: 3px solid #DC2626;">
-                    <h1 style="font-size: 28px; font-weight: bold; color: #1F2937; margin-bottom: 10px;">
-                        Admin Dashboard - ${currentTabName}
-                    </h1>
-                    <p style="color: #6B7280; font-size: 14px;">
-                        Generated on: ${new Date().toLocaleString('en-US', { 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric', 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                        })}
-                    </p>
-                    <p style="color: #6B7280; font-size: 14px;">
-                        Generated by: {{ Auth::user()->name ?? 'Admin' }}
-                    </p>
+                <div style="background: white; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 4px solid #DC2626;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr style="border: none;">
+                            <td style="width: 100px; vertical-align: middle; padding: 20px; border: none !important;">
+                                <img src="${logoUrl}" alt="Logo" style="width: 80px; height: auto; display: block;">
+                            </td>
+                            <td style="vertical-align: middle; padding: 20px; border: none !important;">
+                                <h1 style="font-size: 28px; font-weight: bold; color: #1F2937; margin: 0 0 5px 0; line-height: 1.2;">
+                                    ASSET MANAGEMENT SYSTEM
+                                </h1>
+                                <p style="font-size: 16px; color: #DC2626; font-weight: 600; margin: 0;">
+                                    Admin Dashboard Report - ${currentTabName}
+                                </p>
+                            </td>
+                            <td style="width: 200px; text-align: right; vertical-align: middle; padding: 20px; font-size: 11px; color: #6B7280; line-height: 1.6; border: none !important;">
+                                <div style="margin-bottom: 8px;">
+                                    <strong style="color: #1F2937; display: block;">Date:</strong>
+                                    ${new Date().toLocaleDateString('en-US', { 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric'
+                                    })}
+                                </div>
+                                <div style="margin-bottom: 8px;">
+                                    <strong style="color: #1F2937; display: block;">Period:</strong>
+                                    <span style="color: #DC2626; font-weight: 600;">${periodText}</span>
+                                </div>
+                                <div>
+                                    <strong style="color: #1F2937; display: block;">Generated By:</strong>
+                                    {{ Auth::user()->name ?? 'Admin' }}
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             `;
             document.body.insertBefore(printTitle, document.body.firstChild);
@@ -1244,6 +1530,27 @@ function adminDashboardData() {
             
             // Remove print title
             printTitle.remove();
+        },
+        
+        openPrintDialog() {
+            this.showPrintModal = true;
+        },
+        
+        confirmPrint() {
+            // navigate with selected filters and print=1
+            const url = new URL(window.location.href);
+            if (this.printMonth) {
+                url.searchParams.set('month', this.printMonth);
+            } else {
+                url.searchParams.delete('month');
+            }
+            if (this.printYear) {
+                url.searchParams.set('year', this.printYear);
+            } else {
+                url.searchParams.delete('year');
+            }
+            url.searchParams.set('print', '1');
+            window.location.href = url.toString();
         },
         
         refreshDashboard() {

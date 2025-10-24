@@ -106,36 +106,36 @@ class LostAssetsDetailsSheet implements FromCollection, WithHeadings, WithMappin
                 // Insert title and subtitle (add extra rows for logo)
                 $sheet->insertNewRowBefore(1, 5);
                 
-                // Add PASUC Logo
+                // Add Logo - centered
                 $logoPath = public_path('images/logo-small.png');
                 if (file_exists($logoPath)) {
                     $drawing = new Drawing();
-                    $drawing->setName('PASUC Logo');
-                    $drawing->setDescription('PASUC Logo');
+                    $drawing->setName('PASIG CATHOLIC COLLEGE Logo');
+                    $drawing->setDescription('PASIG CATHOLIC COLLEGE Logo');
                     $drawing->setPath($logoPath);
-                    $drawing->setHeight(80); // Set logo height
-                    $drawing->setCoordinates('A1');
-                    $drawing->setOffsetX(10);
+                    $drawing->setHeight(80);
+                    $drawing->setCoordinates('F1'); // Start from center column
+                    $drawing->setOffsetX(150);
                     $drawing->setOffsetY(5);
                     $drawing->setWorksheet($sheet->getDelegate());
                 }
                 
-                $sheet->mergeCells('C1:' . $highestColumn . '1');
-                $sheet->mergeCells('C2:' . $highestColumn . '2');
+                $sheet->mergeCells('A1:' . $highestColumn . '1');
+                $sheet->mergeCells('A2:' . $highestColumn . '2');
                 $sheet->mergeCells('A3:' . $highestColumn . '3');
                 $sheet->mergeCells('A4:' . $highestColumn . '4');
                 $sheet->mergeCells('A5:' . $highestColumn . '5');
 
-                // Main title (next to logo)
-                $sheet->setCellValue('C1', 'LOST ASSETS REPORT');
-                $sheet->getStyle('C1')->applyFromArray([
+                // Main title (centered below logo)
+                $sheet->setCellValue('A1', 'LOST ASSETS REPORT');
+                $sheet->getStyle('A1')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 18, 'color' => ['rgb' => '800000'], 'name' => 'Arial'],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
                 ]);
 
-                // Institution name (next to logo)
-                $sheet->setCellValue('C2', 'Pamantasan ng Lungsod ng Pasig');
-                $sheet->getStyle('C2')->applyFromArray([
+                // Institution name (centered below title)
+                $sheet->setCellValue('A2', 'PASIG CATHOLIC COLLEGE');
+                $sheet->getStyle('A2')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 12, 'color' => ['rgb' => '666666'], 'name' => 'Arial'],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
                 ]);
@@ -153,6 +153,19 @@ class LostAssetsDetailsSheet implements FromCollection, WithHeadings, WithMappin
                     'font' => ['size' => 10, 'color' => ['rgb' => '999999'], 'name' => 'Arial'],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
                 ]);
+                
+                // Total records header (at the top)
+                $totalRecordsTop = max(0, $highestRow - 6);
+                $sheet->setCellValue('A5', 'Total Lost Asset Records: ' . $totalRecordsTop);
+                $sheet->getStyle('A5')->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '800000'], 'name' => 'Arial'],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEF2F2']],
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'DDDDDD']]
+                    ]
+                ]);
+                $sheet->getRowDimension(5)->setRowHeight(24);
 
                 // Header row styling (now row 6)
                 $sheet->getStyle('A6:' . $highestColumn . '6')->applyFromArray([
@@ -193,30 +206,15 @@ class LostAssetsDetailsSheet implements FromCollection, WithHeadings, WithMappin
                 // Row heights
                 $sheet->getRowDimension(1)->setRowHeight(45); // Logo row
                 $sheet->getRowDimension(2)->setRowHeight(45); // Logo row
-                $sheet->getRowDimension(3)->setRowHeight(24);
-                $sheet->getRowDimension(4)->setRowHeight(18);
-                $sheet->getRowDimension(5)->setRowHeight(6); // Spacing
+                $sheet->getRowDimension(3)->setRowHeight(24); // Subtitle
+                $sheet->getRowDimension(4)->setRowHeight(18); // Generated date
+                $sheet->getRowDimension(5)->setRowHeight(24); // Total records (moved to top)
                 $sheet->getRowDimension(6)->setRowHeight(26); // Header row
                 
                 // For data rows, allow auto-height
                 for ($row = 7; $row <= $highestRow; $row++) {
                     $sheet->getRowDimension($row)->setRowHeight(-1); // Auto-height
                 }
-
-                // Add footer
-                $footerRow = $highestRow + 2;
-                $totalRecords = max(0, $highestRow - 6);
-                $sheet->mergeCells('A' . $footerRow . ':' . $highestColumn . $footerRow);
-                $sheet->setCellValue('A' . $footerRow, 'Total Lost Asset Records: ' . $totalRecords);
-                $sheet->getStyle('A' . $footerRow)->applyFromArray([
-                    'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '800000'], 'name' => 'Arial'],
-                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER],
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEF2F2']],
-                    'borders' => [
-                        'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'DDDDDD']]
-                    ]
-                ]);
-                $sheet->getRowDimension($footerRow)->setRowHeight(24);
             }
         ];
     }
