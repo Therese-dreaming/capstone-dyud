@@ -12,6 +12,7 @@ use App\Models\RepairRequest;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class DashboardController extends Controller
 {
@@ -134,6 +135,10 @@ class DashboardController extends Controller
 
     private function gsuDashboard($user)
     {
+        // Initialize date filters (not used in GSU dashboard, but kept for consistency)
+        $startDate = null;
+        $endDate = null;
+        
         // Get comprehensive asset statistics
         $totalAssets = Asset::count();
         
@@ -159,28 +164,22 @@ class DashboardController extends Controller
         $approvedMaintenanceRequests = MaintenanceRequest::where('status', 'approved')->count();
         $completedMaintenanceRequests = MaintenanceRequest::where('status', 'completed')->count();
         
-        // Get user statistics (filtered when applicable)
-        $userBaseQuery = User::query();
-        if ($startDate && $endDate) {
-            $userBaseQuery->whereBetween('created_at', [$startDate, $endDate]);
-        }
-        $totalUsers = (clone $userBaseQuery)->count();
-        $adminUsers = (clone $userBaseQuery)->where('role', 'admin')->count();
-        $gsuUsers = (clone $userBaseQuery)->where('role', 'gsu')->count();
-        $regularUsers = (clone $userBaseQuery)->where('role', 'user')->count();
-        $purchasingUsers = (clone $userBaseQuery)->where('role', 'purchasing')->count();
+        // Get user statistics
+        $totalUsers = User::count();
+        $adminUsers = User::where('role', 'admin')->count();
+        $gsuUsers = User::where('role', 'gsu')->count();
+        $regularUsers = User::where('role', 'user')->count();
+        $purchasingUsers = User::where('role', 'purchasing')->count();
         
         // System statistics
         $totalCategories = Category::count();
         $totalLocations = Location::count();
         
-        // Get recent assets (last 10, filtered when applicable)
-        $recentAssetsQuery = Asset::with(['category', 'location', 'createdBy'])
-            ->orderBy('created_at', 'desc');
-        if ($startDate && $endDate) {
-            $recentAssetsQuery->whereBetween('created_at', [$startDate, $endDate]);
-        }
-        $recentAssets = $recentAssetsQuery->take(10)->get();
+        // Get recent assets (last 10)
+        $recentAssets = Asset::with(['category', 'location', 'createdBy'])
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
 
         // Get categories with asset counts
         $categories = Category::withCount('assets')
@@ -193,16 +192,11 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
             
-        // Get recent maintenance requests (filtered when applicable)
-        $recentMaintenanceRequestsQuery = MaintenanceRequest::with(['requester', 'location'])
-            ->orderBy('updated_at', 'desc');
-        if ($startDate && $endDate) {
-            $recentMaintenanceRequestsQuery->where(function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('created_at', [$startDate, $endDate])
-                  ->orWhereBetween('updated_at', [$startDate, $endDate]);
-            });
-        }
-        $recentMaintenanceRequests = $recentMaintenanceRequestsQuery->take(5)->get();
+        // Get recent maintenance requests
+        $recentMaintenanceRequests = MaintenanceRequest::with(['requester', 'location'])
+            ->orderBy('updated_at', 'desc')
+            ->take(5)
+            ->get();
             
         // Get notifications for GSU
         $notifications = Notification::where('user_id', $user->id)
@@ -236,11 +230,8 @@ class DashboardController extends Controller
             'Purchasing' => $purchasingUsers,
         ];
         
-        // Get assets by category for chart (filtered when applicable)
-        $assetsByCategory = Asset::when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
-                return $q->whereBetween('assets.created_at', [$startDate, $endDate]);
-            })
-            ->join('categories', 'assets.category_id', '=', 'categories.id')
+        // Get assets by category for chart
+        $assetsByCategory = Asset::join('categories', 'assets.category_id', '=', 'categories.id')
             ->selectRaw('categories.name, count(*) as total')
             ->groupBy('categories.name')
             ->pluck('total', 'name')
@@ -579,5 +570,70 @@ class DashboardController extends Controller
             'filterYear',
             'filterMonth'
         ));
+    }
+
+    /**
+     * Generate PDF report for admin dashboard
+     */
+    public function generatePDF()
+    {
+        // Get comprehensive asset statistics
+        $totalAssets = Asset::count();
+        $availableAssets = Asset::where('status', 'Available')->count();
+        $inUseAssets = Asset::where('status', 'In Use')->count();
+        $maintenanceAssets = Asset::where('status', 'Under Maintenance')->count();
+        $disposedAssets = Asset::where('status', 'Disposed')->count();
+        
+        // Get approval workflow statistics
+        $pendingApprovals = Asset::where('approval_status', Asset::APPROVAL_PENDING ?? 'pending')->count();
+        
+        // Get maintenance statistics
+        $totalMaintenanceRequests = MaintenanceRequest::count();
+        $totalRepairRequests = RepairRequest::count();
+        
+        // Get user statistics
+        $totalUsers = User::count();
+        $adminUsers = User::where('role', 'admin')->count();
+        $gsuUsers = User::where('role', 'gsu')->count();
+        $regularUsers = User::where('role', 'user')->count();
+        $purchasingUsers = User::where('role', 'purchasing')->count();
+        
+        // System statistics
+        $totalCategories = Category::count();
+        $totalLocations = Location::count();
+        
+        // Get monthly asset creation trend (last 12 months)
+        $monthlyAssetData = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $count = Asset::whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month)
+                ->count();
+            $monthlyAssetData[$date->format('M Y')] = $count;
+        }
+        
+        // Generate PDF using DomPDF
+        $pdf = Pdf::loadView('dashboard.pdf-report', compact(
+            'totalAssets',
+            'availableAssets',
+            'inUseAssets',
+            'maintenanceAssets',
+            'disposedAssets',
+            'pendingApprovals',
+            'totalMaintenanceRequests',
+            'totalRepairRequests',
+            'totalUsers',
+            'adminUsers',
+            'gsuUsers',
+            'regularUsers',
+            'purchasingUsers',
+            'totalCategories',
+            'totalLocations',
+            'monthlyAssetData'
+        ));
+        
+        $pdf->setPaper('a4', 'portrait');
+        
+        return $pdf->download('dashboard-report-' . now()->format('Y-m-d') . '.pdf');
     }
 }

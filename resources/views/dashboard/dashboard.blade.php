@@ -44,50 +44,8 @@
                     <span class="truncate">Analytics Dashboard</span>
                 </h1>
                 <p class="text-gray-600 mt-1 md:mt-2 text-xs md:text-sm lg:text-base">Comprehensive asset management insights and performance metrics</p>
-                @if(request()->has('month') || request()->has('year'))
-                <div class="mt-2 inline-flex items-center px-3 py-1 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
-                    <i class="fas fa-filter mr-2"></i>
-                    <span class="font-medium">
-                        Filtered: 
-                        @if(request('month'))
-                            {{ ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][request('month')] }}
-                        @endif
-                        @if(request('year'))
-                            {{ request('year') }}
-                        @endif
-                    </span>
-                </div>
-                @endif
             </div>
             <div class="flex items-center space-x-2 md:space-x-3 w-full sm:w-auto flex-wrap gap-2">
-                <!-- Period Filter Form -->
-                <form method="GET" class="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-2 shadow-sm">
-                    <div class="flex items-center gap-2">
-                        <select name="month" class="text-xs border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 py-1">
-                            <option value="">All Months</option>
-                            @php $months = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'May',6=>'Jun',7=>'Jul',8=>'Aug',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dec']; @endphp
-                            @foreach($months as $num => $name)
-                                <option value="{{ $num }}" {{ request('month') == $num ? 'selected' : '' }}>{{ $name }}</option>
-                            @endforeach
-                        </select>
-                        <select name="year" class="text-xs border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 py-1">
-                            @php $currentYear = now()->year; @endphp
-                            <option value="">All Years</option>
-                            @for($y = $currentYear; $y >= $currentYear - 10; $y--)
-                                <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
-                            @endfor
-                        </select>
-                    </div>
-                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-md whitespace-nowrap">
-                        <i class="fas fa-filter mr-1"></i>Apply
-                    </button>
-                    @if(request()->has('month') || request()->has('year'))
-                        <a href="{{ url()->current() }}" class="text-xs text-gray-600 hover:text-gray-800 px-2 whitespace-nowrap">
-                            <i class="fas fa-times mr-1"></i>Clear
-                        </a>
-                    @endif
-                </form>
-
                 @if($unreadNotifications > 0)
                 <div class="bg-red-50 border border-red-200 text-red-800 px-3 md:px-4 py-1.5 md:py-2 rounded-lg flex items-center gap-2">
                     <i class="fas fa-bell animate-pulse text-sm md:text-base"></i>
@@ -98,10 +56,10 @@
                     <div class="text-xs text-gray-500">Last updated</div>
                     <div class="text-xs md:text-sm font-medium text-gray-900 whitespace-nowrap">{{ now()->format('M d, h:i A') }}</div>
                 </div>
-                <button @click="openPrintDialog()" class="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-sm px-3 md:px-4 py-2 border border-blue-700 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center gap-2" title="Print Dashboard">
-                    <i class="fas fa-print text-sm md:text-base"></i>
-                    <span class="hidden md:inline text-xs md:text-sm font-medium">Print</span>
-                </button>
+                <a href="{{ route('dashboard.pdf') }}" class="bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg shadow-sm px-3 md:px-4 py-2 border border-red-700 hover:from-red-700 hover:to-red-800 transition-all duration-200 flex items-center gap-2" title="Download PDF Report">
+                    <i class="fas fa-file-pdf text-sm md:text-base"></i>
+                    <span class="hidden md:inline text-xs md:text-sm font-medium">Download PDF</span>
+                </a>
                 <button @click="refreshDashboard()" class="bg-white rounded-lg shadow-sm p-2 border border-gray-200 hover:bg-gray-50 transition-colors" title="Refresh">
                     <i class="fas fa-sync-alt text-gray-600 text-sm md:text-base"></i>
                 </button>
@@ -155,36 +113,6 @@
 
         <!-- Tab Content -->
         <div class="space-y-8">
-            <!-- Print Selection Modal -->
-            <div x-show="showPrintModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 border border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Select Period to Print</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                        <div>
-                            <label class="block text-sm text-gray-700 mb-1">Month</label>
-                            <select x-model="printMonth" class="w-full text-sm border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
-                                <option value="">All</option>
-                                <template x-for="(name, num) in months" :key="num">
-                                    <option :value="num" x-text="name"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-700 mb-1">Year</label>
-                            <select x-model="printYear" class="w-full text-sm border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500">
-                                <option value="">All</option>
-                                <template x-for="y in years" :key="y">
-                                    <option :value="y" x-text="y"></option>
-                                </template>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="flex justify-end gap-2">
-                        <button @click="showPrintModal=false" class="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
-                        <button @click="confirmPrint()" class="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700">Print</button>
-                    </div>
-                </div>
-            </div>
             <!-- Overview Tab -->
             <div x-show="activeTab === 'overview'" x-transition>
                 <!-- Enhanced Key Metrics Cards -->

@@ -35,6 +35,7 @@ Route::post('/register', [AuthController::class, 'storeRegister']);
 Route::middleware(['auth'])->group(function () {
     // Dashboard - accessible by all authenticated users
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/pdf', [DashboardController::class, 'generatePDF'])->name('dashboard.pdf');
     
     // API route for getting asset details (for modals)
     Route::get('/api/assets/{asset}', function (App\Models\Asset $asset) {
@@ -74,6 +75,7 @@ Route::middleware(['auth'])->group(function () {
         // Asset management for admin (view and approve only)
         Route::get('/assets', [AssetController::class, 'index'])->name('assets.index');
         Route::get('/assets/{asset}', [AssetController::class, 'show'])->name('assets.show');
+        Route::get('/assets/{asset}/history-pdf', [AssetController::class, 'generateHistoryPDF'])->name('assets.history.pdf');
         Route::get('/assets/{asset}/transfer', [AssetController::class, 'transferForm'])->name('assets.transfer-form');
         Route::post('/assets/{asset}/transfer', [AssetController::class, 'transfer'])->name('assets.transfer');
         Route::put('/assets/{asset}/dispose', [AssetController::class, 'dispose'])->name('assets.dispose');
@@ -86,6 +88,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/assets/pending', [AssetController::class, 'pendingAssets'])->name('assets.pending'); // Alternative route for dashboard
         Route::post('/admin/assets/{asset}/approve', [AssetController::class, 'approve'])->name('admin.assets.approve');
         Route::put('/admin/assets/{asset}/reject', [AssetController::class, 'reject'])->name('admin.assets.reject');
+        Route::post('/admin/assets/bulk-approve', [AssetController::class, 'bulkApprove'])->name('admin.assets.bulk-approve');
+        Route::post('/admin/assets/bulk-reject', [AssetController::class, 'bulkReject'])->name('admin.assets.bulk-reject');
 
         // QR Code routes for admin
         Route::get('/qrcode/asset/{assetCode}', [QRCodeController::class, 'generateAssetQR'])->name('qrcode.asset');

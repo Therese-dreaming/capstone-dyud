@@ -180,7 +180,7 @@
 
     <!-- Pagination -->
     @if($assets->hasPages())
-        <div class="mt-6 flex justify-center">
+        <div class="mt-6">
             {{ $assets->links() }}
         </div>
     @endif

@@ -83,6 +83,49 @@
         </div>
     @endif
 
+    <!-- Search and Bulk Actions Bar -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+        <div class="flex flex-col lg:flex-row gap-4">
+            <!-- Search Form -->
+            <form method="GET" action="{{ route('admin.assets.pending') }}" class="flex-1">
+                <div class="relative">
+                    <input type="text" 
+                           name="search" 
+                           value="{{ request('search') }}" 
+                           placeholder="Search by asset code..."
+                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    @if(request('search'))
+                        <a href="{{ route('admin.assets.pending') }}" 
+                           class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
+            
+            <!-- Bulk Actions -->
+            <div class="flex gap-2" id="bulkActionsBar" style="display: none;">
+                <button type="button" 
+                        onclick="showBulkApproveModal()"
+                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="fas fa-check-double mr-2"></i>
+                    <span class="hidden sm:inline">Approve Selected</span>
+                    <span class="sm:hidden">Approve</span>
+                    (<span id="selectedCount">0</span>)
+                </button>
+                <button type="button" 
+                        onclick="showBulkRejectModal()"
+                        class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    <i class="fas fa-times-circle mr-2"></i>
+                    <span class="hidden sm:inline">Reject Selected</span>
+                    <span class="sm:hidden">Reject</span>
+                    (<span id="selectedCountReject">0</span>)
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Assets Table -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <!-- Table Header -->
@@ -181,6 +224,10 @@
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                 <div class="flex items-center">
+                                    <input type="checkbox" 
+                                           id="selectAll" 
+                                           onchange="toggleSelectAll(this)"
+                                           class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mr-3">
                                     <i class="fas fa-box mr-2 text-blue-500"></i>
                                     Asset Details
                                 </div>
@@ -228,6 +275,10 @@
                             <tr class="hover:bg-gray-50 transition-colors group">
                                 <td class="px-6 py-6">
                                     <div class="flex items-center">
+                                        <input type="checkbox" 
+                                               class="asset-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mr-3" 
+                                               value="{{ $asset->id }}"
+                                               onchange="updateBulkActions()">
                                         <div class="flex-shrink-0 w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
                                             <i class="fas fa-cube text-white"></i>
                                         </div>
@@ -335,14 +386,7 @@
         <!-- Pagination -->
         @if($assets->hasPages())
             <div class="bg-gray-50 px-4 md:px-6 py-3 md:py-4 border-t border-gray-100">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div class="text-xs md:text-sm text-gray-600 text-center sm:text-left">
-                        Showing {{ $assets->firstItem() }} to {{ $assets->lastItem() }} of {{ $assets->total() }} results
-                    </div>
-                    <div class="pagination-wrapper">
-                        {{ $assets->links() }}
-                    </div>
-                </div>
+                {{ $assets->appends(['search' => request('search')])->links() }}
             </div>
         @endif
     </div>
@@ -451,6 +495,109 @@
     @csrf
 </form>
 
+<!-- Bulk Approve Modal -->
+<div id="bulkApproveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl p-6 md:p-8 w-full max-w-md relative">
+        <button onclick="closeBulkApproveModal()" class="absolute top-3 right-3 text-gray-400 hover:text-green-600 text-xl">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="flex flex-col items-center mb-6">
+            <div class="bg-green-100 text-green-600 rounded-full p-4 mb-4">
+                <i class="fas fa-check-double text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800">Bulk Approve Assets</h3>
+            <p class="text-gray-600 text-center mb-2">You are about to approve:</p>
+            <p class="text-green-600 font-semibold text-center" id="bulk-approve-count"></p>
+        </div>
+
+        <div class="mb-6">
+            <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-green-600 text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h4 class="text-sm font-semibold text-green-800">Bulk Approval Confirmation</h4>
+                        <p class="text-sm text-green-700 mt-1">
+                            All selected assets will be approved and available for deployment.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-3">
+            <button type="button" onclick="confirmBulkApprove()"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                <i class="fas fa-check-double"></i> Approve All Selected
+            </button>
+            <button type="button" onclick="closeBulkApproveModal()"
+                    class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Reject Modal -->
+<div id="bulkRejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl p-6 md:p-8 w-full max-w-md relative">
+        <button onclick="closeBulkRejectModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-xl">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="flex flex-col items-center mb-6">
+            <div class="bg-red-100 text-red-600 rounded-full p-4 mb-4">
+                <i class="fas fa-times-circle text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800">Bulk Reject Assets</h3>
+            <p class="text-gray-600 text-center mb-2">You are about to reject:</p>
+            <p class="text-red-600 font-semibold text-center" id="bulk-reject-count"></p>
+        </div>
+
+        <form id="bulkRejectForm" method="POST" action="{{ route('admin.assets.bulk-reject') }}">
+            @csrf
+            <input type="hidden" name="asset_ids" id="bulkRejectAssetIds">
+            
+            <div class="mb-6">
+                <label for="bulk_rejection_reason" class="block text-sm font-semibold text-gray-800 mb-3">
+                    <i class="fas fa-comment-alt mr-2 text-red-600"></i>
+                    Reason for Rejection <span class="text-red-500">*</span>
+                </label>
+                <textarea 
+                    id="bulk_rejection_reason" 
+                    name="rejection_reason" 
+                    rows="4" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none transition-colors duration-200" 
+                    placeholder="Please provide a detailed reason for rejecting these assets..."
+                    required></textarea>
+                <p class="text-sm text-gray-600 mt-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    This reason will be sent to the purchasing team.
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button type="submit" id="bulk-reject-submit-btn"
+                        class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-times-circle"></i> Reject All Selected
+                </button>
+                <button type="button" onclick="closeBulkRejectModal()"
+                        class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Hidden Bulk Approve Form -->
+<form id="bulkApproveForm" method="POST" action="{{ route('admin.assets.bulk-approve') }}" style="display: none;">
+    @csrf
+    <input type="hidden" name="asset_ids" id="bulkApproveAssetIds">
+</form>
+
 <script>
 // Global variables
 let currentAssetId = null;
@@ -536,6 +683,93 @@ function submitRejectForm() {
     }
 }
 
+// Bulk Actions Functions
+function toggleSelectAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.asset-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.asset-checkbox:checked');
+    const count = checkboxes.length;
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    
+    // Update counts
+    document.getElementById('selectedCount').textContent = count;
+    document.getElementById('selectedCountReject').textContent = count;
+    
+    // Show/hide bulk actions bar
+    if (count > 0) {
+        bulkActionsBar.style.display = 'flex';
+    } else {
+        bulkActionsBar.style.display = 'none';
+    }
+    
+    // Update select all checkbox state
+    const allCheckboxes = document.querySelectorAll('.asset-checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = count === allCheckboxes.length && count > 0;
+    }
+}
+
+function getSelectedAssetIds() {
+    const checkboxes = document.querySelectorAll('.asset-checkbox:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+function showBulkApproveModal() {
+    const selectedIds = getSelectedAssetIds();
+    if (selectedIds.length === 0) {
+        alert('Please select at least one asset to approve.');
+        return;
+    }
+    
+    document.getElementById('bulk-approve-count').textContent = `${selectedIds.length} asset(s)`;
+    document.getElementById('bulkApproveModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBulkApproveModal() {
+    document.getElementById('bulkApproveModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function confirmBulkApprove() {
+    const selectedIds = getSelectedAssetIds();
+    if (selectedIds.length === 0) return;
+    
+    document.getElementById('bulkApproveAssetIds').value = JSON.stringify(selectedIds);
+    document.getElementById('bulkApproveForm').submit();
+}
+
+function showBulkRejectModal() {
+    const selectedIds = getSelectedAssetIds();
+    if (selectedIds.length === 0) {
+        alert('Please select at least one asset to reject.');
+        return;
+    }
+    
+    document.getElementById('bulk-reject-count').textContent = `${selectedIds.length} asset(s)`;
+    document.getElementById('bulkRejectAssetIds').value = JSON.stringify(selectedIds);
+    document.getElementById('bulk_rejection_reason').value = '';
+    document.getElementById('bulkRejectModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    // Focus on textarea
+    setTimeout(() => {
+        document.getElementById('bulk_rejection_reason').focus();
+    }, 100);
+}
+
+function closeBulkRejectModal() {
+    document.getElementById('bulkRejectModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
 // Enable/disable reject button based on textarea content
 document.addEventListener('DOMContentLoaded', function() {
     const rejectionTextarea = document.getElementById('rejection_reason');
@@ -556,6 +790,38 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initial state
         rejectButton.disabled = true;
         rejectButton.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+    
+    // Bulk reject button enable/disable
+    const bulkRejectionTextarea = document.getElementById('bulk_rejection_reason');
+    const bulkRejectButton = document.getElementById('bulk-reject-submit-btn');
+    
+    if (bulkRejectionTextarea && bulkRejectButton) {
+        bulkRejectionTextarea.addEventListener('input', function() {
+            if (this.value.trim()) {
+                bulkRejectButton.disabled = false;
+                bulkRejectButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                bulkRejectButton.disabled = true;
+                bulkRejectButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        });
+        
+        // Initial state
+        bulkRejectButton.disabled = true;
+        bulkRejectButton.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+    
+    // Auto-submit search on input (with debounce)
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.form.submit();
+            }, 500);
+        });
     }
 });
 </script>

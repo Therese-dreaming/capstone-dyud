@@ -660,11 +660,11 @@
                 </button>
                 </nav>
                 
-                <!-- Print History Button -->
-                <button onclick="printAssetHistory()" class="no-print bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-sm px-3 md:px-4 py-2 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center gap-2 ml-4" title="Print Asset History">
-                    <i class="fas fa-print text-sm"></i>
-                    <span class="hidden md:inline text-sm font-medium">Print History</span>
-                </button>
+                <!-- PDF Preview Button -->
+                <a href="{{ route('assets.history.pdf', $asset) }}" target="_blank" class="no-print bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg shadow-sm px-3 md:px-4 py-2 hover:from-red-700 hover:to-red-800 transition-all duration-200 flex items-center gap-2 ml-4" title="Preview Asset History PDF">
+                    <i class="fas fa-file-pdf text-sm"></i>
+                    <span class="hidden md:inline text-sm font-medium">Preview PDF</span>
+                </a>
             </div>
         </div>
         

@@ -1,7 +1,7 @@
 @extends('layouts.gsu')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50">
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50" x-data="deploymentPage()">
     <!-- Header Section -->
     <div class="bg-gradient-to-r from-red-800 to-red-900 text-white p-6 mb-6 rounded-xl shadow-lg relative overflow-hidden">
         <div class="absolute inset-0 bg-black opacity-10"></div>
@@ -16,11 +16,19 @@
                         <p class="text-red-100 text-sm md:text-base">Assign a permanent location for asset deployment</p>
                     </div>
                 </div>
-                <div class="text-right">
-                    <div class="text-sm text-red-200">Asset Code</div>
-                    <div class="font-mono text-lg font-bold text-white bg-white/20 px-3 py-1 rounded">
-                        {{ $asset->asset_code }}
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <div class="text-sm text-red-200">Asset Code</div>
+                        <div class="font-mono text-lg font-bold text-white bg-white/20 px-3 py-1 rounded">
+                            {{ $asset->asset_code }}
+                        </div>
                     </div>
+                    <button type="button" 
+                            @click="showBulkSelector = !showBulkSelector"
+                            class="bg-white text-red-800 px-4 py-2 rounded-lg font-semibold hover:bg-red-50 transition-colors shadow-lg flex items-center gap-2">
+                        <i class="fas fa-layer-group"></i>
+                        <span x-text="showBulkSelector ? 'Single Deploy' : 'Bulk Deploy'"></span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -28,6 +36,57 @@
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <div class="max-w-4xl mx-auto">
+            <!-- Bulk Deployment Selector -->
+            <div x-show="showBulkSelector" 
+                 x-transition
+                 class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+                <div class="bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-layer-group text-purple-600"></i>
+                        Bulk Asset Selection
+                    </h2>
+                    <p class="text-sm text-purple-700 mt-1">Select multiple assets to deploy to the same location</p>
+                </div>
+                <div class="p-6">
+                    <div class="mb-4 flex items-center justify-between">
+                        <div class="text-sm text-gray-600">
+                            <span x-text="selectedAssets.length"></span> asset(s) selected
+                        </div>
+                        <button type="button" 
+                                @click="selectAllPendingAssets()"
+                                class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                            <i class="fas fa-check-double mr-1"></i>Select All Pending
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                        @foreach($allPendingAssets ?? [] as $pendingAsset)
+                            <div @click="toggleAssetSelection({{ $pendingAsset->id }})"
+                                 :class="selectedAssets.includes({{ $pendingAsset->id }}) ? 'ring-2 ring-purple-500 bg-purple-50' : 'bg-gray-50'"
+                                 class="p-4 rounded-lg border border-gray-200 cursor-pointer hover:shadow-md transition-all">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="font-semibold text-gray-900">{{ $pendingAsset->asset_code }}</div>
+                                        <div class="text-sm text-gray-600">{{ $pendingAsset->name }}</div>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            {{ $pendingAsset->category->name ?? 'N/A' }}
+                                        </div>
+                                    </div>
+                                    <div x-show="selectedAssets.includes({{ $pendingAsset->id }})" 
+                                         class="text-purple-600">
+                                        <i class="fas fa-check-circle text-xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    @if(empty($allPendingAssets) || count($allPendingAssets) === 0)
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-inbox text-3xl mb-2"></i>
+                            <p>No other pending assets available</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
             <!-- Asset Information Card -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
                 <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
@@ -129,9 +188,7 @@
                     <p class="text-sm text-green-700 mt-1">Select the permanent location for this asset</p>
                 </div>
                 <div class="p-6">
-                    <form action="{{ route('gsu.assets.update-location', $asset) }}" method="POST" class="space-y-6">
-                        @csrf
-                        @method('PUT')
+                    <form @submit.prevent="submitDeployment()" class="space-y-6">
                         
                         <!-- Location Selection -->
                         <div>
@@ -183,6 +240,17 @@
                             </div>
                         </div>
 
+                        <!-- Selected Assets Summary (for bulk) -->
+                        <div x-show="showBulkSelector && selectedAssets.length > 0" 
+                             class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-purple-900 mb-2">
+                                <i class="fas fa-layer-group mr-2"></i>Bulk Deployment Summary
+                            </h4>
+                            <div class="text-sm text-purple-800">
+                                <span x-text="selectedAssets.length"></span> asset(s) will be deployed to the selected location
+                            </div>
+                        </div>
+
                         <!-- Action Buttons -->
                         <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
                             <a href="{{ route('gsu.assets.index') }}" 
@@ -191,9 +259,11 @@
                                 Back to Assets
                             </a>
                             <button type="submit" 
+                                    :disabled="showBulkSelector && selectedAssets.length === 0"
+                                    :class="(showBulkSelector && selectedAssets.length === 0) ? 'opacity-50 cursor-not-allowed' : ''"
                                     class="flex-1 inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm">
                                 <i class="fas fa-map-marker-alt mr-2"></i>
-                                Deploy Asset to Location
+                                <span x-text="showBulkSelector ? 'Deploy ' + selectedAssets.length + ' Asset(s)' : 'Deploy Asset to Location'"></span>
                             </button>
                         </div>
                     </form>
@@ -204,15 +274,121 @@
 </div>
 
 <script>
+function deploymentPage() {
+    return {
+        showBulkSelector: false,
+        selectedAssets: [{{ $asset->id }}], // Start with current asset selected
+        
+        toggleAssetSelection(assetId) {
+            const index = this.selectedAssets.indexOf(assetId);
+            if (index > -1) {
+                // Don't allow deselecting if it's the only asset and we're in single mode
+                if (this.selectedAssets.length > 1 || this.showBulkSelector) {
+                    this.selectedAssets.splice(index, 1);
+                }
+            } else {
+                this.selectedAssets.push(assetId);
+            }
+        },
+        
+        selectAllPendingAssets() {
+            const allAssetIds = @json(($allPendingAssets ?? collect())->pluck('id')->toArray());
+            if (this.selectedAssets.length === allAssetIds.length) {
+                // Deselect all except current asset
+                this.selectedAssets = [{{ $asset->id }}];
+            } else {
+                // Select all
+                this.selectedAssets = [...allAssetIds];
+            }
+        },
+        
+        async submitDeployment() {
+            const locationId = document.getElementById('location_id').value;
+            
+            if (!locationId) {
+                alert('Please select a location');
+                return;
+            }
+            
+            if (this.showBulkSelector && this.selectedAssets.length === 0) {
+                alert('Please select at least one asset');
+                return;
+            }
+            
+            try {
+                let response;
+                
+                if (this.showBulkSelector && this.selectedAssets.length > 1) {
+                    // Bulk deployment
+                    response = await fetch('/gsu/assets/bulk-deploy', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            asset_ids: this.selectedAssets,
+                            location_id: parseInt(locationId)
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        window.location.href = '{{ route('gsu.assets.index') }}';
+                    } else {
+                        alert(data.message || 'Failed to deploy assets');
+                    }
+                } else {
+                    // Single deployment - use traditional form submission
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '{{ route('gsu.assets.update-location', $asset) }}';
+                    
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_token';
+                    csrfInput.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    form.appendChild(csrfInput);
+                    
+                    const methodInput = document.createElement('input');
+                    methodInput.type = 'hidden';
+                    methodInput.name = '_method';
+                    methodInput.value = 'PUT';
+                    form.appendChild(methodInput);
+                    
+                    const locationInput = document.createElement('input');
+                    locationInput.type = 'hidden';
+                    locationInput.name = 'location_id';
+                    locationInput.value = locationId;
+                    form.appendChild(locationInput);
+                    
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while deploying assets');
+            }
+        }
+    }
+}
+
 // Add visual feedback when location is selected
-document.getElementById('location_id').addEventListener('change', function() {
-    const selectedOption = this.options[this.selectedIndex];
-    if (selectedOption.value) {
-        this.classList.add('border-green-500', 'bg-green-50');
-        this.classList.remove('border-gray-300');
-    } else {
-        this.classList.remove('border-green-500', 'bg-green-50');
-        this.classList.add('border-gray-300');
+document.addEventListener('DOMContentLoaded', function() {
+    const locationSelect = document.getElementById('location_id');
+    if (locationSelect) {
+        locationSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                this.classList.add('border-green-500', 'bg-green-50');
+                this.classList.remove('border-gray-300');
+            } else {
+                this.classList.remove('border-green-500', 'bg-green-50');
+                this.classList.add('border-gray-300');
+            }
+        });
     }
 });
 </script>

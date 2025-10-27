@@ -227,21 +227,27 @@ class AssetController extends Controller
         // Get the active tab from request (default to maintenance)
         $activeTab = $request->get('tab', 'maintenance');
         
+        // Use independent pagination for each tab (5 items per page)
         // Use only legitimate maintenance checklist scanning history (excludes transfers)
         $maintenances = $asset->legitimateMaintenanceHistory()
             ->orderBy('scanned_at', 'desc')
-            ->paginate(10);
+            ->paginate(5, ['*'], 'maintenance_page');
             
-        $disposes = $asset->disposes()->orderBy('disposal_date', 'desc')->paginate(10);
+        $disposes = $asset->disposes()
+            ->orderBy('disposal_date', 'desc')
+            ->paginate(5, ['*'], 'disposal_page');
         
         // Asset changes (transfers, status changes, etc.)
-        $changes = $asset->changes()->with('user')->orderBy('created_at', 'desc')->paginate(10);
+        $changes = $asset->changes()
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->paginate(5, ['*'], 'changes_page');
         
         // Get repair count and history - all repair requests for this asset
         $repairs = \App\Models\RepairRequest::where('asset_id', $asset->id)
             ->with(['requester', 'approvedBy', 'rejectedBy', 'completedBy'])
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(5, ['*'], 'repairs_page');
         
         // Count all repair requests for this asset (not just completed ones)
         $repairCount = \App\Models\RepairRequest::where('asset_id', $asset->id)
@@ -253,6 +259,99 @@ class AssetController extends Controller
         }
         
         return view('assets.show', compact('asset', 'maintenances', 'disposes', 'changes', 'repairs', 'activeTab', 'repairCount'));
+    }
+
+    /**
+     * Generate PDF for asset history
+     */
+    public function generateHistoryPDF(Asset $asset)
+    {
+        $asset->load(['category', 'location', 'createdBy']);
+        
+        // Collect all history records
+        $history = collect();
+        
+        // Get maintenance records
+        $maintenances = $asset->legitimateMaintenanceHistory()->get();
+        foreach ($maintenances as $maintenance) {
+            $history->push([
+                'date' => $maintenance->scanned_at ? $maintenance->scanned_at->format('M d, Y') : 'N/A',
+                'type' => 'Maintenance',
+                'description' => 'Maintenance checklist: ' . ($maintenance->checklist->name ?? 'N/A'),
+                'status' => $maintenance->end_status ?? 'N/A',
+                'performed_by' => $maintenance->scannedBy->name ?? 'System',
+                'notes' => $maintenance->notes ?? '',
+                'timestamp' => $maintenance->scanned_at ?? now()
+            ]);
+        }
+        
+        // Get repair records
+        $repairs = \App\Models\RepairRequest::where('asset_id', $asset->id)->get();
+        foreach ($repairs as $repair) {
+            $history->push([
+                'date' => $repair->created_at->format('M d, Y'),
+                'type' => 'Repair',
+                'description' => $repair->issue_description,
+                'status' => ucfirst($repair->status),
+                'performed_by' => $repair->requester->name ?? 'N/A',
+                'notes' => $repair->urgency_level . ' urgency',
+                'timestamp' => $repair->created_at
+            ]);
+        }
+        
+        // Get disposal records
+        $disposes = $asset->disposes()->get();
+        foreach ($disposes as $dispose) {
+            $history->push([
+                'date' => $dispose->disposal_date ? \Carbon\Carbon::parse($dispose->disposal_date)->format('M d, Y') : 'N/A',
+                'type' => 'Disposal',
+                'description' => 'Disposal method: ' . $dispose->disposal_method,
+                'status' => 'Disposed',
+                'performed_by' => $dispose->disposedBy->name ?? 'N/A',
+                'notes' => $dispose->reason ?? '',
+                'timestamp' => $dispose->disposal_date ? \Carbon\Carbon::parse($dispose->disposal_date) : now()
+            ]);
+        }
+        
+        // Get asset changes
+        $changes = $asset->changes()->with('user')->get();
+        foreach ($changes as $change) {
+            $history->push([
+                'date' => $change->created_at->format('M d, Y'),
+                'type' => 'Change',
+                'description' => $change->change_type . ': ' . $change->description,
+                'status' => null,
+                'performed_by' => $change->user->name ?? 'System',
+                'notes' => $change->old_value ? 'From: ' . $change->old_value . ' To: ' . $change->new_value : '',
+                'timestamp' => $change->created_at
+            ]);
+        }
+        
+        // Sort by date descending
+        $history = $history->sortByDesc('timestamp')->values();
+        
+        // Count records
+        $totalRecords = $history->count();
+        $maintenanceCount = $maintenances->count();
+        $repairCount = $repairs->count();
+        $disposalCount = $disposes->count();
+        $changeCount = $changes->count();
+        
+        // Generate PDF
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('assets.history-pdf', compact(
+            'asset',
+            'history',
+            'totalRecords',
+            'maintenanceCount',
+            'repairCount',
+            'disposalCount',
+            'changeCount'
+        ));
+        
+        $pdf->setPaper('a4', 'portrait');
+        
+        // Stream PDF to browser for preview (opens in new tab)
+        return $pdf->stream('asset-history-' . $asset->asset_code . '-' . now()->format('Y-m-d') . '.pdf');
     }
 
     public function gsuShowByCode(string $assetCode, Request $request)
@@ -511,7 +610,7 @@ class AssetController extends Controller
     /**
      * Display pending assets for admin approval
      */
-    public function pendingAssets()
+    public function pendingAssets(Request $request)
     {
         // Check if user is admin
         if (auth()->user()->role !== 'admin') {
@@ -521,17 +620,25 @@ class AssetController extends Controller
         \Log::info('pendingAssets method called', [
             'user' => auth()->user()->email,
             'role' => auth()->user()->role,
+            'search' => $request->get('search'),
             'timestamp' => now()
         ]);
 
-        $assets = Asset::where('approval_status', Asset::APPROVAL_PENDING)
-            ->with(['category', 'createdBy'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $query = Asset::where('approval_status', Asset::APPROVAL_PENDING)
+            ->with(['category', 'createdBy']);
+
+        // Apply search filter if provided
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where('asset_code', 'like', '%' . $search . '%');
+        }
+
+        $assets = $query->orderBy('created_at', 'desc')->paginate(10);
 
         \Log::info('Pending assets query result', [
             'count' => $assets->count(),
-            'total' => $assets->total()
+            'total' => $assets->total(),
+            'search_applied' => $request->has('search')
         ]);
 
         return view('admin.assets.pending', compact('assets'));
@@ -626,6 +733,100 @@ class AssetController extends Controller
     }
 
     /**
+     * Bulk approve assets
+     */
+    public function bulkApprove(Request $request)
+    {
+        // Check if user is admin
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized. Only admin users can approve assets.');
+        }
+
+        $request->validate([
+            'asset_ids' => 'required|json'
+        ]);
+
+        $assetIds = json_decode($request->asset_ids, true);
+
+        if (empty($assetIds) || !is_array($assetIds)) {
+            return redirect()->back()->with('error', 'No assets selected for approval.');
+        }
+
+        $assets = Asset::whereIn('id', $assetIds)
+            ->where('approval_status', Asset::APPROVAL_PENDING)
+            ->get();
+
+        if ($assets->isEmpty()) {
+            return redirect()->back()->with('error', 'No pending assets found to approve.');
+        }
+
+        $approvedCount = 0;
+        $notificationService = app(NotificationService::class);
+
+        foreach ($assets as $asset) {
+            $asset->update([
+                'approval_status' => Asset::APPROVAL_APPROVED,
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+
+            // Notify the purchasing user
+            $notificationService->notifyAssetApproved($asset);
+            $approvedCount++;
+        }
+
+        return redirect()->back()->with('success', "Successfully approved {$approvedCount} asset(s).");
+    }
+
+    /**
+     * Bulk reject assets
+     */
+    public function bulkReject(Request $request)
+    {
+        // Check if user is admin
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized. Only admin users can reject assets.');
+        }
+
+        $request->validate([
+            'asset_ids' => 'required|json',
+            'rejection_reason' => 'required|string|max:500'
+        ]);
+
+        $assetIds = json_decode($request->asset_ids, true);
+
+        if (empty($assetIds) || !is_array($assetIds)) {
+            return redirect()->back()->with('error', 'No assets selected for rejection.');
+        }
+
+        $assets = Asset::whereIn('id', $assetIds)
+            ->where('approval_status', Asset::APPROVAL_PENDING)
+            ->get();
+
+        if ($assets->isEmpty()) {
+            return redirect()->back()->with('error', 'No pending assets found to reject.');
+        }
+
+        $rejectedCount = 0;
+        $notificationService = app(NotificationService::class);
+
+        foreach ($assets as $asset) {
+            $asset->update([
+                'approval_status' => Asset::APPROVAL_REJECTED,
+                'rejection_reason' => $request->rejection_reason,
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+
+            // Notify the purchasing user
+            $notificationService->notifyAssetRejected($asset);
+            $rejectedCount++;
+        }
+
+        return redirect()->back()->with('success', "Successfully rejected {$rejectedCount} asset(s).");
+    }
+
+    /**
      * Show form for GSU to assign location to approved asset
      */
     public function assignLocationForm(Asset $asset)
@@ -637,7 +838,14 @@ class AssetController extends Controller
 
         $locations = Location::orderBy('building')->orderBy('floor')->orderBy('room')->get();
         
-        return view('gsu.assets.assign-location', compact('asset', 'locations'));
+        // Get all other pending assets (approved but not yet deployed) for bulk deployment
+        $allPendingAssets = Asset::where('approval_status', Asset::APPROVAL_APPROVED)
+            ->whereNull('location_id')
+            ->with(['category'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('gsu.assets.assign-location', compact('asset', 'locations', 'allPendingAssets'));
     }
 
     /**
