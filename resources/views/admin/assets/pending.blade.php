@@ -105,23 +105,45 @@
             </form>
             
             <!-- Bulk Actions -->
-            <div class="flex gap-2" id="bulkActionsBar" style="display: none;">
-                <button type="button" 
-                        onclick="showBulkApproveModal()"
-                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    <i class="fas fa-check-double mr-2"></i>
-                    <span class="hidden sm:inline">Approve Selected</span>
-                    <span class="sm:hidden">Approve</span>
-                    (<span id="selectedCount">0</span>)
-                </button>
-                <button type="button" 
-                        onclick="showBulkRejectModal()"
-                        class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                    <i class="fas fa-times-circle mr-2"></i>
-                    <span class="hidden sm:inline">Reject Selected</span>
-                    <span class="sm:hidden">Reject</span>
-                    (<span id="selectedCountReject">0</span>)
-                </button>
+            <div class="flex flex-wrap gap-2">
+                <div class="flex gap-2" id="bulkActionsBar" style="display: none;">
+                    <button type="button" 
+                            onclick="showBulkApproveModal()"
+                            class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                        <i class="fas fa-check-double mr-2"></i>
+                        <span class="hidden sm:inline">Approve Selected</span>
+                        <span class="sm:hidden">Approve</span>
+                        (<span id="selectedCount">0</span>)
+                    </button>
+                    <button type="button" 
+                            onclick="showBulkRejectModal()"
+                            class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
+                        <i class="fas fa-times-circle mr-2"></i>
+                        <span class="hidden sm:inline">Reject Selected</span>
+                        <span class="sm:hidden">Reject</span>
+                        (<span id="selectedCountReject">0</span>)
+                    </button>
+                </div>
+                @if($assets->total() > 0)
+                <div class="flex gap-2 ml-auto">
+                    <button type="button" 
+                            onclick="showApproveAllModal()"
+                            class="inline-flex items-center px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors text-sm border border-green-800">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span class="hidden sm:inline">Approve All</span>
+                        <span class="sm:hidden">All</span>
+                        ({{ $assets->total() }})
+                    </button>
+                    <button type="button" 
+                            onclick="showRejectAllModal()"
+                            class="inline-flex items-center px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 transition-colors text-sm border border-red-800">
+                        <i class="fas fa-ban mr-2"></i>
+                        <span class="hidden sm:inline">Reject All</span>
+                        <span class="sm:hidden">All</span>
+                        ({{ $assets->total() }})
+                    </button>
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -187,6 +209,10 @@
                         <a href="{{ route('admin.assets.show', $asset->id) }}"
                            class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
                             <i class="fas fa-eye mr-1.5"></i>View
+                        </a>
+                        <a href="{{ route('assets.edit', $asset) }}"
+                           class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-yellow-500 text-white text-xs font-medium rounded-lg hover:bg-yellow-600 transition-colors">
+                            <i class="fas fa-edit mr-1.5"></i>Edit
                         </a>
                         <button onclick="approveAsset({{ $asset->id }}, '{{ $asset->asset_code }}')"
                                 class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors">
@@ -336,6 +362,16 @@
                                         <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap">
                                             View Details
                                         </div>
+                                        
+                                        <!-- Edit Button -->
+                                        <a href="{{ route('assets.edit', $asset) }}"
+                                           class="group/btn relative inline-flex items-center justify-center w-10 h-10 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-colors"
+                                           title="Edit Asset">
+                                            <i class="fas fa-edit text-sm"></i>
+                                            <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap">
+                                                Edit
+                                            </div>
+                                        </a>
                                         
                                         <!-- Approve Button -->
                                         <button onclick="approveAsset({{ $asset->id }}, '{{ $asset->asset_code }}')"
@@ -598,6 +634,123 @@
     <input type="hidden" name="asset_ids" id="bulkApproveAssetIds">
 </form>
 
+<!-- Approve All Modal -->
+<div id="approveAllModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl p-6 md:p-8 w-full max-w-md relative">
+        <button onclick="closeApproveAllModal()" class="absolute top-3 right-3 text-gray-400 hover:text-green-600 text-xl">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="flex flex-col items-center mb-6">
+            <div class="bg-green-100 text-green-600 rounded-full p-4 mb-4">
+                <i class="fas fa-check-circle text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800">Approve All Pending Assets</h3>
+            <p class="text-gray-600 text-center mb-2">You are about to approve:</p>
+            <p class="text-green-600 font-semibold text-center text-lg">All {{ $assets->total() }} pending asset(s)</p>
+        </div>
+
+        <div class="mb-6">
+            <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h4 class="text-sm font-semibold text-yellow-800">This includes all pages</h4>
+                        <p class="text-sm text-yellow-700 mt-1">
+                            This will approve <strong>all {{ $assets->total() }} pending assets</strong> across all pages, not just the ones currently visible.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-3">
+            <button type="button" onclick="confirmApproveAll()"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                <i class="fas fa-check-circle"></i> Approve All {{ $assets->total() }} Assets
+            </button>
+            <button type="button" onclick="closeApproveAllModal()"
+                    class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Reject All Modal -->
+<div id="rejectAllModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl p-6 md:p-8 w-full max-w-md relative">
+        <button onclick="closeRejectAllModal()" class="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-xl">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="flex flex-col items-center mb-6">
+            <div class="bg-red-100 text-red-600 rounded-full p-4 mb-4">
+                <i class="fas fa-ban text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800">Reject All Pending Assets</h3>
+            <p class="text-gray-600 text-center mb-2">You are about to reject:</p>
+            <p class="text-red-600 font-semibold text-center text-lg">All {{ $assets->total() }} pending asset(s)</p>
+        </div>
+
+        <div class="mb-4">
+            <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h4 class="text-sm font-semibold text-yellow-800">This includes all pages</h4>
+                        <p class="text-sm text-yellow-700 mt-1">
+                            This will reject <strong>all {{ $assets->total() }} pending assets</strong> across all pages, not just the ones currently visible.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form id="rejectAllForm" method="POST" action="{{ route('admin.assets.reject-all') }}">
+            @csrf
+            
+            <div class="mb-6">
+                <label for="reject_all_reason" class="block text-sm font-semibold text-gray-800 mb-3">
+                    <i class="fas fa-comment-alt mr-2 text-red-600"></i>
+                    Reason for Rejection <span class="text-red-500">*</span>
+                </label>
+                <textarea 
+                    id="reject_all_reason" 
+                    name="rejection_reason" 
+                    rows="4" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none transition-colors duration-200" 
+                    placeholder="Please provide a reason for rejecting all pending assets..."
+                    required></textarea>
+                <p class="text-sm text-gray-600 mt-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    This reason will be applied to all rejected assets.
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button type="submit" id="reject-all-submit-btn"
+                        class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed" disabled>
+                    <i class="fas fa-ban"></i> Reject All {{ $assets->total() }} Assets
+                </button>
+                <button type="button" onclick="closeRejectAllModal()"
+                        class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Hidden Approve All Form -->
+<form id="approveAllForm" method="POST" action="{{ route('admin.assets.approve-all') }}" style="display: none;">
+    @csrf
+</form>
+
 <script>
 // Global variables
 let currentAssetId = null;
@@ -770,6 +923,35 @@ function closeBulkRejectModal() {
     document.body.style.overflow = 'auto';
 }
 
+// Approve All functions
+function showApproveAllModal() {
+    document.getElementById('approveAllModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeApproveAllModal() {
+    document.getElementById('approveAllModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function confirmApproveAll() {
+    document.getElementById('approveAllForm').submit();
+}
+
+// Reject All functions
+function showRejectAllModal() {
+    document.getElementById('rejectAllModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+        document.getElementById('reject_all_reason').focus();
+    }, 100);
+}
+
+function closeRejectAllModal() {
+    document.getElementById('rejectAllModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
 // Enable/disable reject button based on textarea content
 document.addEventListener('DOMContentLoaded', function() {
     const rejectionTextarea = document.getElementById('rejection_reason');
@@ -810,6 +992,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initial state
         bulkRejectButton.disabled = true;
         bulkRejectButton.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+    
+    // Reject All button enable/disable
+    const rejectAllTextarea = document.getElementById('reject_all_reason');
+    const rejectAllButton = document.getElementById('reject-all-submit-btn');
+    
+    if (rejectAllTextarea && rejectAllButton) {
+        rejectAllTextarea.addEventListener('input', function() {
+            if (this.value.trim()) {
+                rejectAllButton.disabled = false;
+                rejectAllButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                rejectAllButton.disabled = true;
+                rejectAllButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        });
     }
     
     // Auto-submit search on input (with debounce)

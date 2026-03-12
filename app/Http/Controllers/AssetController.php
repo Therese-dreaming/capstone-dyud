@@ -82,15 +82,30 @@ class AssetController extends Controller
         ]);
     }
 
-    public function gsuIndex()
+    public function gsuIndex(Request $request)
     {
         // Show only approved assets for GSU (for location assignment and management)
-        // Order by created_at descending so newest assets appear first
-        $assets = Asset::where('approval_status', Asset::APPROVAL_APPROVED)
+        $tab = $request->get('tab', 'pending');
+        
+        $query = Asset::where('approval_status', Asset::APPROVAL_APPROVED)
             ->with(['category', 'location', 'originalLocation', 'warranty', 'createdBy'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-        return view('gsu.assets.index', compact('assets'));
+            ->orderBy('created_at', 'desc');
+
+        if ($tab === 'deployed') {
+            $query->whereNotNull('location_id');
+        } else {
+            $query->whereNull('location_id');
+        }
+
+        $assets = $query->paginate(9)->appends(['tab' => $tab]);
+
+        // Counts for stats (across all pages)
+        $pendingCount = Asset::where('approval_status', Asset::APPROVAL_APPROVED)->whereNull('location_id')->count();
+        $deployedCount = Asset::where('approval_status', Asset::APPROVAL_APPROVED)->whereNotNull('location_id')->count();
+        $totalCount = $pendingCount + $deployedCount;
+        $totalValue = Asset::where('approval_status', Asset::APPROVAL_APPROVED)->sum('purchase_cost');
+
+        return view('gsu.assets.index', compact('assets', 'tab', 'pendingCount', 'deployedCount', 'totalCount', 'totalValue'));
     }
 
     public function create(Request $request)
@@ -827,6 +842,75 @@ class AssetController extends Controller
     }
 
     /**
+     * Approve all pending assets
+     */
+    public function approveAll(Request $request)
+    {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized. Only admin users can approve assets.');
+        }
+
+        $assets = Asset::where('approval_status', Asset::APPROVAL_PENDING)->get();
+
+        if ($assets->isEmpty()) {
+            return redirect()->back()->with('error', 'No pending assets found to approve.');
+        }
+
+        $approvedCount = 0;
+        $notificationService = app(NotificationService::class);
+
+        foreach ($assets as $asset) {
+            $asset->update([
+                'approval_status' => Asset::APPROVAL_APPROVED,
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+
+            $notificationService->notifyAssetApproved($asset);
+            $approvedCount++;
+        }
+
+        return redirect()->back()->with('success', "Successfully approved all {$approvedCount} pending asset(s).");
+    }
+
+    /**
+     * Reject all pending assets
+     */
+    public function rejectAll(Request $request)
+    {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized. Only admin users can reject assets.');
+        }
+
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500'
+        ]);
+
+        $assets = Asset::where('approval_status', Asset::APPROVAL_PENDING)->get();
+
+        if ($assets->isEmpty()) {
+            return redirect()->back()->with('error', 'No pending assets found to reject.');
+        }
+
+        $rejectedCount = 0;
+        $notificationService = app(NotificationService::class);
+
+        foreach ($assets as $asset) {
+            $asset->update([
+                'approval_status' => Asset::APPROVAL_REJECTED,
+                'rejection_reason' => $request->rejection_reason,
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+            ]);
+
+            $notificationService->notifyAssetRejected($asset);
+            $rejectedCount++;
+        }
+
+        return redirect()->back()->with('success', "Successfully rejected all {$rejectedCount} pending asset(s).");
+    }
+
+    /**
      * Show form for GSU to assign location to approved asset
      */
     public function assignLocationForm(Asset $asset)
@@ -888,15 +972,28 @@ class AssetController extends Controller
      */
     public function bulkDeploy(Request $request)
     {
-        $request->validate([
-            'asset_ids' => 'required|array|min:1',
-            'asset_ids.*' => 'required|exists:assets,id',
-            'location_id' => 'required|exists:locations,id',
-        ]);
+        // Support "deploy all pending" mode
+        if ($request->boolean('deploy_all')) {
+            $request->validate([
+                'location_id' => 'required|exists:locations,id',
+            ]);
+
+            $assetIds = Asset::where('approval_status', Asset::APPROVAL_APPROVED)
+                ->whereNull('location_id')
+                ->pluck('id')
+                ->toArray();
+        } else {
+            $request->validate([
+                'asset_ids' => 'required|array|min:1',
+                'asset_ids.*' => 'required|exists:assets,id',
+                'location_id' => 'required|exists:locations,id',
+            ]);
+
+            $assetIds = $request->asset_ids;
+        }
 
         try {
-            return DB::transaction(function () use ($request) {
-                $assetIds = $request->asset_ids;
+            return DB::transaction(function () use ($request, $assetIds) {
                 $locationId = $request->location_id;
                 $deployedCount = 0;
                 $skippedCount = 0;

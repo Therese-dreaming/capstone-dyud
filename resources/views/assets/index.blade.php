@@ -229,6 +229,12 @@
                                class="flex-1 inline-flex items-center justify-center px-3 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm">
                                 <i class="fas fa-eye mr-1.5"></i>View
                             </a>
+                            @if(Auth::user()->role === 'admin')
+                                <a href="{{ route('assets.edit', $asset) }}" 
+                                   class="flex-1 inline-flex items-center justify-center px-3 py-2.5 bg-yellow-500 text-white text-xs font-bold rounded-lg hover:bg-yellow-600 active:bg-yellow-700 transition-colors shadow-sm">
+                                    <i class="fas fa-edit mr-1.5"></i>Edit
+                                </a>
+                            @endif
                             @if($asset->isAvailable() && $asset->location_id && (Auth::user()->role === 'admin' || Auth::user()->role === 'gsu'))
                                 <a href="{{ route('assets.transfer-form', $asset) }}" 
                                    class="flex-1 inline-flex items-center justify-center px-3 py-2.5 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 active:bg-purple-800 transition-colors shadow-sm">
@@ -339,6 +345,13 @@
                                        title="View Details">
                                         <i class="fas fa-eye text-xs"></i>
                                     </a>
+                                    @if(Auth::user()->role === 'admin')
+                                        <a href="{{ route('assets.edit', $asset) }}" 
+                                           class="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 text-yellow-600 rounded-full hover:bg-yellow-200 transition-colors duration-150"
+                                           title="Edit Asset">
+                                            <i class="fas fa-edit text-xs"></i>
+                                        </a>
+                                    @endif
                                     @if($asset->isAvailable() && $asset->location_id && (Auth::user()->role === 'admin' || Auth::user()->role === 'gsu'))
                                         <a href="{{ route('assets.transfer-form', $asset) }}" 
                                            class="inline-flex items-center justify-center w-8 h-8 bg-purple-100 text-purple-600 rounded-full hover:bg-purple-200 transition-colors duration-150"
