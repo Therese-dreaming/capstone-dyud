@@ -9,42 +9,13 @@
                 <h1 class="text-2xl font-bold text-gray-900">My Assets</h1>
                 <p class="mt-1 text-sm text-gray-600">Manage your registered assets and track approval status</p>
             </div>
-            <a href="{{ route('purchasing.assets.create') }}" 
+            <a href="{{ route('purchasing.assets.create') }}"
                class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
                 <i class="fas fa-plus mr-2"></i>
                 Register New Asset
             </a>
         </div>
     </div>
-
-    <!-- Flash Messages -->
-    @if(session('success'))
-        <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg" x-data="{ show: true }" x-show="show">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <i class="fas fa-check-circle text-green-600 mr-3"></i>
-                    <p class="text-green-800">{{ session('success') }}</p>
-                </div>
-                <button @click="show = false" class="text-green-600 hover:text-green-800">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg" x-data="{ show: true }" x-show="show">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <i class="fas fa-exclamation-circle text-red-600 mr-3"></i>
-                    <p class="text-red-800">{{ session('error') }}</p>
-                </div>
-                <button @click="show = false" class="text-red-600 hover:text-red-800">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
-    @endif
 
     <!-- Filter Tabs -->
     <div class="mb-6">
@@ -217,4 +188,36 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Success message
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            html: `
+                <div class="text-center">
+                    <p>{{ session('success') }}</p>
+                </div>
+            `,
+            confirmButtonColor: '#7C3AED',
+            confirmButtonText: 'Great!'
+        });
+    @endif
+
+    // Error message
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: "{{ session('error') }}",
+            confirmButtonColor: '#DC2626',
+            confirmButtonText: 'OK'
+        });
+    @endif
+});
+</script>
 @endsection

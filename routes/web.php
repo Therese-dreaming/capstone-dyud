@@ -278,6 +278,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/purchasing/assets', [App\Http\Controllers\PurchasingController::class, 'index'])->name('purchasing.assets.index');
         Route::get('/purchasing/assets/create', [App\Http\Controllers\PurchasingController::class, 'create'])->name('purchasing.assets.create');
         Route::post('/purchasing/assets', [App\Http\Controllers\PurchasingController::class, 'store'])->name('purchasing.assets.store');
+        Route::get('/purchasing/assets/import-template', [App\Http\Controllers\PurchasingController::class, 'downloadTemplate'])->name('purchasing.assets.import-template');
+        Route::post('/purchasing/assets/import', [App\Http\Controllers\PurchasingController::class, 'import'])->name('purchasing.assets.import');
         Route::get('/purchasing/assets/{asset}', [App\Http\Controllers\PurchasingController::class, 'show'])->name('purchasing.assets.show');
         Route::get('/purchasing/assets/{asset}/edit', [App\Http\Controllers\PurchasingController::class, 'edit'])->name('purchasing.assets.edit');
         Route::put('/purchasing/assets/{asset}', [App\Http\Controllers\PurchasingController::class, 'update'])->name('purchasing.assets.update');

@@ -6,9 +6,12 @@ use App\Models\Asset;
 use App\Models\Category;
 use App\Models\Semester;
 use App\Models\Warranty;
+use App\Imports\AssetsImport;
+use App\Exports\AssetImportTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\NotificationService;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PurchasingController extends Controller
 {
@@ -241,5 +244,45 @@ class PurchasingController extends Controller
         } while (Asset::where('asset_code', $assetCode)->exists());
 
         return $assetCode;
+    }
+
+    /**
+     * Download the Excel import template.
+     */
+    public function downloadTemplate()
+    {
+        return Excel::download(new AssetImportTemplate(), 'asset_import_template.xlsx');
+    }
+
+    /**
+     * Import assets from Excel file.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'import_file' => 'required|file|mimes:xlsx,xls|max:10240', // Max 10MB
+        ]);
+
+        $import = new AssetsImport();
+        Excel::import($import, $request->file('import_file'));
+
+        $successCount = $import->getSuccessCount();
+        $errors = $import->getErrors();
+
+        // All-or-nothing approach: either all succeed or none
+        if ($successCount > 0 && empty($errors)) {
+            return redirect()->route('purchasing.assets.index')
+                ->with('success', "{$successCount} asset(s) imported successfully and submitted for approval.");
+        }
+
+        if (!empty($errors)) {
+            $errorCount = count($errors);
+            return redirect()->route('purchasing.assets.create')
+                ->with('error', "Import failed. Please fix {$errorCount} error(s) and try again. No assets were imported.")
+                ->with('import_errors', $errors);
+        }
+
+        return redirect()->route('purchasing.assets.create')
+            ->with('error', 'No data found in the import file. Please check that you have filled in the template correctly.');
     }
 }

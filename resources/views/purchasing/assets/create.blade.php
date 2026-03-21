@@ -9,11 +9,117 @@
                 <h1 class="text-2xl font-bold text-gray-900">Register New Asset</h1>
                 <p class="mt-1 text-sm text-gray-600">Create a new asset entry for admin approval</p>
             </div>
-            <a href="{{ route('purchasing.assets.index') }}" 
+            <a href="{{ route('purchasing.assets.index') }}"
                class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Assets
             </a>
+        </div>
+    </div>
+
+    <!-- Import Section -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-file-excel text-green-600 mr-3 text-xl"></i>
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Import from Excel</h2>
+                        <p class="text-sm text-gray-500">Bulk import multiple assets at once</p>
+                    </div>
+                </div>
+                <button type="button"
+                        onclick="document.getElementById('importSection').classList.toggle('hidden')"
+                        class="text-purple-600 hover:text-purple-800 text-sm font-medium">
+                    <i class="fas fa-chevron-down mr-1"></i>
+                    Show/Hide
+                </button>
+            </div>
+        </div>
+
+        <div id="importSection" class="p-6 hidden">
+            <!-- Download Template -->
+            <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div class="flex items-start">
+                    <i class="fas fa-download text-green-600 mt-0.5 mr-3"></i>
+                    <div class="flex-1">
+                        <h4 class="text-sm font-medium text-green-900 mb-1">Step 1: Download Template</h4>
+                        <p class="text-sm text-green-700 mb-3">
+                            Download the Excel template with all required columns and dropdown selections.
+                        </p>
+                        <a href="{{ route('purchasing.assets.import-template') }}"
+                           class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
+                            <i class="fas fa-file-download mr-2"></i>
+                            Download Template
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <div class="flex items-start">
+                    <i class="fas fa-upload text-purple-600 mt-0.5 mr-3"></i>
+                    <div class="flex-1">
+                        <h4 class="text-sm font-medium text-purple-900 mb-1">Step 2: Upload Filled Template</h4>
+                        <p class="text-sm text-purple-700 mb-3">
+                            Fill in the template and upload it here. Supported formats: .xlsx, .xls (max 10MB)
+                        </p>
+                        <form action="{{ route('purchasing.assets.import') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-4">
+                            @csrf
+                            <div class="flex-1">
+                                <input type="file"
+                                       name="import_file"
+                                       id="import_file"
+                                       accept=".xlsx,.xls"
+                                       required
+                                       class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer">
+                                @error('import_file')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <button type="submit"
+                                    class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors">
+                                <i class="fas fa-file-import mr-2"></i>
+                                Import Assets
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Info -->
+            <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-600 mt-0.5 mr-3"></i>
+                    <div>
+                        <h4 class="text-sm font-medium text-blue-900 mb-1">Template Columns</h4>
+                        <ul class="text-sm text-blue-700 grid grid-cols-2 gap-x-4">
+                            <li><i class="fas fa-check text-blue-500 mr-1"></i> Category (dropdown)</li>
+                            <li><i class="fas fa-check text-blue-500 mr-1"></i> Condition (dropdown)</li>
+                            <li><i class="fas fa-check text-blue-500 mr-1"></i> Purchase Cost (decimal)</li>
+                            <li><i class="fas fa-check text-blue-500 mr-1"></i> Purchase Date (MM-DD-YYYY)</li>
+                            <li><i class="fas fa-check text-blue-500 mr-1"></i> Manufacturer</li>
+                            <li><i class="fas fa-check text-blue-500 mr-1"></i> Model</li>
+                            <li><i class="fas fa-check text-blue-500 mr-1"></i> Warranty Expiry Date (MM-DD-YYYY)</li>
+                            <li><i class="fas fa-check text-blue-500 mr-1"></i> Depreciation Method (dropdown)</li>
+                            <li><i class="fas fa-check text-blue-500 mr-1"></i> Useful Life (years)</li>
+                            <li><i class="fas fa-check text-blue-500 mr-1"></i> Salvage Value (decimal)</li>
+                            <li><i class="fas fa-check text-blue-500 mr-1"></i> Description (optional)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="relative mb-6">
+        <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-300"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+            <span class="px-4 bg-gray-100 text-gray-500 font-medium">Or enter manually</span>
         </div>
     </div>
 
@@ -366,12 +472,12 @@
 
             <!-- Form Actions -->
             <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                <a href="{{ route('purchasing.assets.index') }}" 
+                <a href="{{ route('purchasing.assets.index') }}"
                    class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
                     <i class="fas fa-arrow-left mr-2"></i>
                     Cancel
                 </a>
-                <button type="submit" 
+                <button type="submit"
                         class="inline-flex items-center px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors">
                     <i class="fas fa-paper-plane mr-2"></i>
                     Submit for Approval
@@ -380,4 +486,83 @@
         </form>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Success message
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: "{{ session('success') }}",
+            confirmButtonColor: '#7C3AED',
+            confirmButtonText: 'Great!'
+        });
+    @endif
+
+    // Warning message (partial success with errors)
+    @if(session('warning'))
+        Swal.fire({
+            icon: 'warning',
+            title: 'Partial Import',
+            html: `
+                <div class="text-left">
+                    <p class="mb-3">{{ session('warning') }}</p>
+                    @if(session('import_errors'))
+                    <div class="mt-3 p-3 bg-red-50 rounded-lg max-h-60 overflow-y-auto text-sm">
+                        <p class="font-semibold text-red-800 mb-2">Errors found:</p>
+                        @foreach(session('import_errors') as $error)
+                        <div class="mb-2 pb-2 border-b border-red-200 last:border-0">
+                            <span class="font-medium text-red-700">Row {{ $error['row'] }}:</span>
+                            <ul class="list-disc list-inside ml-2 text-red-600">
+                                @foreach($error['errors'] as $errorMsg)
+                                <li>{{ $errorMsg }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
+                </div>
+            `,
+            confirmButtonColor: '#7C3AED',
+            confirmButtonText: 'Understood',
+            width: '600px'
+        });
+    @endif
+
+    // Error message
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Import Failed',
+            html: `
+                <div class="text-left">
+                    <p class="mb-3">{{ session('error') }}</p>
+                    @if(session('import_errors'))
+                    <div class="mt-3 p-3 bg-red-50 rounded-lg max-h-60 overflow-y-auto text-sm">
+                        <p class="font-semibold text-red-800 mb-2">Please fix the following errors:</p>
+                        @foreach(session('import_errors') as $error)
+                        <div class="mb-2 pb-2 border-b border-red-200 last:border-0">
+                            <span class="font-medium text-red-700">Row {{ $error['row'] }}:</span>
+                            <ul class="list-disc list-inside ml-2 text-red-600">
+                                @foreach($error['errors'] as $errorMsg)
+                                <li>{{ $errorMsg }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
+                </div>
+            `,
+            confirmButtonColor: '#DC2626',
+            confirmButtonText: 'Fix & Retry',
+            width: '600px'
+        });
+    @endif
+});
+</script>
 @endsection
